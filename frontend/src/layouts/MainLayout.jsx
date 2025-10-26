@@ -4,22 +4,23 @@ import {
   HelpCircle,
   Bell,
   User,
-  Home,
   Users,
   List,
   UserPlus,
   LogOut,
+  Building2,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
-import { useAuth } from "../context/AuthContext"; 
+import { useAuth } from "../context/AuthContext";
 
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth(); 
+  const { user, logout } = useAuth();
   const [logo, setLogo] = useState(localStorage.getItem("logo") || "/logo.png");
   const [collapsed, setCollapsed] = useState(false);
-  const [personasOpen, setPersonasOpen] = useState(false);
+  const [juntasOpen, setJuntasOpen] = useState(true);
+  const [usuariosOpen, setUsuariosOpen] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -48,8 +49,8 @@ export default function MainLayout() {
 
   const isActive = (path) =>
     location.pathname === path
-      ? "bg-gray-200 font-semibold text-[var(--color-hover-text)]"
-      : "";
+      ? "bg-green-50 font-semibold text-green-800 border-l-4 border-green-700"
+      : "text-gray-700 hover:bg-gray-100 hover:text-green-800";
 
   const handleLogout = async () => {
     try {
@@ -61,45 +62,45 @@ export default function MainLayout() {
       console.error("Error al cerrar sesión:", error);
     } finally {
       logout();
-      navigate("/login_user", { replace: true });
+      navigate("/login", { replace: true });
     }
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: "var(--color-background-page)" }}
-    >
-      {/* Header */}
-      <header
-        className="bg-gradient-to-r shadow-md"
-        style={{ backgroundColor: "var(--color-background-upper)" }}
-      >
-        <div className="flex justify-between items-center px-8 py-3">
+    <div className="min-h-screen flex flex-col bg-gray-50 font-[Poppins]">
+      {/* HEADER */}
+      <header className="bg-white shadow-sm sticky top-0 z-20 border-b border-gray-200">
+        <div className="flex justify-between items-center px-10 py-4">
           {/* Logo + título */}
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="Logo" className="h-16 w-auto" />
-            <h1
-              className="text-xl font-bold tracking-wide"
-              style={{ color: "var(--color-text-color-upper)" }}
-            >
-              Gobernación de Boyacá
-            </h1>
+          <div className="flex items-center gap-4">
+            <img src={logo} alt="Logo" className="h-14 w-auto" />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 tracking-wide">
+                Gobernación de Boyacá
+              </h1>
+              <p className="text-sm text-gray-600 tracking-wide">
+                Gestión de Juntas de Acción Comunal
+              </p>
+            </div>
           </div>
 
           {/* Navbar con iconos */}
           <nav className="flex items-center gap-6 relative">
-            <button className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]">
+            <button
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+              title="Notificaciones"
+            >
               <Bell className="h-5 w-5" />
             </button>
-            <button className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]">
+            <button
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+              title="Ayuda"
+            >
               <HelpCircle className="h-5 w-5" />
             </button>
-
-            {/* Botón de configuración */}
             <button
               onClick={() => navigate("/configuracion")}
-              className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]"
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
               title="Configuración"
             >
               <Settings className="h-5 w-5" />
@@ -109,7 +110,7 @@ export default function MainLayout() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowUserMenu((prev) => !prev)}
-                className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]"
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
                 title="Usuario"
               >
                 <User className="h-5 w-5" />
@@ -138,137 +139,116 @@ export default function MainLayout() {
         </div>
       </header>
 
-      {/* Layout principal */}
+      {/* CONTENIDO PRINCIPAL */}
       <div className="flex flex-1">
-        {/* Sidebar */}
+        {/* SIDEBAR */}
         <aside
           className={`${
             collapsed ? "w-20" : "w-64"
-          } transition-all duration-300 border-r shadow-sm`}
-          style={{ backgroundColor: "var(--color-background-sidebar)" }}
+          } transition-all duration-300 border-r shadow-sm bg-white`}
         >
-          <nav className="p-4 space-y-4">
+          <nav className="p-4 space-y-6">
+            {/* Sección: Gestión de Juntas */}
             <div>
               {!collapsed && (
-                <h2 className="font-semibold mb-3 uppercase tracking-wide text-[var(--color-text-color-sidebar-pr)]">
-                  Menú principal
+                <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
+                  Gestión de Juntas
                 </h2>
               )}
               <ul className="space-y-1">
                 <li>
                   <Link
-                    to="/asistencia"
-                    title="Asistencia"
-                    className={`flex items-center gap-3 px-3 py-2 rounded
-                      text-[var(--color-text-color-sidebar-sec)]
-                      hover:bg-[var(--color-hover-bg)]
-                      hover:text-[var(--color-hover-text)] ${isActive(
-                        "/asistencia"
-                      )}`}
+                    to="/juntas/crear"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/juntas/crear"
+                    )}`}
                   >
-                    <Home className="h-5 w-5" />
-                    {!collapsed && "Asistencia"}
+                    <Building2 className="h-5 w-5" />
+                    {!collapsed && "Crear Junta"}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/juntas/consultar"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/juntas/consultar"
+                    )}`}
+                  >
+                    <List className="h-5 w-5" />
+                    {!collapsed && "Consultar Juntas"}
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Administración */}
-            {!collapsed && (
-              <h2 className="font-semibold mb-3 uppercase tracking-wide text-[var(--color-text-color-sidebar-pr)]">
-                Administración
-              </h2>
-            )}
-            <ul className="space-y-1">
-              <li>
-                <button
-                  onClick={() => setPersonasOpen(!personasOpen)}
-                  title="Personas"
-                  className={`flex items-center w-full gap-3 px-3 py-2 rounded
-                    text-[var(--color-text-color-sidebar-sec)]
-                    hover:bg-[var(--color-hover-bg)]
-                    hover:text-[var(--color-hover-text)]`}
-                >
-                  <Users className="h-5 w-5" />
-                  {!collapsed && "Personas"}
-                </button>
-
-                {(personasOpen || !collapsed) && (
-                  <ul
-                    className={`${collapsed ? "pl-0" : "ml-6"} mt-1 space-y-1`}
+            {/* Sección: Gestión de Usuarios */}
+            <div>
+              {!collapsed && (
+                <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
+                  Gestión de Usuarios
+                </h2>
+              )}
+              <ul className="space-y-1">
+                <li>
+                  <Link
+                    to="/usuarios/crear"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/usuarios/crear"
+                    )}`}
                   >
-                    <li>
-                      <Link
-                        to="/usuarios/creacion"
-                        title="Crear Persona"
-                        className={`flex items-center gap-2 px-3 py-2 rounded
-                          text-[var(--color-text-color-sidebar-sec)]
-                          hover:bg-[var(--color-hover-bg)]
-                          hover:text-[var(--color-hover-text)] ${isActive(
-                            "/usuarios/creacion"
-                          )}`}
-                      >
-                        <UserPlus className="h-5 w-5" />
-                        {!collapsed && "Crear Persona"}
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/usuarios/listar"
-                        title="Listar Personas"
-                        className={`flex items-center gap-2 px-3 py-2 rounded
-                          text-[var(--color-text-color-sidebar-sec)]
-                          hover:bg-[var(--color-hover-bg)]
-                          hover:text-[var(--color-hover-text)] ${isActive(
-                            "/usuarios/listar"
-                          )}`}
-                      >
-                        <List className="h-5 w-5" />
-                        {!collapsed && "Listar Personas"}
-                      </Link>
-                    </li>
-                  </ul>
-                )}
-              </li>
-            </ul>
+                    <UserPlus className="h-5 w-5" />
+                    {!collapsed && "Crear Usuario"}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/usuarios/listar"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/usuarios/listar"
+                    )}`}
+                  >
+                    <Users className="h-5 w-5" />
+                    {!collapsed && "Listar Usuarios"}
+                  </Link>
+                </li>
+              </ul>
+            </div>
 
-            {/* Configuración */}
-            {!collapsed && (
-              <h2 className="font-semibold mb-3 uppercase tracking-wide text-[var(--color-text-color-sidebar-pr)]">
-                Ajustes
-              </h2>
-            )}
-            <ul className="space-y-1">
-              <li>
-                <Link
-                  to="/configuracion"
-                  title="Configuración"
-                  className={`flex items-center gap-3 px-3 py-2 rounded
-                      text-[var(--color-text-color-sidebar-sec)]
-                      hover:bg-[var(--color-hover-bg)]
-                      hover:text-[var(--color-hover-text)] ${isActive(
-                        "/configuracion"
-                      )}`}
-                >
-                  <Settings className="h-5 w-5" />
-                  {!collapsed && "Configuración"}
-                </Link>
-              </li>
-            </ul>
+            {/* Sección: Configuración */}
+            <div>
+              {!collapsed && (
+                <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
+                  Configuración
+                </h2>
+              )}
+              <ul className="space-y-1">
+                <li>
+                  <Link
+                    to="/configuracion"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/configuracion"
+                    )}`}
+                  >
+                    <Settings className="h-5 w-5" />
+                    {!collapsed && "Configuración General"}
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </nav>
 
-          {/* Botón colapsar/expandir */}
+          {/* Botón colapsar */}
           <div className="flex justify-end p-2">
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="p-2 rounded hover:bg-[var(--color-hover-bg)]"
+              className="p-2 rounded hover:bg-gray-100 text-gray-600"
             >
               {collapsed ? "»" : "«"}
             </button>
           </div>
         </aside>
 
-        {/* Zona de contenido dinámico */}
+        {/* CONTENIDO CENTRAL */}
         <main className="flex-1 p-6">
           <Outlet />
         </main>
