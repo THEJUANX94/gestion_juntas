@@ -8,25 +8,25 @@ import { Card, CardContent } from "../components/ui/card";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
-
 export default function UserForm({ initialData = null, mode = "create", onSubmit }) {
   const navigate = useNavigate();
 
-const [form, setForm] = useState({
-  NumeroIdentificacion: "",
-  PrimerApellido: "",
-  SegundoApellido: "",
-  PrimerNombre: "",
-  SegundoNombre: "",
-  Sexo: "",
-  TipoSangre: "",
-  FechaNacimiento: "",
-  NombreRol: "",
-  Correo: "",
-  Celular: "",
-  Firma: null,
-});
-
+  const [form, setForm] = useState({
+    NumeroIdentificacion: "",
+    PrimerApellido: "",
+    SegundoApellido: "",
+    PrimerNombre: "",
+    SegundoNombre: "",
+    Sexo: "",
+    TipoSangre: "",
+    FechaNacimiento: "",
+    NombreRol: "",
+    Correo: "",
+    Celular: "",
+    Firma: null,
+    Usuario: null,
+    Contrasena: null,
+  });
 
   const [checking, setChecking] = useState(false);
   const [exists, setExists] = useState(null);
@@ -35,10 +35,26 @@ const [form, setForm] = useState({
   const [preview, setPreview] = useState(null);
   const [emailError, setEmailError] = useState("");
 
-
   useEffect(() => {
     if (initialData) {
-      setForm(initialData);
+      setForm(prev => ({
+        ...prev,
+        NumeroIdentificacion: initialData.NumeroIdentificacion || "",
+        PrimerApellido: initialData.PrimerApellido || "",
+        SegundoApellido: initialData.SegundoApellido || "",
+        PrimerNombre: initialData.PrimerNombre || "",
+        SegundoNombre: initialData.SegundoNombre || "",
+        Sexo: initialData.Sexo || initialData.sexo || "",              
+        TipoSangre: initialData.tipodesangre || "",    
+        FechaNacimiento: initialData.FechaNacimiento || "",
+        NombreRol: initialData.nombrerol || "",      
+        Correo: initialData.Correo || "",
+        Celular: initialData.Celular || "",
+        Firma: initialData.Firma || null,
+        Usuario: initialData.Usuario || null,
+        Contrasena: initialData.Contrasena || null,
+      }));
+
       if (initialData.Firma) {
         setPreview(initialData.Firma);
       }
@@ -62,25 +78,44 @@ const [form, setForm] = useState({
   };
 
   const handleCancel = () => {
-  setForm({
-    NumeroIdentificacion: "",
-    PrimerApellido: "",
-    SegundoApellido: "",
-    PrimerNombre: "",
-    SegundoNombre: "",
-    Sexo: "",
-    TipoSangre: "",
-    FechaNacimiento: "",
-    NombreRol: "",
-    Correo: "",
-    Celular: "",
-    Firma: null,
-  });
-  setPreview(null);
-  setErrors({});
-  setExists(null);
-  setFormDisabled(false);
+  if (mode === "create") {
+    setForm({
+      NumeroIdentificacion: "",
+      PrimerApellido: "",
+      SegundoApellido: "",
+      PrimerNombre: "",
+      SegundoNombre: "",
+      Sexo: "",
+      TipoSangre: "",
+      FechaNacimiento: "",
+      NombreRol: "",
+      Correo: "",
+      Celular: "",
+      Firma: null,
+      Usuario: null,
+      Contrasena: null,
+    });
+    setPreview(null);
+    setErrors({});
+    setExists(null);
+    setFormDisabled(false);
+    setEmailError("");
+  } 
+  else if (mode === "edit" && initialData) {
+    setForm(initialData);
+    if (initialData.Firma) {
+      setPreview(initialData.Firma);
+    } else {
+      setPreview(null);
+    }
+    setErrors({});
+    setExists(null);
+    setFormDisabled(false);
+    setEmailError("");
+    navigate("/usuarios/listar");
+  }
 };
+
 
   const handleChange = async (field, value) => {
     let sanitized = sanitizeInput(value);
@@ -88,10 +123,11 @@ const [form, setForm] = useState({
     if (["PrimerApellido", "SegundoApellido", "PrimerNombre", "SegundoNombre"].includes(field)) {
       sanitized = normalizeText(sanitized);
     }
+    
     setForm({ ...form, [field]: sanitized });
     validateField(field, sanitized);
 
-    if (field === "NumeroIdentificacion" && sanitized.length >= 7) {
+    if (field === "NumeroIdentificacion" && sanitized.length >= 7 && mode === "create") {
       setChecking(true);
       setExists(null);
 
@@ -111,15 +147,13 @@ const [form, setForm] = useState({
           setFormDisabled(false);
         }
       } catch (err) {
-        AlertMessage.error("Error al verificar identificación:");
         console.error("Error al verificar identificación:", err);
+        setExists(null);
       } finally {
         setChecking(false);
       }
     }
   };
-
-
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -170,7 +204,7 @@ const [form, setForm] = useState({
           if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate()))
             edad--;
           if (edad < 18) message = "Debe ser mayor de 18 años";
-        } else message = "Debe ingresar fecha de nacimiento";
+        }
         break;
       default:
         break;
@@ -187,8 +221,22 @@ const [form, setForm] = useState({
       "FechaNacimiento",
       "Correo",
       "Celular",
+      "NombreRol"
     ];
     const hasEmpty = requiredFields.some((f) => !form[f]);
+    
+    if (form.NombreRol === "Mandatario" && !form.Firma) {
+      return false;
+    }
+
+    if (form.NombreRol === "Administrador" && (!form.Usuario || !form.Contrasena)) {
+      return false;
+    }
+
+    if (mode === "create" && exists !== false) {
+      return false;
+    }
+    
     return !hasErrors && !hasEmpty;
   };
 
@@ -196,13 +244,10 @@ const [form, setForm] = useState({
     try {
       const response = await fetch(
         `${import.meta.env.VITE_PATH}/usuarios/verificar-correo/${correo}`,
-        {
-          credentials: 'include'
-        }
+        { credentials: 'include' }
       );
-      
+
       if (!response.ok) throw new Error('Error al verificar correo');
-      
       const data = await response.json();
       return data.existe;
     } catch (error) {
@@ -214,17 +259,57 @@ const [form, setForm] = useState({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setEmailError("");
-    
+
+    console.log('Submitting form...', { form, isValid: isFormValid() });
+
+    if (!isFormValid()) {
+      AlertMessage.error("Error de Validación", "Por favor, complete todos los campos requeridos.");
+      return;
+    }
+
     try {
-      // Verify email first
-      const correoExiste = await verificarCorreoExistente(form.Correo);
-      if (correoExiste) {
-        setEmailError("Este correo ya está registrado");
-        return;
+      if (mode === "create" || (initialData && form.Correo !== initialData.Correo)) {
+        const correoExiste = await verificarCorreoExistente(form.Correo);
+        if (correoExiste) {
+          setEmailError("Este correo ya está registrado");
+          AlertMessage.error("Error", "Este correo ya está registrado");
+          return;
+        }
       }
+
+      const formData = new FormData();
       
-      // Call the onSubmit prop function and await its result
-      await onSubmit(form);
+      Object.keys(form).forEach(key => {
+        if (key === 'Firma') {
+          if (form[key] instanceof File) {
+            formData.append('Firma', form[key]);
+          }
+        } else if (form[key] !== null && form[key] !== '') {
+          formData.append(key, form[key]);
+        }
+      });
+
+      console.log('FormData contents:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ':', pair[1]);
+      }
+
+      await onSubmit(formData);
+
+      if (form.NombreRol === "Administrador") {
+        const credencialesData = {
+          Usuario: form.Usuario,
+          Contrasena: form.Contrasena,
+          Correo: form.Correo,
+        };
+
+        await fetch(import.meta.env.VITE_PATH + "/credenciales", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credencialesData),
+          credentials: "include"
+        });
+      }
 
       AlertMessage.success(
         mode === "create" ? "Registro exitoso" : "Actualización exitosa",
@@ -233,27 +318,36 @@ const [form, setForm] = useState({
           : "La información fue actualizada correctamente."
       );
 
+      if (mode === "create") {
+        handleCancel();
+      }
+
     } catch (err) {
       console.error('Error completo:', err);
-      AlertMessage.error(
-        "Error", 
-        err.message || "Hubo un problema al guardar la información."
-      );
+      AlertMessage.error("Error", err.message || "Hubo un problema al guardar la información.");
     }
   };
 
-  // Fix the role selection handler to use NombreRol consistently
   const handleRoleChange = (v) => {
     setForm(prev => ({
       ...prev,
-      NombreRol: v // Use NombreRol instead of Rol
+      NombreRol: v,
+      Firma: v === "Mandatario" ? prev.Firma : null
     }));
+    
+    if (v !== "Mandatario") {
+      setPreview(null);
+    }
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-100">
-      <Card className="w-[500px]">
+    <div className="flex flex-col items-center min-h-screen bg-gray-100 py-8">
+      <Card className="w-full max-w-[500px] mx-4">
         <CardContent className="space-y-4 p-6">
+          <h2 className="text-2xl font-bold text-center mb-4">
+            {mode === "create" ? "Crear Usuario" : "Editar Usuario"}
+          </h2>
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <FormField
@@ -262,9 +356,9 @@ const [form, setForm] = useState({
                 onChange={(e) => handleChange("NumeroIdentificacion", e.target.value)}
                 placeholder="Ingrese número"
                 error={errors.NumeroIdentificacion}
+                disabled={formDisabled}
               />
 
-              {/* Estado visual al lado derecho */}
               <div className="absolute right-3 top-8">
                 {checking && <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />}
                 {!checking && exists === true && (
@@ -280,7 +374,7 @@ const [form, setForm] = useState({
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
-                label="Apellido"
+                label="Primer Apellido"
                 value={form.PrimerApellido}
                 onChange={(e) => handleChange("PrimerApellido", e.target.value)}
                 disabled={formDisabled}
@@ -363,24 +457,59 @@ const [form, setForm] = useState({
               ]}
             />
 
-            {form.NombreRol === "mandatario" && (
+            {form.NombreRol === "Mandatario" && (
               <div>
-                <label className="text-sm">Firma (PNG/JPG, máx 2MB)</label>
+                <label className="text-sm font-medium block mb-1">
+                  Firma (PNG/JPG, máx 2MB) <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="file"
                   accept="image/png, image/jpeg"
                   onChange={handleFileChange}
-                  className="border rounded p-1"
+                  className="border rounded p-2 w-full"
+                  disabled={formDisabled}
                 />
                 {errors.Firma && (
                   <p className="text-red-500 text-xs mt-1">{errors.Firma}</p>
                 )}
+                {!form.Firma && (
+                  <p className="text-amber-600 text-xs mt-1">La firma es obligatoria para Mandatarios</p>
+                )}
                 {preview && (
-                  <img
-                    src={preview}
-                    alt="Vista previa firma"
-                    className="mt-2 w-32 h-20 border rounded"
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-600 mb-1">Vista previa:</p>
+                    <img
+                      src={preview}
+                      alt="Vista previa firma"
+                      className="w-32 h-20 border rounded object-contain bg-gray-50"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            {form.NombreRol === "Administrador" && (
+              <div>
+                <label className="text-sm font-medium block mb-1">
+                  Usuario <span className="text-red-500">*</span>
+                </label>
+                  <input
+                    type="text"
+                    value={form.Usuario}
+                    onChange={(e) => handleChange("Usuario", e.target.value)}
+                    className="border rounded p-2 w-full"
+                    placeholder="Ingrese el nombre de usuario"
                   />
+
+                  <input
+                    type="password"
+                    value={form.Contrasena}
+                    onChange={(e) => handleChange("Contrasena", e.target.value)}
+                    className="border rounded p-2 w-full"
+                    placeholder="Ingrese la contraseña"
+                  />
+
+                {errors.Contrasena && (
+                  <p className="text-red-500 text-xs mt-1">{errors.Contrasena}</p>
                 )}
               </div>
             )}
@@ -395,7 +524,9 @@ const [form, setForm] = useState({
               error={errors.Correo}
             />
 
-            {emailError && <span className="error-message">{emailError}</span>}
+            {emailError && (
+              <p className="text-red-500 text-sm mt-1">{emailError}</p>
+            )}
 
             <FormField
               label="Celular"
@@ -407,15 +538,23 @@ const [form, setForm] = useState({
             />
 
             <div className="flex gap-4 mt-6">
-              <ActionButton
+              <button
                 type="button"
-                onClick={handleCancel}
-                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCancel();
+                }}
+                className="border rounded px-4 py-2 flex-1"
               >
                 Cancelar
-              </ActionButton>
-              <ActionButton type="submit" disabled={!isFormValid()}>
-                {mode === "create" ? "Crear" : "Actualizar"}
+              </button>
+              <ActionButton 
+                type="submit" 
+                disabled={!isFormValid() || formDisabled}
+                className="flex-1"
+              >
+                {mode === "create" ? "Crear Usuario" : "Actualizar Usuario"}
               </ActionButton>
             </div>
           </form>

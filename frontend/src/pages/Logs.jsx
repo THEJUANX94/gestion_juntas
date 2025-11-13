@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
 
-const SOCKET_SERVER_URL = 'http://172.20.1.31:3000';
 const MAX_LOGS = 500;
 
 const styles = {
@@ -70,7 +69,105 @@ const Logs = () => {
         setLogs(prevLogs => [newLog, ...prevLogs].slice(0, MAX_LOGS));
     }, []);
 
-    // ... useEffect ...
+    // Conexión a Socket.IO y verificación de sesión
+    useEffect(() => {
+        let socket;
+        const API_PATH = import.meta.env.VITE_PATH || '';
+
+        const init = async () => {
+            try {
+                // Verificamos la cookie de sesión en el servidor
+                const res = await fetch(API_PATH + '/auth/verify', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (!res.ok) {
+                    setLogs(prev => [{
+                        timestamp: new Date().toISOString(),
+                        level: 'SYSTEM',
+                        data: { message: 'No autenticado: no se puede conectar al feed de logs.' },
+                        key: 'no-auth'
+                    }, ...prev].slice(0, MAX_LOGS));
+                    return;
+                }
+
+                const data = await res.json();
+                if (!data.valid) {
+                    setLogs(prev => [{
+                        timestamp: new Date().toISOString(),
+                        level: 'SYSTEM',
+                        data: { message: 'Sesión inválida o expirada.' },
+                        key: 'invalid-session'
+                    }, ...prev].slice(0, MAX_LOGS));
+                    return;
+                }
+
+                let connectUrl;
+                try {
+                    connectUrl = API_PATH ? new URL(API_PATH, window.location.origin).origin : undefined;
+                } catch (e) {
+                    // Fallback: si por alguna razón no se puede parsear, limpiamos barras finales
+                    connectUrl = API_PATH ? API_PATH.replace(/\/+$|\s+/g, '') : undefined;
+                }
+
+                socket = io(connectUrl, { withCredentials: true });
+
+                socket.on('connect', () => {
+                    setLogs(prev => [{
+                        timestamp: new Date().toISOString(),
+                        level: 'SYSTEM',
+                        data: { message: 'Conectado al servidor de logs.' },
+                        key: 'connected'
+                    }, ...prev].slice(0, MAX_LOGS));
+                });
+
+                socket.on('connect_error', (err) => {
+                    setLogs(prev => [{
+                        timestamp: new Date().toISOString(),
+                        level: 'ERROR',
+                        data: { message: `Error de conexión Socket.IO: ${err?.message || err}` },
+                        key: 'connect-error'
+                    }, ...prev].slice(0, MAX_LOGS));
+                });
+
+                socket.on('system_message', (msg) => {
+                    addLogEntry({
+                        timestamp: new Date().toISOString(),
+                        level: 'SYSTEM',
+                        ...msg
+                    });
+                });
+
+                socket.on('new_log', (logEntry) => {
+                    // Aceptamos tanto strings como objetos
+                    if (typeof logEntry === 'string') {
+                        addLogEntry({ timestamp: new Date().toISOString(), level: 'RAW', message: logEntry });
+                    } else {
+                        addLogEntry(logEntry);
+                    }
+                });
+
+            } catch (err) {
+                setLogs(prev => [{
+                    timestamp: new Date().toISOString(),
+                    level: 'ERROR',
+                    data: { message: `Error inicializando logs: ${err.message || err}` },
+                    key: 'init-error'
+                }, ...prev].slice(0, MAX_LOGS));
+            }
+        };
+
+        init();
+
+        return () => {
+            try {
+                if (socket && socket.disconnect) socket.disconnect();
+            } catch (e) {
+                // noop
+            }
+        };
+    }, [addLogEntry]);
 
     const renderLogMessage = (logData) => {
         const userName = logData.userName || 'Desconocido';
