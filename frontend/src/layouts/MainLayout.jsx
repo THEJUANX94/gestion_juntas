@@ -79,7 +79,7 @@ export default function MainLayout() {
                 Gobernación de Boyacá
               </h1>
               <p className="text-sm text-gray-600 tracking-wide">
-                Gestión de Juntas de Acción Comunal
+                Gestión de Juntas
               </p>
             </div>
           </div>
