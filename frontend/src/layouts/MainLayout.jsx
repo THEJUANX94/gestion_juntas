@@ -67,40 +67,44 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 font-[Poppins]">
-      {/* HEADER */}
-      <header className="bg-white shadow-sm sticky top-0 z-20 border-b border-gray-200">
-        <div className="flex justify-between items-center px-10 py-4">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: "var(--color-background-page)" }}
+    >
+      {/* Header */}
+      <header
+        className="bg-gradient-to-r shadow-md"
+        style={{ backgroundColor: "var(--color-background-upper)" }}
+      >
+        <div className="flex justify-between items-center px-8 py-3">
           {/* Logo + título */}
-          <div className="flex items-center gap-4">
-            <img src={logo} alt="Logo" className="h-14 w-auto" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 tracking-wide">
-                Gobernación de Boyacá
-              </h1>
-              <p className="text-sm text-gray-600 tracking-wide">
-                Gestión de Juntas
-              </p>
-            </div>
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="Logo" className="h-16 w-auto" />
+            <h1
+              className="text-xl font-bold tracking-wide"
+              style={{ color: "var(--color-text-color-upper)" }}
+            >
+              Gobernación de Boyacá
+            </h1>
           </div>
 
           {/* Navbar con iconos */}
           <nav className="flex items-center gap-6 relative">
-            <button
-              className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
-              title="Notificaciones"
-            >
-              <Bell className="h-5 w-5" />
-            </button>
-            <button
-              className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
-              title="Ayuda"
+            {/* Botón de ayuda modificado para ser un enlace a PDF */}
+            <a
+              href="/Manual_Usuario_Juntas.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]"
+              title="Manual de Ayuda"
             >
               <HelpCircle className="h-5 w-5" />
-            </button>
+            </a>
+
+            {/* Botón de configuración */}
             <button
               onClick={() => navigate("/configuracion")}
-              className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+              className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]"
               title="Configuración"
             >
               <Settings className="h-5 w-5" />
@@ -110,7 +114,7 @@ export default function MainLayout() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowUserMenu((prev) => !prev)}
-                className="p-2 rounded-full hover:bg-gray-100 text-gray-700"
+                className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]"
                 title="Usuario"
               >
                 <User className="h-5 w-5" />

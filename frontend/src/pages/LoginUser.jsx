@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { motion } from "framer-motion";
 import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import { useAuth } from "../context/AuthContext";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Importar 'Link'
 
 export default function LoginUser() {
   const navigate = useNavigate();
@@ -13,25 +12,12 @@ export default function LoginUser() {
   const [captchaToken, setCaptchaToken] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Normaliza la URL base: si VITE_PATH no tiene puerto, se añade el puerto por defecto (3000)
-  const BASE_PATH = (() => {
-    const envUrl = import.meta.env.VITE_PATH || "";
-    try {
-      const u = new URL(envUrl);
-      if (u.port) return envUrl; // ya tiene puerto
-      const defaultPort = import.meta.env.VITE_PORT || "3000";
-      return `${u.protocol}//${u.hostname}:${defaultPort}`;
-    } catch (e) {
-      return envUrl;
-    }
-  })();
-
   useEffect(() => {
-        if (isAuthenticated) {
-            // Redirige al dashboard si ya está logueado
-            navigate("/asistencia", { replace: true }); 
-        }
-    }, [isAuthenticated, navigate]);
+    if (isAuthenticated) {
+      // Redirige al dashboard si ya está logueado
+      navigate("/juntas/crear", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (form) => {
     const { login, contraseña } = form;
@@ -45,7 +31,7 @@ export default function LoginUser() {
     }
 
     try {
-      const response = await fetch(`${BASE_PATH}/login`, {
+      const response = await fetch(import.meta.env.VITE_PATH + "/login", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +59,7 @@ export default function LoginUser() {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-800 via-green-600 to-emerald-400 text-white">
       {/* Contenedor principal */}
       <div className="flex flex-col md:flex-row flex-grow">
-        {/* Lado izquierdo con logo y texto */}
+        {/* Lado izquierdo con logo y texto - SIN CAMBIOS */}
         <motion.div
           initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -89,11 +75,11 @@ export default function LoginUser() {
             Gobernación de Boyacá
             <br />
             <span className="text-3xl font-semibold text-green-100">
-              Gestión de Juntas de Acción Comunal
+              Certificación de Alcaldes
             </span>
           </h1>
           <p className="text-xl text-center opacity-90 max-w-md leading-relaxed">
-            “Fortaleciendo la participación ciudadana desde el territorio.”
+            “Transparencia, servicio y eficiencia al servicio de los municipios boyacenses.”
           </p>
         </motion.div>
 
@@ -117,7 +103,7 @@ export default function LoginUser() {
               }}
               className="space-y-8"
             >
-              {/* Campo usuario */}
+              {/* Campo usuario - SIN CAMBIOS */}
               <div>
                 <label htmlFor="login" className="block text-gray-700 font-semibold mb-2">
                   Usuario
@@ -135,7 +121,7 @@ export default function LoginUser() {
                 </div>
               </div>
 
-              {/* Campo contraseña */}
+              {/* Campo contraseña - SIN CAMBIOS */}
               <div>
                 <label htmlFor="contraseña" className="block text-gray-700 font-semibold mb-2">
                   Contraseña
@@ -160,7 +146,17 @@ export default function LoginUser() {
                 </div>
               </div>
 
-              {/* Captcha */}
+              {/* Enlace de Recuperación de Contraseña (NUEVO) */}
+              <div className="text-right text-gray-700 -mt-6">
+                <Link
+                  to="/forgot-password"
+                  className="text-green-600 hover:text-green-800 hover:underline transition-colors font-medium"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
+
+              {/* Captcha - SIN CAMBIOS */}
               <div className="flex justify-center">
                 <ReCAPTCHA
                   sitekey="6LcceNwrAAAAAIjw8rb6K56RaqYj5onuHT-_XQRl"
@@ -168,7 +164,7 @@ export default function LoginUser() {
                 />
               </div>
 
-              {/* Botón */}
+              {/* Botón - SIN CAMBIOS */}
               <div className="flex justify-center pt-8">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -183,7 +179,6 @@ export default function LoginUser() {
           </div>
         </motion.div>
       </div>
-
     </div>
   );
 }

@@ -134,12 +134,6 @@ export default function ForgotPassword() {
           </div>
         </motion.div>
       </div>
-
-      <footer className="bg-black/20 backdrop-blur-sm py-4 text-center text-white text-sm">
-        Dirección de Sistemas - Gobernación de Boyacá <br />
-        Todos los derechos reservados. <br />
-        Copyright © 2025
-      </footer>
     </div>
   );
 }

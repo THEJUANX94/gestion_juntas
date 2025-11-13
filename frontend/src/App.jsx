@@ -14,6 +14,8 @@ import ListarUser from "./pages/ListarUser";
 import UpdateUser from "./pages/UpdateUser";
 import CrearJunta from "./pages/CrearJunta";
 import Logs from "./pages/Logs";
+import ForgotPassword from './pages/ForgotPassword'; 
+import ResetPassword from './pages/ResetPassword';
 
 
 
@@ -25,16 +27,18 @@ export default function App() {
           <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginUser />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Route>
 
-            <Route element={<MainLayout />}>
-            <Route path ="/juntas/crear" element={<CrearJunta />} />
+          <Route element={<MainLayout />}>
+            <Route path="/juntas/crear" element={<CrearJunta />} />
             <Route path="usuarios/listar" element={<ListarUser />} />
-              <Route path="usuarios/crear" element={<CreateUser />} />
-              <Route path="usuarios/update/:id" element={<UpdateUser />} />
-              <Route path="configuracion" element={<Configuracion />} />
-              <Route path="logs" element={<Logs />} />
-          <Route path="*" element={<ErrorPage />} />
+            <Route path="usuarios/crear" element={<CreateUser />} />
+            <Route path="usuarios/update/:id" element={<UpdateUser />} />
+            <Route path="configuracion" element={<Configuracion />} />
+            <Route path="logs" element={<Logs />} />
+            <Route path="*" element={<ErrorPage />} />
           </Route>
         </Routes>
       </AuthProvider>
