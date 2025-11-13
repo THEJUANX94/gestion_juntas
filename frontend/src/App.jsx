@@ -13,6 +13,8 @@ import Configuracion from "./pages/Configuracion";
 import ListarUser from "./pages/ListarUser";
 import UpdateUser from "./pages/UpdateUser";
 import CrearJunta from "./pages/CrearJunta";
+import ConsultarJunta from "./pages/ConsultarJunta";
+import DetalleJunta from "./pages/DetalleJunta";
 import Logs from "./pages/Logs";
 import ForgotPassword from './pages/ForgotPassword'; 
 import ResetPassword from './pages/ResetPassword';
@@ -33,6 +35,8 @@ export default function App() {
 
           <Route element={<MainLayout />}>
             <Route path="/juntas/crear" element={<CrearJunta />} />
+            <Route path="/juntas/consultar" element={<ConsultarJunta />} />
+            <Route path="/detalle-junta/:id" element={<DetalleJunta />} />
             <Route path="usuarios/listar" element={<ListarUser />} />
             <Route path="usuarios/crear" element={<CreateUser />} />
             <Route path="usuarios/update/:id" element={<UpdateUser />} />
