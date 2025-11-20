@@ -120,8 +120,6 @@ try {
 // --- 3. LÓGICA DE SOCKET.IO PARA ADMINISTRADORES ---
 
 io.on('connection', (socket) => {
-
-  // 🛑 CAMBIO CLAVE: Leer la cookie del handshake de la petición
   const token = socket.request.cookies.auth_token;
 
   let esAdministrador = false;
@@ -137,7 +135,6 @@ io.on('connection', (socket) => {
         socket.usuario = decoded;
       }
     } catch (err) {
-      // El token es inválido (expirado, modificado, firma incorrecta)
       logger.error({ message: 'Error al verificar JWT en Socket.IO', error: err.message, socketId: socket.id });
     }
   }
@@ -147,10 +144,7 @@ io.on('connection', (socket) => {
     logger.info({ message: `Admin (ID: ${socket.usuario.id}) connected to logs socket.`, socketId: socket.id });
     socket.emit('system_message', { message: 'Conectado al feed de logs en vivo.' });
 
-    // ... (Tu código para logs históricos) ...
-
   } else {
-    // Desconectar si no hay token, si es inválido o si no es administrador
     socket.disconnect(true);
     logger.warn({ message: 'Unauthenticated or non-admin user attempted to connect to logs socket.', socketId: socket.id });
     return;
@@ -161,7 +155,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// --- Verificación de sesión (JWT en cookie) ---
 app.get("/api/auth/verify", (req, res) => {
   const token = req.cookies.auth_token;
 
@@ -192,7 +185,6 @@ app.use("/api/auth", authRoutes);
 
 const frontendPath = path.join(__dirname, '../frontend/dist');
 
-// 1. Servir archivos estáticos 
 app.use(express.static(frontendPath));
 
 app.use((req, res) => {
