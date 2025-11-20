@@ -14,15 +14,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const firmasDir = path.resolve(__dirname, "../../firmas");
 
-// Crear la carpeta "firmas" si no existe
 if (!fs.existsSync(firmasDir)) {
   fs.mkdirSync(firmasDir, { recursive: true });
   console.log(`Carpeta creada: ${firmasDir}`);
 }
 
-// ========================
-// Crear usuario
-// ========================
 export const crearUsuario = async (req, res) => {
   try {
     console.log('Received request body:', req.body);
@@ -104,7 +100,6 @@ export const crearUsuario = async (req, res) => {
       });
     }
 
-    // 4. Crear usuario
     const newUser = await Usuario.create({
       NumeroIdentificacion,
       PrimerApellido,
@@ -119,15 +114,12 @@ export const crearUsuario = async (req, res) => {
       Celular
     });
 
-    // 5. Lógica para guardar la firma si el rol es Mandatario
     if (isMandatario && firmaFile) {
         try {
-            // === NUEVO: guardar archivo localmente en /firmas ===
             const extension = path.extname(firmaFile.originalname) || ".png";
             const nuevoNombre = `${uuidv4()}${extension}`;
             const destino = path.join(firmasDir, nuevoNombre);
 
-            // Mover el archivo cargado (temporal) a la carpeta local
             fs.renameSync(firmaFile.path, destino);
 
             const ubicacionFirma = path.relative(process.cwd(), destino);
@@ -137,7 +129,7 @@ export const crearUsuario = async (req, res) => {
                 Ubicacion: ubicacionFirma
             });
 
-            console.log(`✅ Firma guardada localmente en: ${ubicacionFirma}`);
+            console.log(`Firma guardada localmente en: ${ubicacionFirma}`);
         } catch (errFirma) {
             console.error("Error al guardar firma local:", errFirma);
             return res.status(500).json({
@@ -147,13 +139,11 @@ export const crearUsuario = async (req, res) => {
         }
     }
 
-    // 6. Crear credenciales si el rol es Administrador
     if (NombreRol === "Administrador") {
       try {
         const loginFinal = Login || Correo || NumeroIdentificacion;
-        const passwordPlano = Contrasena || Contraseña || "admin123"; // fallback seguro
+        const passwordPlano = Contrasena || Contraseña || "admin123"; 
 
-        // Hashear la contraseña antes de almacenar
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(passwordPlano, saltRounds);
 
@@ -173,7 +163,6 @@ export const crearUsuario = async (req, res) => {
       }
     }
 
-    // 7. Obtener datos completos del usuario con rol
     const userWithRole = await Usuario.findByPk(newUser.NumeroIdentificacion, {
       include: [{ 
         model: Rol,
@@ -182,7 +171,6 @@ export const crearUsuario = async (req, res) => {
       }]
     });
 
-    // 8. Logear operación y responder
     logOperation(
       "USUARIO_CREADO",
       req.user || {},
@@ -211,9 +199,6 @@ export const crearUsuario = async (req, res) => {
   }
 };
 
-// ========================
-// Obtener todos los usuarios
-// ========================
 export const obtenerUsuarios = async (req, res) => {
   try {
     const usuarios = await Usuario.findAll({
@@ -236,9 +221,6 @@ export const obtenerUsuarios = async (req, res) => {
   }
 };
 
-// ========================
-// Verificar identificación
-// ========================
 export const verificarIdentificacion = async (req, res) => {
   try {
     const { NumeroIdentificacion } = req.params;
@@ -254,9 +236,6 @@ export const verificarIdentificacion = async (req, res) => {
   }
 };
 
-// ========================
-// Obtener usuario por CC
-// ========================
 export const obtenerUsuarioPorId = async (req, res) => {
   try {
     const { NumeroIdentificacion } = req.params;
@@ -295,15 +274,11 @@ export const obtenerUsuarioPorId = async (req, res) => {
   }
 };
 
-// ========================
-// Actualizar usuario
-// ========================
 export const actualizarUsuario = async (req, res) => {
   const userAdmin = req.user || {};
   const { NumeroIdentificacion } = req.params;
-  const { Login, Contraseña, ...datosUsuario } = req.body; // Separar Login y Contraseña del resto de los datos
+  const { Login, Contraseña, ...datosUsuario } = req.body; 
 
-  // Bandera para saber si se actualizaron las credenciales
   let credencialesActualizadas = null;
 
   try {
@@ -343,11 +318,9 @@ export const actualizarUsuario = async (req, res) => {
         datosCredenciales.Contraseña = Contraseña; 
       }
 
-      // Buscar las credenciales por NumeroIdentificacion
       const credenciales = await Credenciales.findOne({ where: { NumeroIdentificacion } });
 
       if (credenciales) {
-        // Actualizar credenciales existentes
         const credencialesActualizadasData = await credenciales.update(datosCredenciales);
         credencialesActualizadas = {
             NumeroIdentificacion, 
@@ -386,7 +359,6 @@ export const actualizarUsuario = async (req, res) => {
       );
     }
 
-    // Devolver el objeto de usuario principal actualizado (puedes ajustar qué devolver)
     res.json(actualizado); 
 
   } catch (err) {
@@ -406,9 +378,6 @@ export const actualizarUsuario = async (req, res) => {
   }
 };
 
-// ========================
-// Eliminar usuario
-// ========================
 export const eliminarUsuario = async (req, res) => {
   const userAdmin = req.user || {};
   const { NumeroIdentificacion } = req.params;
@@ -441,7 +410,6 @@ export const eliminarUsuario = async (req, res) => {
     let firmasEliminadas = 0;
     for (const firma of firmas) {
       const pathFirma = firma.Ubicacion;
-      // Intentar eliminar archivo local
       try {
         if (fs.existsSync(pathFirma)) {
           fs.unlinkSync(pathFirma);
@@ -480,9 +448,6 @@ export const eliminarUsuario = async (req, res) => {
   }
 };
 
-// ========================
-// Verificar correo
-// ========================
 export const verificarCorreo = async (req, res) => {
   try {
     const { correo } = req.params;

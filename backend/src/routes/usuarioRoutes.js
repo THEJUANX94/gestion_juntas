@@ -15,20 +15,14 @@ import { verificarAuth } from "../utils/authMiddleware.js";
 
 const router = Router();
 
-// ========================
-// Configuración de multer
-// ========================
-
-// Ruta absoluta a la carpeta "firmas" (una carpeta fuera del backend y frontend)
 const firmasDir = path.resolve("../firmas");
 
-// Configuración de almacenamiento físico en disco
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, firmasDir); // guarda las firmas en /firmas
+    cb(null, firmasDir); 
   },
   filename: (req, file, cb) => {
-    // genera un nombre único
+
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
@@ -36,10 +30,6 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-
-// ========================
-// Rutas de usuarios
-// ========================
 
 router.post("/", verificarAuth, upload.single("Firma"), crearUsuario);
 router.get("/", verificarAuth, obtenerUsuarios);
