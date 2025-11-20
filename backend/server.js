@@ -13,7 +13,7 @@ import jwt from 'jsonwebtoken';
 import { sequelize } from "./src/config/database.js";
 import usuarioRoutes from "./src/routes/usuarioRoutes.js";
 import firmasRoutes from "./src/routes/firmasRoutes.js";
-import CredencialesRoutes from "./src/routes/CredencialesRoutes.js";
+import CredencialesRoutes from "./src/routes/credencialesRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import { logger } from './src/utils/logger.js';
 import { Asociaciones } from "./src/config/asociacionesBD.js";
