@@ -453,7 +453,8 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
               options={[
                 { value: "Administrador", label: "Administrador" },
                 { value: "AUxiliar", label: "Auxiliar" },
-                { value: "Mandatario", label: "Mandatario" }
+                { value: "Mandatario", label: "Mandatario" },
+                { value: "Participante", label: "Participante" },
               ]}
             />
 
