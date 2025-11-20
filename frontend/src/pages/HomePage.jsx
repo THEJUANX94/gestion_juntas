@@ -31,7 +31,7 @@ export default function HomePage() {
 
         <p className="text-2xl md:text-4xl text-gray-700 leading-relaxed mb-6 font-medium">
           Plataforma institucional para la administración, registro y seguimiento
-          de las Juntas de Acción Comunal del departamento de Boyacá.
+          de las Juntas de Acción del departamento de Boyacá.
         </p>
 
         <p className="text-xl md:text-3xl italic text-gray-600 font-light">

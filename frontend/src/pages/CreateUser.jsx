@@ -18,7 +18,7 @@ export default function CreateUser() {
         })
       });
 
-      const data = await response.json();  // Parse JSON once
+      const data = await response.json(); 
 
       if (!response.ok) {
         console.error('Server error details:', data);
