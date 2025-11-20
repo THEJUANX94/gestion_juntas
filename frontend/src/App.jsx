@@ -1,35 +1,51 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-function App() {
-  const [count, setCount] = useState(0)
+import { AuthProvider } from "./context/AuthContext";
+//import { ProtectedRoute } from "./components/ProtectedRoute";
 
+import MainLayout from "./layouts/MainLayout";
+import HomeLayout from "./layouts/HomeLayout";
+import HomePage from "./pages/HomePage";
+import LoginUser from "./pages/LoginUser";
+import ErrorPage from "./pages/ErrorPage";
+import CreateUser from "./pages/CreateUser";
+import Configuracion from "./pages/Configuracion";
+import ListarUser from "./pages/ListarUser";
+import UpdateUser from "./pages/UpdateUser";
+import CrearJunta from "./pages/CrearJunta";
+import ConsultarJunta from "./pages/ConsultarJunta";
+import DetalleJunta from "./pages/DetalleJunta";
+import Logs from "./pages/Logs";
+import ForgotPassword from './pages/ForgotPassword'; 
+import ResetPassword from './pages/ResetPassword';
+
+
+
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route element={<HomeLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginUser />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+          </Route>
 
-export default App
+          <Route element={<MainLayout />}>
+            <Route path="/juntas/crear" element={<CrearJunta />} />
+            <Route path="/juntas/consultar" element={<ConsultarJunta />} />
+            <Route path="/detalle-junta/:id" element={<DetalleJunta />} />
+            <Route path="usuarios/listar" element={<ListarUser />} />
+            <Route path="usuarios/crear" element={<CreateUser />} />
+            <Route path="usuarios/update/:id" element={<UpdateUser />} />
+            <Route path="configuracion" element={<Configuracion />} />
+            <Route path="logs" element={<Logs />} />
+            <Route path="*" element={<ErrorPage />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </Router>
+  );
+}
