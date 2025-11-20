@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { Credenciales } from "../model/CredencialesModel.js";
+import { Credenciales } from "../model/credencialesModel.js";
 import { Usuario } from "../model/usuarioModel.js";
 import { logOperation } from "../utils/logger.js";
 import jwt from "jsonwebtoken";

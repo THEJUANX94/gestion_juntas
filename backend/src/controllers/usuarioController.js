@@ -5,7 +5,7 @@ import { logOperation } from "../utils/logger.js";
 import { Op } from "sequelize";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
-import { Credenciales } from "../model/CredencialesModel.js";
+import { Credenciales } from "../model/credencialesModel.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
