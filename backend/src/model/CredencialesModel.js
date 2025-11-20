@@ -10,10 +10,10 @@ export const Credenciales = sequelize.define("Credenciales", {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: "users",
-      key: "idusuario"
+      model: "usuarios",
+      key: "numeroIdentificacion"
     },
-    field: "idusuario"
+    field: "numeroIdentificacion"
   },
   Contraseña: {
     type: DataTypes.STRING,
