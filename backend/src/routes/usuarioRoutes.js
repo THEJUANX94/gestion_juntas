@@ -10,7 +10,7 @@ import {
   verificarCorreo,
   actualizarUsuario,
   eliminarUsuario
-} from "../controllers/usuariosController.js";
+} from "../controllers/usuarioController.js";
 import { verificarAuth } from "../utils/authMiddleware.js";
 
 const router = Router();

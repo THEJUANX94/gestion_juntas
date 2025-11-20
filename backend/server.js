@@ -11,7 +11,7 @@ import cookieParser from "cookie-parser";
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import { sequelize } from "./src/config/database.js";
-import usuariosRoutes from "./src/routes/usuariosRoutes.js";
+import usuarioRoutes from "./src/routes/usuarioRoutes.js";
 import firmasRoutes from "./src/routes/firmasRoutes.js";
 import CredencialesRoutes from "./src/routes/CredencialesRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
@@ -185,7 +185,7 @@ app.get("/api/auth/verify", (req, res) => {
   }
 });
 
-app.use("/api/usuarios", usuariosRoutes);
+app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/firmas", firmasRoutes);
 app.use("/api/login", CredencialesRoutes)
 app.use("/api/auth", authRoutes);
