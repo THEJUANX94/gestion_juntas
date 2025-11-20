@@ -2,9 +2,6 @@ import jwt from "jsonwebtoken";
 import { Usuario } from "../model/usuarioModel.js";
 import { Rol } from "../model/rolModel.js";
 
-// ========================
-// Verificar sesión activa
-// ========================
 export const verificarSesion = async (req, res) => {
   try {
     const token = req.cookies?.auth_token;
@@ -13,13 +10,11 @@ export const verificarSesion = async (req, res) => {
       return res.status(401).json({ error: "No autenticado" });
     }
 
-    // 🔑 Verificamos token JWT
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded?.numeroIdentificacion) {
       return res.status(401).json({ error: "Token inválido" });
     }
 
-    // 🔍 Buscamos usuario en base de datos con su rol
     const usuario = await Usuario.findByPk(decoded.numeroIdentificacion, {
       include: [{ model: Rol, as: "RolInfo", attributes: ["NombreRol"] }],
       attributes: [

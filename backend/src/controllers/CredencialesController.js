@@ -76,7 +76,7 @@ export const loginUsuario = async (req, res) => {
             );
             return res.status(401).json({ error: "Error de autenticación. Contacte soporte." });
         }
-        const previousLogin = user.ultimo_inicio_sesion; // Guardamos el valor anterior para el log
+        const previousLogin = user.ultimo_inicio_sesion;
         const currentLoginTime = new Date();
         await user.update({
             ultimo_inicio_sesion: new Date()
@@ -130,7 +130,7 @@ export const loginUsuario = async (req, res) => {
 
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
-    console.log(`[FORGOT] Solicitud de restablecimiento recibida para email: ${email}`); // 🛑 Log 1
+    console.log(`[FORGOT] Solicitud de restablecimiento recibida para email: ${email}`);
 
     try {
         const user = await Usuario.findOne({
@@ -138,14 +138,14 @@ export const forgotPassword = async (req, res) => {
         });
 
         if (!user) {
-            console.log(`[FORGOT] Usuario no encontrado para el correo: ${email}. Enviando respuesta genérica.`); // 🛑 Log 2
+            console.log(`[FORGOT] Usuario no encontrado para el correo: ${email}. Enviando respuesta genérica.`);
             return res.status(200).json({
                 message: 'Si el correo está registrado, recibirás un enlace de restablecimiento.'
             });
         }
 
         const numeroIdentificacion = user.numeroIdentificacion;
-        console.log(`[FORGOT] Usuario encontrado. ID: ${numeroIdentificacion}, Correo: ${user.Correo}.`); // 🛑 Log 3
+        console.log(`[FORGOT] Usuario encontrado. ID: ${numeroIdentificacion}, Correo: ${user.Correo}.`);
 
         const resetToken = jwt.sign(
             { id: numeroIdentificacion },
@@ -154,9 +154,8 @@ export const forgotPassword = async (req, res) => {
         );
 
         const resetUrl = `${process.env.CLIENT_ORIGIN}/reset-password/${resetToken}`;
-        console.log(`[FORGOT] Enlace de restablecimiento generado: ${resetUrl}`); // 🛑 Log 4
+        console.log(`[FORGOT] Enlace de restablecimiento generado: ${resetUrl}`); 
 
-        // 5. Configurar y enviar el correo
         const mailOptions = {
             to: user.Correo,
             from: process.env.EMAIL_USER,
@@ -168,13 +167,11 @@ export const forgotPassword = async (req, res) => {
             <p>Este enlace expirará en 15 minutos. Si no solicitó esto, ignore este correo.</p>`
         };
         
-        console.log(`[FORGOT] Intentando enviar correo a: ${user.Correo} desde: ${process.env.EMAIL_USER}`); // 🛑 Log 5
+        console.log(`[FORGOT] Intentando enviar correo a: ${user.Correo} desde: ${process.env.EMAIL_USER}`);
         
-        // 🛑 Punto de Falla Probable: Si sendMail falla silenciosamente, 
-        // el error debería ser capturado si sendMail relanza la excepción.
         await sendMail(mailOptions); 
         
-        console.log(`[FORGOT] ÉXITO: El correo se envió con éxito (o fue aceptado por el transportador).`); // 🛑 Log 6
+        console.log(`[FORGOT] ÉXITO: El correo se envió con éxito (o fue aceptado por el transportador).`)
 
         logOperation(
             "FORGOT_PASSWORD_REQUEST",
@@ -188,7 +185,7 @@ export const forgotPassword = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`[FORGOT] ERROR CRÍTICO en forgotPassword: ${error.message}`); // 🛑 Log 7
+        console.error(`[FORGOT] ERROR CRÍTICO en forgotPassword: ${error.message}`);
         
         logOperation(
             "FORGOT_PASSWORD_ERROR",
@@ -200,48 +197,41 @@ export const forgotPassword = async (req, res) => {
     }
 };
 
-// ---------------------------------------------------------------------
-// 🛑 FUNCIÓN MODIFICADA: resetPassword con Console Logs
-// ---------------------------------------------------------------------
 export const resetPassword = async (req, res) => {
     const { token } = req.params;
     const { newPassword } = req.body;
     let userId = null;
     
-    console.log(`[RESET] Solicitud de restablecimiento recibida. Token: ${token.substring(0, 10)}...`); // 🛑 Log 8
+    console.log(`[RESET] Solicitud de restablecimiento recibida. Token: ${token.substring(0, 10)}...`);
 
     if (!newPassword || newPassword.length < 8) {
-        console.error("[RESET] Error: Contraseña no cumple el mínimo de 8 caracteres."); // 🛑 Log 9
+        console.error("[RESET] Error: Contraseña no cumple el mínimo de 8 caracteres.");
         return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres.' });
     }
 
     try {
-        // 1. Verificar el Token JWT y obtener el IDUsuario
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         numeroIdentificacion = payload.numeroIdentificacion;
-        console.log(`[RESET] Token verificado. IDUsuario: ${numeroIdentificacion}`); // 🛑 Log 10
+        console.log(`[RESET] Token verificado. IDUsuario: ${numeroIdentificacion}`); 
 
-        // 2. Buscar la CREDENCIAL asociada al IDUsuario
         const credencial = await Credenciales.findOne({
             where: { numeroIdentificacion: numeroIdentificacion }
         });
 
         if (!credencial) {
-            console.error(`[RESET] Error: Credencial no encontrada para IDUsuario: ${numeroIdentificacion}`); // 🛑 Log 11
+            console.error(`[RESET] Error: Credencial no encontrada para IDUsuario: ${numeroIdentificacion}`);
             return res.status(404).json({ message: 'Credencial no encontrada o token inválido.' });
         }
         
-        console.log(`[RESET] Credencial encontrada. Hasheando nueva contraseña...`); // 🛑 Log 12
+        console.log(`[RESET] Credencial encontrada. Hasheando nueva contraseña...`);
 
-        // 3. Hashear la nueva contraseña
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        // 4. Actualizar la contraseña en la tabla CREDENCIALES
         credencial.Contraseña = hashedPassword;
         await credencial.save();
         
-        console.log(`[RESET] ÉXITO: Contraseña actualizada para IDUsuario: ${numeroIdentificacion}`); // 🛑 Log 13
+        console.log(`[RESET] ÉXITO: Contraseña actualizada para IDUsuario: ${numeroIdentificacion}`);
 
         logOperation(
             "RESET_PASSWORD_SUCCESS",
@@ -252,7 +242,7 @@ export const resetPassword = async (req, res) => {
         res.status(200).json({ message: 'Contraseña restablecida con éxito.' });
 
     } catch (error) {
-        console.error(`[RESET] ERROR CRÍTICO en resetPassword (JWT o DB): ${error.message}`); // 🛑 Log 14
+        console.error(`[RESET] ERROR CRÍTICO en resetPassword (JWT o DB): ${error.message}`);
         
         logOperation(
             "RESET_PASSWORD_ERROR",
