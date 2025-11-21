@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { Search, Filter, ExternalLink, FileSearch } from "lucide-react";
 import { Link } from "react-router-dom";
+
 
 export default function ConsultarJunta() {
     const [filtros, setFiltros] = useState({
@@ -9,8 +11,8 @@ export default function ConsultarJunta() {
 
     const [municipios, setMunicipios] = useState([]);
     const [juntas, setJuntas] = useState([]);
+    const [consultado, setConsultado] = useState(false);
 
-    // Simulación de datos
     useEffect(() => {
         setMunicipios([
             { id: "1", nombre: "Tunja" },
@@ -24,10 +26,7 @@ export default function ConsultarJunta() {
         setFiltros((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleConsultar = (e) => {
-        e.preventDefault();
-
-        // Simulación de resultados
+    const handleConsultar = () => {
         const datosSimulados = [
             {
                 razonSocial: "JAC Barrio Libertador",
@@ -43,116 +42,199 @@ export default function ConsultarJunta() {
                 reconocida: "No",
                 numPersoneria: "PJ-0378",
             },
+            {
+                razonSocial: "JAC Centro Histórico",
+                fechaCreacion: "2021-03-15",
+                fechaExpedida: "2021-03-20",
+                reconocida: "Sí",
+                numPersoneria: "PJ-0589",
+            },
         ];
 
         setJuntas(datosSimulados);
+        setConsultado(true);
+    };
+
+    const limpiarFiltros = () => {
+        setFiltros({
+            tipoJunta: "",
+            municipio: "",
+        });
+        setJuntas([]);
+        setConsultado(false);
     };
 
     return (
-        <div className="max-w-6xl mx-auto bg-white p-8 rounded-2xl shadow-md border border-gray-200">
-            <h2 className="text-3xl font-bold text-center mb-8 text-[var(--color-text-color-sidebar-pr)]">
-                Consultar Juntas de Acción Comunal
-            </h2>
-
-            {/* Filtros */}
-            <form
-                onSubmit={handleConsultar}
-                className="bg-gray-50 p-5 rounded-xl border border-gray-200 mb-8"
-            >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
-                    {/* Tipo de Junta */}
-                    <div>
-                        <label className="block text-sm font-semibold mb-1 text-gray-700">
-                            Tipo de Junta
-                        </label>
-                        <select
-                            name="tipoJunta"
-                            value={filtros.tipoJunta}
-                            onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-[var(--color-hover-text)]"
-                        >
-                            <option value="">Seleccione...</option>
-                            <option value="Asociacion Comunal de Juntas">Asociacion Comunal de Juntas</option>
-                            <option value="Junta de Accion Comunal">Junta de Accion Comunal</option>
-                            <option value="Junta de Vivienda Comunitaria">Junta de Vivienda Comunitaria</option>
-                        </select>
-                    </div>
-
-                    {/* Municipio */}
-                    <div>
-                        <label className="block text-sm font-semibold mb-1 text-gray-700">
-                            Municipio
-                        </label>
-                        <select
-                            name="municipio"
-                            value={filtros.municipio}
-                            onChange={handleChange}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-[var(--color-hover-text)]"
-                        >
-                            <option value="">Seleccione...</option>
-                            {municipios.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                    {m.nombre}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Botón */}
-                    <div className="flex justify-center md:justify-start">
-                        <button
-                            type="submit"
-                            className="bg-[var(--color-hover-text)] text-white font-semibold px-6 py-2 rounded-lg shadow hover:opacity-90 transition"
-                        >
-                            Consultar
-                        </button>
+        <div className="min-h-screen bg-gray-50 p-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div className="flex items-center gap-3 mb-2">
+                        <FileSearch className="text-[#009E76]" size={32} />
+                        <h1 className="text-3xl font-bold text-gray-800">Consultar Juntas</h1>
                     </div>
                 </div>
-            </form>
 
-            {/* Tabla de resultados */}
-            <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                    <thead className="bg-[var(--color-hover-text)] text-white">
-                        <tr>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">Razón Social</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">Fecha Expedida</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">Fecha Creación</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">Reconocida</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold">Personería N°</th>
-                        </tr>
-                    </thead>
+                {/* Filtros */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Filter className="text-[#009E76]" size={24} />
+                        <h3 className="text-xl font-semibold text-gray-800">Filtros de Búsqueda</h3>
+                    </div>
 
-                    <tbody>
-                        {juntas.length > 0 ? (
-                            juntas.map((junta, index) => (
-                                <tr
-                                    key={index}
-                                    className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                                        } border-t border-gray-200`}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-end">
+                        {/* Tipo de Junta */}
+                        <div>
+                            <label className="block text-sm font-semibold mb-2 text-gray-700">
+                                Tipo de Junta
+                            </label>
+                            <select
+                                name="tipoJunta"
+                                value={filtros.tipoJunta}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                            >
+                                <option value="">Todos los tipos</option>
+                                <option value="Asociacion Comunal de Juntas">Asociación Comunal de Juntas</option>
+                                <option value="Junta de Accion Comunal">Junta de Acción Comunal</option>
+                                <option value="Junta de Vivienda Comunitaria">Junta de Vivienda Comunitaria</option>
+                            </select>
+                        </div>
+
+                        {/* Municipio */}
+                        <div>
+                            <label className="block text-sm font-semibold mb-2 text-gray-700">
+                                Municipio
+                            </label>
+                            <select
+                                name="municipio"
+                                value={filtros.municipio}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                            >
+                                <option value="">Todos los municipios</option>
+                                {municipios.map((m) => (
+                                    <option key={m.id} value={m.id}>
+                                        {m.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Botones */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleConsultar}
+                                className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white font-semibold px-6 py-2.5 rounded-lg shadow-md transition-all flex-1"
+                            >
+                                <Search size={18} />
+                                Consultar
+                            </button>
+                            {consultado && (
+                                <button
+                                    onClick={limpiarFiltros}
+                                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-4 py-2.5 rounded-lg transition-all"
                                 >
-                                    <td className="px-4 py-3 text-sm text-[var(--color-hover-text)] font-semibold hover:underline">
-                                        <Link to={`/detalle-junta/${index}`}>{junta.razonSocial}</Link>
-                                    </td>
+                                    Limpiar
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
-                                    <td className="px-4 py-3 text-sm text-gray-700">{junta.fechaExpedida}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">{junta.fechaCreacion}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">{junta.reconocida}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-700">{junta.numPersoneria}</td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td
-                                    colSpan="5"
-                                    className="text-center text-gray-500 py-6 italic"
-                                >
-                                    No se encontraron juntas para los filtros seleccionados.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                    {consultado && (
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                            <p className="text-sm text-gray-600">
+                                Se encontraron <span className="font-semibold text-[#009E76]">{juntas.length}</span> resultados
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Tabla de resultados */}
+                {consultado && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full">
+                                <thead className="bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white">
+                                    <tr>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold">Razón Social</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold">Fecha Expedida</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold">Fecha Creación</th>
+                                        <th className="px-6 py-4 text-center text-sm font-semibold">Reconocida</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold">Personería N°</th>
+                                        <th className="px-6 py-4 text-center text-sm font-semibold">Acción</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {juntas.length > 0 ? (
+                                        juntas.map((junta, index) => (
+                                            <tr
+                                                key={index}
+                                                className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                                                    } border-t border-gray-200 hover:bg-blue-50 transition-colors`}
+                                            >
+                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                                    {junta.razonSocial}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.fechaExpedida}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.fechaCreacion}</td>
+                                                <td className="px-6 py-4 text-sm text-center">
+                                                    {junta.reconocida === "Sí" ? (
+                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                            Sí
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                            No
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.numPersoneria}</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <Link
+                                                        to={`/detalle-junta/${index}`}
+                                                        className="inline-flex items-center gap-1 text-[#009E76] hover:text-[#007d5e] font-medium text-sm transition-colors"
+                                                    >
+                                                        Ver detalles
+                                                        <ExternalLink size={16} />
+                                                    </Link>
+                                                </td>
+
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td
+                                                colSpan="6"
+                                                className="text-center text-gray-500 py-12"
+                                            >
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <Search className="text-gray-300" size={48} />
+                                                    <p className="text-lg font-medium">No se encontraron juntas</p>
+                                                    <p className="text-sm">Intenta ajustar los filtros de búsqueda</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* Mensaje inicial */}
+                {!consultado && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                        <Search className="mx-auto text-gray-300 mb-4" size={64} />
+                        <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                            Seleccione los filtros y presione Consultar
+                        </h3>
+                        <p className="text-gray-500">
+                            Los resultados de búsqueda aparecerán aquí
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

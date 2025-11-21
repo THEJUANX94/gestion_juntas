@@ -18,6 +18,7 @@ import DetalleJunta from "./pages/DetalleJunta";
 import Logs from "./pages/Logs";
 import ForgotPassword from './pages/ForgotPassword'; 
 import ResetPassword from './pages/ResetPassword';
+import DatosJunta from "./pages/DatosJunta";
 
 
 
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="/juntas/crear" element={<CrearJunta />} />
             <Route path="/juntas/consultar" element={<ConsultarJunta />} />
             <Route path="/detalle-junta/:id" element={<DetalleJunta />} />
+            <Route path="/datos-junta/:id" element={<DatosJunta />} />
             <Route path="usuarios/listar" element={<ListarUser />} />
             <Route path="usuarios/crear" element={<CreateUser />} />
             <Route path="usuarios/update/:id" element={<UpdateUser />} />

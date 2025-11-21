@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Building2, Calendar } from "lucide-react";
 
 export default function CrearJunta() {
   const [formData, setFormData] = useState({
@@ -18,7 +19,6 @@ export default function CrearJunta() {
   const [municipios, setMunicipios] = useState([]);
   const [instituciones, setInstituciones] = useState([]);
 
-  // Simulación de datos
   useEffect(() => {
     setMunicipios([
       { id: "1", nombre: "Tunja" },
@@ -37,209 +37,237 @@ export default function CrearJunta() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     console.log("Datos de la Junta:", formData);
     alert("Junta creada exitosamente (modo demo)");
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-md border border-gray-200">
-      {/* Título principal */}
-      <h2 className="text-3xl font-bold text-center mb-6 text-[var(--color-text-color-sidebar-pr)]">
-        Crear Junta
-      </h2>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Building2 className="text-[#009E76]" size={32} />
+            <h1 className="text-3xl font-bold text-gray-800">Crear Junta</h1>
+          </div>
+          <p className="text-gray-500">Complete el formulario para registrar una nueva junta</p>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Sección 1: Datos de la Junta */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4 text-[var(--color-hover-text)] border-b pb-2">
-            Datos de la Junta
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Municipio */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Municipio</label>
-              <select
-                name="idMunicipio"
-                value={formData.idMunicipio}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              >
-                <option value="">Seleccione un municipio</option>
-                {municipios.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.nombre}
-                  </option>
-                ))}
-              </select>
+        <div className="space-y-6">
+          {/* Sección 1: Datos de la Junta */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+              <Building2 className="text-[#009E76]" size={24} />
+              <h3 className="text-xl font-semibold text-gray-800">Datos de la Junta</h3>
             </div>
 
-            {/* Institución */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Institución</label>
-              <select
-                name="idInstitucion"
-                value={formData.idInstitucion}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              >
-                <option value="">Seleccione una institución</option>
-                {instituciones.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Municipio */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Municipio <span className="text-[#E43440]">*</span>
+                </label>
+                <select
+                  name="idMunicipio"
+                  value={formData.idMunicipio}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                >
+                  <option value="">Seleccione un municipio</option>
+                  {municipios.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Dirección */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Dirección</label>
-              <input
-                type="text"
-                name="direccion"
-                value={formData.direccion}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              />
-            </div>
+              {/* Institución */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Institución <span className="text-[#E43440]">*</span>
+                </label>
+                <select
+                  name="idInstitucion"
+                  value={formData.idInstitucion}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                >
+                  <option value="">Seleccione una institución</option>
+                  {instituciones.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Tipo de Junta */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Tipo de Junta</label>
-              <select
-                name="tipoJunta"
-                value={formData.tipoJunta}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              >
-                <option value="">Seleccione tipo</option>
-                <option value="Comunal">ASOCIACION COMUNAL DE JUNTAS</option>
-                <option value="Veredal">JUNTA DE ACCION COMUNAL</option>
-                <option value="Barrial">JUNTA DE VIVIENDA COMUNITARIA</option>
-              </select>
-            </div>
+              {/* Dirección */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Dirección <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="direccion"
+                  value={formData.direccion}
+                  onChange={handleChange}
+                  placeholder="Ingrese la dirección"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
 
-            {/* Razón Social */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Razón Social</label>
-              <input
-                type="text"
-                name="razonSocial"
-                value={formData.razonSocial}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              />
-            </div>
+              {/* Tipo de Junta */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Tipo de Junta <span className="text-[#E43440]">*</span>
+                </label>
+                <select
+                  name="tipoJunta"
+                  value={formData.tipoJunta}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                >
+                  <option value="">Seleccione tipo</option>
+                  <option value="Comunal">ASOCIACION COMUNAL DE JUNTAS</option>
+                  <option value="Veredal">JUNTA DE ACCION COMUNAL</option>
+                  <option value="Barrial">JUNTA DE VIVIENDA COMUNITARIA</option>
+                </select>
+              </div>
 
-            {/* N° Personería Jurídica */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">
-                N° Personería Jurídica
-              </label>
-              <input
-                type="text"
-                name="numPersoneriaJuridica"
-                value={formData.numPersoneriaJuridica}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              />
-            </div>
+              {/* Razón Social */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Razón Social <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="razonSocial"
+                  value={formData.razonSocial}
+                  onChange={handleChange}
+                  placeholder="Ingrese la razón social"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
 
-            {/* Zona */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Zona</label>
-              <select
-                name="zona"
-                value={formData.zona}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              >
-                <option value="">Seleccione una zona</option>
-                <option value="Urbana">Urbana</option>
-                <option value="Rural">Rural</option>
-              </select>
-            </div>
+              {/* N° Personería Jurídica */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  N° Personería Jurídica <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="numPersoneriaJuridica"
+                  value={formData.numPersoneriaJuridica}
+                  onChange={handleChange}
+                  placeholder="Ingrese el número"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
 
-            {/* Fecha de Creación */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Fecha de Creación</label>
-              <input
-                type="date"
-                name="fechaCreacion"
-                value={formData.fechaCreacion}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              />
+              {/* Zona */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Zona <span className="text-[#E43440]">*</span>
+                </label>
+                <select
+                  name="zona"
+                  value={formData.zona}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                >
+                  <option value="">Seleccione una zona</option>
+                  <option value="Urbana">Urbana</option>
+                  <option value="Rural">Rural</option>
+                </select>
+              </div>
+
+              {/* Fecha de Creación */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Fecha de Creación <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="fechaCreacion"
+                  value={formData.fechaCreacion}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Sección 2: Datos de la Asamblea */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4 text-[var(--color-hover-text)] border-b pb-2">
-            Datos de la Asamblea
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Fecha Asamblea */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Fecha de Asamblea</label>
-              <input
-                type="date"
-                name="fechaAsamblea"
-                value={formData.fechaAsamblea}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              />
+          {/* Sección 2: Datos de la Asamblea */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+              <Calendar className="text-[#64AF59]" size={24} />
+              <h3 className="text-xl font-semibold text-gray-800">Datos de la Asamblea</h3>
             </div>
 
-            {/* Fecha Inicio Periodo */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Inicio del Período</label>
-              <input
-                type="date"
-                name="fechaInicioPeriodo"
-                value={formData.fechaInicioPeriodo}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Fecha Asamblea */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Fecha de Asamblea
+                </label>
+                <input
+                  type="date"
+                  name="fechaAsamblea"
+                  value={formData.fechaAsamblea}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#64AF59] focus:border-transparent outline-none transition-all"
+                />
+              </div>
 
-            {/* Fecha Fin Periodo */}
-            <div>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">Fin del Período</label>
-              <input
-                type="date"
-                name="fechaFinPeriodo"
-                value={formData.fechaFinPeriodo}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[var(--color-hover-text)]"
-              />
+              {/* Fecha Inicio Periodo */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Inicio del Período
+                </label>
+                <input
+                  type="date"
+                  name="fechaInicioPeriodo"
+                  value={formData.fechaInicioPeriodo}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#64AF59] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              {/* Fecha Fin Periodo */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Fin del Período
+                </label>
+                <input
+                  type="date"
+                  name="fechaFinPeriodo"
+                  value={formData.fechaFinPeriodo}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#64AF59] focus:border-transparent outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Botón */}
-        <div className="flex justify-center pt-4">
-          <button
-            type="submit"
-            className="bg-[var(--color-hover-text)] text-white font-semibold px-8 py-2 rounded-lg shadow hover:opacity-90 transition"
-          >
-            Crear Junta
-          </button>
+          {/* Botones de acción */}
+          <div className="flex justify-center gap-4 pt-4">
+            <button
+              onClick={() => alert("Cancelado")}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-lg shadow-sm transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white font-semibold px-8 py-3 rounded-lg shadow-md transition-all"
+            >
+              Crear Junta
+            </button>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
