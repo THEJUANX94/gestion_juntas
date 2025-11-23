@@ -5,7 +5,7 @@ import { Rol } from "../model/rolModel.js";
 import { Firma } from "../model/firmaModel.js";
 import { Junta } from '../model/juntaModel.js';
 import { Lugar } from '../model/lugarModel.js';
-import { Credenciales } from '../model/CredencialesModel.js';
+import { Credenciales } from '../model/credencialesModel.js';
 import { MandatarioJunta } from '../model/mandatarioJuntaModel.js';
 import { TipoJunta } from '../model/tipoJuntaModel.js';
 
