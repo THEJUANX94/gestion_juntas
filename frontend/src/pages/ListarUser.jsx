@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Search, Edit, User, Filter, Trash2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Search, Edit, User, Filter, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
@@ -9,6 +9,12 @@ export default function ListarPersonas() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [usuarios, setUsuarios] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Nuevo estado para la carga
+
+  // 💡 Estados para la PAGINACIÓN
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // Puedes ajustar este valor
+
 
   const [showFilter, setShowFilter] = useState({
     nombre: false,
@@ -35,41 +41,67 @@ export default function ListarPersonas() {
 
         // Transformar formato
         const transformados = data.map((u) => ({
-          IDUsuario: u.IDUsuario,
           nombre: `${u.PrimerNombre} ${u.SegundoNombre ?? ""} ${u.PrimerApellido} ${u.SegundoApellido ?? ""}`.trim(),
           identificacion: u.NumeroIdentificacion,
-          rol: u.rol,
-         // Mostrar solo fecha y hora sin zona
-         ultimo: u.ultimo_inicio_sesion ? new Date(u.ultimo_inicio_sesion).toLocaleString('es-ES', { hour12: false }) : '',
+          rol: u.RolInfo ? u.RolInfo.NombreRol : 'Sin Rol',
+          ultimo: u.ultimo_inicio_sesion ? new Date(u.ultimo_inicio_sesion).toLocaleString('es-ES', { hour12: false }) : '',
         }));
 
         setUsuarios(transformados);
       } catch (error) {
         console.error("Error al cargar usuarios:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchUsuarios();
   }, []);
+  const filtered = useMemo(() => {
+    // Filtrado general
+    const generalFiltered = usuarios.filter((a) => {
+      const texto = search.toLowerCase();
+      return (
+        a.nombre.toLowerCase().includes(texto) ||
+        a.identificacion.toLowerCase().includes(texto) ||
+        a.rol.toLowerCase().includes(texto) ||
+        a.ultimo.toLowerCase().includes(texto)
+      );
+    });
 
-  //  Filtrado general
-  const generalFiltered = usuarios.filter((u) => {
-    const texto = search.toLowerCase();
-    return Object.values(u).some((valor) =>
-      String(valor).toLowerCase().includes(texto)
+    // Filtrado por columnas
+    const columnFiltered = generalFiltered.filter((a) =>
+      Object.keys(filtros).every((key) =>
+        filtros[key]
+          ? String(a[key]).toLowerCase().includes(filtros[key].toLowerCase())
+          : true
+      )
     );
-  });
 
-  //  Filtrado por columnas
-  const filtered = generalFiltered.filter((u) =>
-    Object.keys(filtros).every((key) =>
-      filtros[key]
-        ? String(u[key]).toLowerCase().includes(filtros[key].toLowerCase())
-        : true
-    )
-  );
+    // 💡 Al cambiar los filtros o la búsqueda, volvemos a la primera página.
+    setCurrentPage(1);
+
+    return columnFiltered;
+  }, [usuarios, search, filtros]);
 
 
+  // 2. Lógica de PAGINACIÓN
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  // Obtiene los elementos de la página actual
+  const paginatedItems = filtered.slice(startIndex, endIndex);
+
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
+  const goToPrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  // Manejadores de filtro y eliminación (sin cambios)
   const toggleFilter = (col) => {
     setShowFilter((prev) => ({ ...prev, [col]: !prev[col] }));
   };
@@ -93,7 +125,7 @@ export default function ListarPersonas() {
     if (!confirmed) return;
 
     try {
-       console.log("Intentando eliminar usuario otra vez:", usuario.IDUsuario);
+      console.log("Intentando eliminar usuario otra vez:", usuario.IDUsuario);
       const res = await fetch(import.meta.env.VITE_PATH + `/usuarios/${usuario.IDUsuario}`, {
         method: "DELETE",
         credentials: 'include'
@@ -228,8 +260,14 @@ export default function ListarPersonas() {
           </thead>
 
           <tbody>
-            {filtered.length > 0 ? (
-              filtered.map((u, i) => (
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="text-center py-10 text-blue-500 text-lg">
+                  Cargando asistencias...
+                </td>
+              </tr>
+            ) : paginatedItems.length > 0 ? (
+              paginatedItems.map((u, i) => (
                 <tr
                   key={i}
                   className="border-b transition"
@@ -276,7 +314,55 @@ export default function ListarPersonas() {
           </tbody>
         </table>
       </div>
+      {/* 💡 CONTROLES DE PAGINACIÓN */}
+      {filtered.length > 0 && !isLoading && (
+        <div className="flex justify-between items-center py-4 px-6 border-t border-gray-200">
 
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <span>Filas por página:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              className="border border-gray-300 rounded-md p-1 bg-white"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            Mostrando {startIndex + 1} a {Math.min(endIndex, filtered.length)} de {filtered.length} resultados
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={goToPrevPage}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-full border transition duration-150 ${currentPage === 1
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300"
+                }`}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="flex items-center justify-center px-4 border border-gray-300 rounded-lg bg-blue-50 text-blue-700 font-semibold">
+              {currentPage} / {totalPages}
+            </div>
+            <button
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className={`p-2 rounded-full border transition duration-150 ${currentPage === totalPages || totalPages === 0
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-700 hover:bg-blue-50 hover:border-blue-300"
+                }`}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      )}
+      {/* FIN CONTROLES DE PAGINACIÓN */}
       <Footer />
     </div>
   );

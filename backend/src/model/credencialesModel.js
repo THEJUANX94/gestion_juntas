@@ -11,14 +11,19 @@ export const Credenciales = sequelize.define("Credenciales", {
     allowNull: false,
     references: {
       model: "usuarios",
-      key: "numeroIdentificacion"
+      key: "numeroidentificacion"
     },
-    field: "numeroIdentificacion"
+    field: "numeroidentificacion"
   },
   Contraseña: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: "contrasena"
+    field: "contraseña"
+  },
+   ultimo_inicio_sesion: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: "ultimo_inicio_sesion"
   },
   Bloqueado: {
     type: DataTypes.BOOLEAN,

@@ -22,6 +22,10 @@ export const Lugar = sequelize.define("Lugar", {
     type: DataTypes.UUID,
     allowNull: false,
     field: "idotrolugar",
+    references: {
+      model: "lugar",
+      key: "idlugar"
+    }
   }
 }, {
   tableName: "lugar",

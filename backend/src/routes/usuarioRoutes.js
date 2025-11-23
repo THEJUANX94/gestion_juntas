@@ -31,11 +31,11 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post("/", verificarAuth, upload.single("Firma"), crearUsuario);
+router.post("/", upload.single("Firma"), crearUsuario);
 router.get("/", verificarAuth, obtenerUsuarios);
 router.get("/:IDUsuario", verificarAuth, obtenerUsuarioPorId);
-router.get("/verificar/:NumeroIdentificacion", verificarAuth, verificarIdentificacion);
-router.get("/verificar-correo/:correo", verificarAuth, verificarCorreo);
+router.get("/verificar/:NumeroIdentificacion", verificarIdentificacion);
+router.get("/verificar-correo/:correo", verificarCorreo);
 router.put("/:IDUsuario", verificarAuth, actualizarUsuario);
 router.delete("/:IDUsuario", verificarAuth, eliminarUsuario);
 

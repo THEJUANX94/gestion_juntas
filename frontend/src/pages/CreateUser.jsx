@@ -7,22 +7,30 @@ export default function CreateUser() {
   const handleCreate = async (form) => {
     try {
       console.log('Form data being sent:', form);
-      
-      const response = await fetch(import.meta.env.VITE_PATH + "/usuarios", {
+      const isFormData = typeof FormData !== 'undefined' && form instanceof FormData;
+
+      const fetchOptions = {
         method: "POST",
         credentials: 'include',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          NombreRol: form.NombreRol
-        })
-      });
+        body: isFormData
+          ? form
+          : JSON.stringify({ ...(form || {}), NombreRol: form?.NombreRol })
+      };
 
-      const data = await response.json(); 
+      if (!isFormData) {
+        fetchOptions.headers = { "Content-Type": "application/json" };
+      }
+
+      const response = await fetch(import.meta.env.VITE_PATH + "/usuarios", fetchOptions);
+
+      // read text then parse (defensive)
+      const text = await response.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch (e) { /* not json */ }
 
       if (!response.ok) {
-        console.error('Server error details:', data);
-        throw new Error(data.message || "Error al crear usuario");
+        console.error('Server error details:', data || text);
+        throw new Error((data && data.message) || text || response.statusText || "Error al crear usuario");
       }
 
       alert("Usuario creado con éxito");

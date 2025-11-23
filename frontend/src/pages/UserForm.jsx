@@ -301,6 +301,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
           Usuario: form.Usuario,
           Contrasena: form.Contrasena,
           Correo: form.Correo,
+          NumeroIdentificacion: form.NumeroIdentificacion
         };
 
         await fetch(import.meta.env.VITE_PATH + "/credenciales", {
