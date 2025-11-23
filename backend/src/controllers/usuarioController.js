@@ -142,14 +142,14 @@ export const crearUsuario = async (req, res) => {
     if (NombreRol === "Administrador") {
       try {
         const loginFinal = Login || Correo || NumeroIdentificacion;
-        const passwordPlano = Contrasena || Contraseña || "admin123"; 
+        const passwordPlano = Contrasena || Contraseña; 
 
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(passwordPlano, saltRounds);
 
         await Credenciales.create({
           Login: loginFinal,
-          NumeroIdentificacion: newUser.NumeroIdentificacion,
+          numeroIdentificacion: NumeroIdentificacion,
           Contraseña: hashedPassword
         });
 
@@ -318,7 +318,7 @@ export const actualizarUsuario = async (req, res) => {
         datosCredenciales.Contraseña = Contraseña; 
       }
 
-      const credenciales = await Credenciales.findOne({ where: { NumeroIdentificacion } });
+      const credenciales = await Credenciales.findOne({ where: { numeroIdentificacion: NumeroIdentificacion } });
 
       if (credenciales) {
         const credencialesActualizadasData = await credenciales.update(datosCredenciales);

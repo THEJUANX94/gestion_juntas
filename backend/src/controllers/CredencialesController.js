@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
-import { Credenciales } from "../model/credencialesModel.js";
 import { Usuario } from "../model/usuarioModel.js";
 import { logOperation } from "../utils/logger.js";
 import jwt from "jsonwebtoken";
 import { sendMail } from "../utils/mailer.js";
+import { Credenciales } from "../model/credencialesModel.js";
 
 export const loginUsuario = async (req, res) => {
     try {
@@ -19,21 +19,29 @@ export const loginUsuario = async (req, res) => {
 
             return res.status(400).json({ error: "Datos incompletos." });
         }
-        const captchaResponse = await fetch(
-            `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
-            { method: "POST" }
-        );
+        // Allow bypassing reCAPTCHA in non-production when DEBUG or SKIP_RECAPTCHA is enabled
+        const skipRecaptcha = process.env.SKIP_RECAPTCHA === 'true' || (process.env.NODE_ENV !== 'production' && !process.env.RECAPTCHA_SECRET);
+        let captchaData = { success: true };
 
-        const captchaData = await captchaResponse.json();
-        if (!captchaData.success) {
-            logOperation(
-                "LOGIN_FALLIDO",
-                login,
-                { motivo: `Captcha inválido`, score: captchaData.score, ip: req.ip || 'N/A' },
-                "error"
+        if (!skipRecaptcha) {
+            const captchaResponse = await fetch(
+                `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
+                { method: "POST" }
             );
 
-            return res.status(400).json({ error: "Captcha inválido" });
+            captchaData = await captchaResponse.json();
+            if (!captchaData.success) {
+                logOperation(
+                    "LOGIN_FALLIDO",
+                    login,
+                    { motivo: `Captcha inválido`, details: captchaData, ip: req.ip || 'N/A' },
+                    "error"
+                );
+
+                return res.status(400).json({ error: "Captcha inválido", details: captchaData });
+            }
+        } else {
+            logger && logger.info && logger.info({ message: 'reCAPTCHA saltado en entorno de desarrollo o por SKIP_RECAPTCHA' });
         }
         const credencial = await Credenciales.findOne({
             where: {
@@ -78,7 +86,7 @@ export const loginUsuario = async (req, res) => {
         }
         const previousLogin = user.ultimo_inicio_sesion;
         const currentLoginTime = new Date();
-        await user.update({
+        await credencial.update({
             ultimo_inicio_sesion: new Date()
         });
         const token = jwt.sign(
@@ -113,7 +121,7 @@ export const loginUsuario = async (req, res) => {
                 id: user.numeroIdentificacion,
                 nombre: `${user.PrimerNombre} ${user.PrimerApellido}`,
                 correo: user.Correo,
-                ultimo_inicio_sesion: user.ultimo_inicio_sesion
+                ultimo_inicio_sesion: credencial.ultimo_inicio_sesion
             },
         });
 

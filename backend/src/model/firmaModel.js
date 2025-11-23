@@ -13,9 +13,9 @@ export const Firma = sequelize.define("Firma", {
     allowNull: false,
     references: {
       model: "usuarios",
-      key: "numeroIdentificacion"
+      key: "numeroidentificacion"
     },
-    field: "numeroIdentificacion"
+    field: "numeroidentificacion"
   },
   FechaCreacion: {
     type: DataTypes.DATE,

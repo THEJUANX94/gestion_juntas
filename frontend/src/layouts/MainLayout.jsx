@@ -9,6 +9,8 @@ import {
   UserPlus,
   LogOut,
   Building2,
+  Handshake,
+  ScanEye
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -167,7 +169,7 @@ export default function MainLayout() {
                       "/juntas/crear"
                     )}`}
                   >
-                    <Building2 className="h-5 w-5" />
+                    <Handshake className="h-5 w-5" />
                     {!collapsed && "Crear Junta"}
                   </Link>
                 </li>
@@ -180,6 +182,39 @@ export default function MainLayout() {
                   >
                     <List className="h-5 w-5" />
                     {!collapsed && "Consultar Juntas"}
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Sección: Gestión de Cosas */}
+            <div>
+              {!collapsed && (
+                <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
+                  Gestión de Cosas
+                </h2>
+              )}
+              <ul className="space-y-1">
+                <li>
+                  <Link
+                    to="/cargos/listar"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/cargos/listar"
+                    )}`}
+                  >
+                    <ScanEye className="h-5 w-5" />
+                    {!collapsed && "Listar Cargos"}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/instituciones/listar"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/instituciones/listar"
+                    )}`}
+                  >
+                    <Building2 className="h-5 w-5" />
+                    {!collapsed && "Listar Instituciones"}
                   </Link>
                 </li>
               </ul>

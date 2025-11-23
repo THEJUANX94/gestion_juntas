@@ -13,8 +13,10 @@ import jwt from 'jsonwebtoken';
 import { sequelize } from "./src/config/database.js";
 import usuarioRoutes from "./src/routes/usuarioRoutes.js";
 import firmasRoutes from "./src/routes/firmasRoutes.js";
-import CredencialesRoutes from "./src/routes/credencialesRoutes.js";
+import CredencialesRoutes from "./src/routes/CredencialesRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
+import cargosRoutes from "./src/routes/cargosRoutes.js"
+import institucionesRoutes from "./src/routes/institucionesRoutes.js"
 import { logger } from './src/utils/logger.js';
 import { Asociaciones } from "./src/config/asociacionesBD.js";
 import { verifyMailerConnection } from "./src/utils/mailer.js";
@@ -182,15 +184,17 @@ app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/firmas", firmasRoutes);
 app.use("/api/login", CredencialesRoutes)
 app.use("/api/auth", authRoutes);
+app.use("/api/cargos", cargosRoutes);
+app.use("/api/instituciones", institucionesRoutes);
 
 const frontendPath = path.join(__dirname, '../frontend/dist');
 
-app.use(express.static(frontendPath));
+/*app.use(express.static(frontendPath));
 
 app.use((req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
-
+*/
 const PORT = process.env.PORT || 3000;
 
 (async () => {

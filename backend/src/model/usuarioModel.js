@@ -59,11 +59,6 @@ export const Usuario = sequelize.define("Usuario", {
     },
     field: "idrol"
   },
-  ultimo_inicio_sesion: {
-    type: DataTypes.DATE,
-    allowNull: true,
-    field: "ultimo_inicio_sesion"
-  },
   Activo: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
