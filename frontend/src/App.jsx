@@ -43,8 +43,8 @@ export default function App() {
               <Route path="/juntas/crear" element={<CrearJunta />} />
               <Route path="/juntas/consultar" element={<ConsultarJunta />} />
               <Route path="/juntas/mandatario/crear" element={<CrearMandatario />} />
-              <Route path="/detalle-junta/:id" element={<DetalleJunta />} />
-              <Route path="/datos-junta/:id" element={<DatosJunta />} />
+              <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
+              <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
               <Route path="cargos/listar" element={<ListarCargos/>}/>
               <Route path="cargos/create" element={<CrearCargo/>} />
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />

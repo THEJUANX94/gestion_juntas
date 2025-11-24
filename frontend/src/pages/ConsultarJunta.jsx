@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Filter, ExternalLink, FileSearch } from "lucide-react";
 import { Link } from "react-router-dom";
+import { AlertMessage } from "../components/ui/AlertMessage";
 
 
 export default function ConsultarJunta() {
@@ -12,48 +13,72 @@ export default function ConsultarJunta() {
     const [municipios, setMunicipios] = useState([]);
     const [juntas, setJuntas] = useState([]);
     const [consultado, setConsultado] = useState(false);
+    const [tiposJunta, setTiposJunta] = useState([]);
 
     useEffect(() => {
-        setMunicipios([
-            { id: "1", nombre: "Tunja" },
-            { id: "2", nombre: "Duitama" },
-            { id: "3", nombre: "Sogamoso" },
-        ]);
+        const loadData = async () => {
+            try {
+                const [resMunicipios, resTipos] = await Promise.all([
+                    fetch("http://localhost:3000/api/lugares"),
+                    fetch("http://localhost:3000/api/tipojunta"),
+                ]);
+
+                const munData = await resMunicipios.json();
+                const tipoData = await resTipos.json();
+
+                setMunicipios(munData);
+                setTiposJunta(tipoData);
+
+            } catch (e) {
+                AlertMessage.error("Error", "No se pudieron cargar los datos iniciales");
+            }
+        };
+
+        loadData();
     }, []);
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFiltros((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleConsultar = () => {
-        const datosSimulados = [
-            {
-                razonSocial: "JAC Barrio Libertador",
-                fechaCreacion: "2020-05-12",
-                fechaExpedida: "2020-05-14",
-                reconocida: "Sí",
-                numPersoneria: "PJ-0456",
-            },
-            {
-                razonSocial: "JAC Vereda La Florida",
-                fechaCreacion: "2019-10-08",
-                fechaExpedida: "2019-10-12",
-                reconocida: "No",
-                numPersoneria: "PJ-0378",
-            },
-            {
-                razonSocial: "JAC Centro Histórico",
-                fechaCreacion: "2021-03-15",
-                fechaExpedida: "2021-03-20",
-                reconocida: "Sí",
-                numPersoneria: "PJ-0589",
-            },
-        ];
+    const handleConsultar = async () => {
 
-        setJuntas(datosSimulados);
-        setConsultado(true);
+        if (!filtros.tipoJunta || !filtros.municipio) {
+            return AlertMessage.error(
+                "Filtros incompletos",
+                "Debe seleccionar tipo de junta y municipio"
+            );
+        }
+
+        try {
+            const resp = await fetch(
+                `http://localhost:3000/api/juntas?tipoJunta=${filtros.tipoJunta}&idMunicipio=${filtros.municipio}`
+            );
+
+
+            const data = await resp.json();
+
+            console.log(data);
+
+            if (!resp.ok) {
+                return AlertMessage.error("Error", data.message);
+            }
+
+            setJuntas(data);
+            setConsultado(true);
+
+            AlertMessage.success("Consulta realizada", "Las juntas han sido cargadas");
+
+        } catch (e) {
+            AlertMessage.error(
+                "Error de conexión",
+                "No se pudo comunicar con el servidor"
+            );
+        }
     };
+
 
     const limpiarFiltros = () => {
         setFiltros({
@@ -92,13 +117,16 @@ export default function ConsultarJunta() {
                                 name="tipoJunta"
                                 value={filtros.tipoJunta}
                                 onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
                             >
                                 <option value="">Todos los tipos</option>
-                                <option value="Asociacion Comunal de Juntas">Asociación Comunal de Juntas</option>
-                                <option value="Junta de Accion Comunal">Junta de Acción Comunal</option>
-                                <option value="Junta de Vivienda Comunitaria">Junta de Vivienda Comunitaria</option>
+                                {tiposJunta.map((t) => (
+                                    <option key={t.IDTipoJuntas} value={t.IDTipoJuntas}>
+                                        {t.NombreTipoJunta}
+                                    </option>
+                                ))}
                             </select>
+
                         </div>
 
                         {/* Municipio */}
@@ -114,9 +142,10 @@ export default function ConsultarJunta() {
                             >
                                 <option value="">Todos los municipios</option>
                                 {municipios.map((m) => (
-                                    <option key={m.id} value={m.id}>
-                                        {m.nombre}
+                                    <option key={m.IDLugar} value={m.IDLugar}>
+                                        {m.NombreLugar}
                                     </option>
+
                                 ))}
                             </select>
                         </div>
@@ -158,9 +187,7 @@ export default function ConsultarJunta() {
                                 <thead className="bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white">
                                     <tr>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Razón Social</th>
-                                        <th className="px-6 py-4 text-left text-sm font-semibold">Fecha Expedida</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Fecha Creación</th>
-                                        <th className="px-6 py-4 text-center text-sm font-semibold">Reconocida</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Personería N°</th>
                                         <th className="px-6 py-4 text-center text-sm font-semibold">Acción</th>
                                     </tr>
@@ -175,25 +202,20 @@ export default function ConsultarJunta() {
                                                     } border-t border-gray-200 hover:bg-blue-50 transition-colors`}
                                             >
                                                 <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                    {junta.razonSocial}
+                                                    {junta.RazonSocial}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.fechaExpedida}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.fechaCreacion}</td>
-                                                <td className="px-6 py-4 text-sm text-center">
-                                                    {junta.reconocida === "Sí" ? (
-                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                            Sí
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                            No
-                                                        </span>
-                                                    )}
+                                                <td>
+                                                    {new Date(junta.FechaCreacion).toLocaleDateString("es-CO", {
+                                                        year: "numeric",
+                                                        month: "long",
+                                                        day: "numeric",
+                                                    })}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.numPersoneria}</td>
+
+                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.NumPersoneriaJuridica}</td>
                                                 <td className="px-6 py-4 text-center">
                                                     <Link
-                                                        to={`/detalle-junta/${index}`}
+                                                        to={`/juntas/detalle-junta/${index}`}
                                                         className="inline-flex items-center gap-1 text-[#009E76] hover:text-[#007d5e] font-medium text-sm transition-colors"
                                                     >
                                                         Ver detalles

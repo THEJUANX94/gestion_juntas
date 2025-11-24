@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail, MapPin, Search, Filter, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export default function DetalleJuntaMejorado() {
+
+export default function DetalleJunta() {
+
+  const navigate = useNavigate();
+
+
   const [miembros] = useState([
     {
       cargo: "Presidente",
@@ -70,7 +76,7 @@ export default function DetalleJuntaMejorado() {
     { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]" },
     { icon: Award, label: "Certificado JAC", color: "bg-[#64AF59] hover:bg-[#52934a]" },
     { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]" },
-    { icon: Database, label: "Datos Junta", color: "bg-[#009E76] hover:bg-[#007d5e]" },
+    { icon: Database, label: "Datos Junta", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/1` },
   ];
 
   // Obtener valores únicos para los filtros
@@ -80,14 +86,14 @@ export default function DetalleJuntaMejorado() {
 
   // Función de filtrado
   const miembrosFiltrados = miembros.filter(miembro => {
-    const cumpleBusqueda = 
+    const cumpleBusqueda =
       miembro.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       miembro.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
       miembro.documento.includes(searchTerm) ||
       miembro.cargo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       miembro.profesion.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const cumpleFiltros = 
+    const cumpleFiltros =
       (!filtros.cargo || miembro.cargo === filtros.cargo) &&
       (!filtros.periodo || miembro.periodo === filtros.periodo) &&
       (!filtros.genero || miembro.genero === filtros.genero) &&
@@ -116,9 +122,11 @@ export default function DetalleJuntaMejorado() {
         <nav className="space-y-3">
           {acciones.map((accion, idx) => {
             const Icon = accion.icon;
+
             return (
               <button
                 key={idx}
+                onClick={() => navigate(accion.ruta)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white ${accion.color} transition-all shadow-sm hover:shadow-md`}
               >
                 <Icon size={20} />
@@ -126,6 +134,7 @@ export default function DetalleJuntaMejorado() {
               </button>
             );
           })}
+
         </nav>
       </aside>
 
@@ -139,10 +148,14 @@ export default function DetalleJuntaMejorado() {
                 <h1 className="text-3xl font-bold text-gray-800">Detalle de la Junta</h1>
                 <p className="text-gray-500 mt-1">Gestión de mandatarios y miembros</p>
               </div>
-              <button className="flex items-center gap-2 bg-[#64AF59] hover:bg-[#52934a] text-white px-5 py-3 rounded-lg font-medium shadow-md transition-all">
+              <button
+                onClick={() => navigate("/juntas/mandatario/crear")}
+                className="flex items-center gap-2 bg-[#64AF59] hover:bg-[#52934a] text-white px-5 py-3 rounded-lg font-medium shadow-md transition-all"
+              >
                 <UserPlus size={20} />
                 Nuevo Mandatario
               </button>
+
             </div>
           </div>
 
@@ -164,11 +177,10 @@ export default function DetalleJuntaMejorado() {
               {/* Botón de filtros */}
               <button
                 onClick={() => setMostrarFiltros(!mostrarFiltros)}
-                className={`flex items-center gap-2 px-5 py-3 rounded-lg font-medium transition-all ${
-                  mostrarFiltros 
-                    ? 'bg-[#E43440] text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`flex items-center gap-2 px-5 py-3 rounded-lg font-medium transition-all ${mostrarFiltros
+                  ? 'bg-[#E43440] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 <Filter size={20} />
                 Filtros {hayFiltrosActivos && `(${Object.values(filtros).filter(v => v).length})`}
@@ -196,7 +208,7 @@ export default function DetalleJuntaMejorado() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Cargo</label>
                     <select
                       value={filtros.cargo}
-                      onChange={(e) => setFiltros({...filtros, cargo: e.target.value})}
+                      onChange={(e) => setFiltros({ ...filtros, cargo: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none"
                     >
                       <option value="">Todos</option>
@@ -211,7 +223,7 @@ export default function DetalleJuntaMejorado() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Periodo</label>
                     <select
                       value={filtros.periodo}
-                      onChange={(e) => setFiltros({...filtros, periodo: e.target.value})}
+                      onChange={(e) => setFiltros({ ...filtros, periodo: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none"
                     >
                       <option value="">Todos</option>
@@ -226,7 +238,7 @@ export default function DetalleJuntaMejorado() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Género</label>
                     <select
                       value={filtros.genero}
-                      onChange={(e) => setFiltros({...filtros, genero: e.target.value})}
+                      onChange={(e) => setFiltros({ ...filtros, genero: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none"
                     >
                       <option value="">Todos</option>
@@ -240,7 +252,7 @@ export default function DetalleJuntaMejorado() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Comisión</label>
                     <select
                       value={filtros.comision}
-                      onChange={(e) => setFiltros({...filtros, comision: e.target.value})}
+                      onChange={(e) => setFiltros({ ...filtros, comision: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none"
                     >
                       <option value="">Todas</option>
