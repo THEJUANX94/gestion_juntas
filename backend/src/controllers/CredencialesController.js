@@ -3,7 +3,7 @@ import { Usuario } from "../model/usuarioModel.js";
 import { logOperation } from "../utils/logger.js";
 import jwt from "jsonwebtoken";
 import { sendMail } from "../utils/mailer.js";
-import { Credenciales } from "../model/credencialesModel.js";
+import { Credenciales } from "../model/CredencialesModel.js";
 
 export const loginUsuario = async (req, res) => {
     try {
