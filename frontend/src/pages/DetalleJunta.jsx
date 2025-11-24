@@ -75,7 +75,7 @@ export default function DetalleJunta() {
     { icon: FileText, label: "Consulta", color: "bg-[#009E76] hover:bg-[#007d5e]" },
     { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]" },
     { icon: Award, label: "Certificado JAC", color: "bg-[#64AF59] hover:bg-[#52934a]" },
-    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]" },
+    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", ruta: '/juntas/crear'},
     { icon: Database, label: "Datos Junta", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/1` },
   ];
 
@@ -132,6 +132,7 @@ export default function DetalleJunta() {
                 <Icon size={20} />
                 <span className="text-sm font-medium">{accion.label}</span>
               </button>
+              
             );
           })}
 
