@@ -33,6 +33,12 @@ export const Junta = sequelize.define("Junta", {
     field: "fechacreacion"
   },
 
+  Zona: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    field: "zona"
+  },
+
   FechaInicioPeriodo: {
     type: DataTypes.DATE,
     allowNull: false,
@@ -51,10 +57,10 @@ export const Junta = sequelize.define("Junta", {
     field: "fechaasamblea"
   },
 
-  IDTipoJunta: {
+  TipoJunta: {
     type: DataTypes.UUID,
     allowNull: false,
-    field: "idtipojunta"
+    field: "tipojunta"
   },
 
   IDMunicipio: {

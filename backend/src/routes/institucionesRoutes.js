@@ -4,9 +4,9 @@ import { crearInstitucion, eliminarInstitucion, obtenerInstituciones, obtenerIns
 
 const router = Router();
 
-router.get("/", verificarAuth, obtenerInstituciones);
-router.get("/:idinstitucion", verificarAuth, obtenerInstitucionPorId);
-router.delete("/:idinstitucion", verificarAuth, eliminarInstitucion);
-router.post("/crearinstitucion", verificarAuth, crearInstitucion);
+router.get("/", obtenerInstituciones);
+router.get("/:idinstitucion",  obtenerInstitucionPorId);
+router.delete("/:idinstitucion",  eliminarInstitucion);
+router.post("/crearinstitucion", crearInstitucion);
 
 export default router;

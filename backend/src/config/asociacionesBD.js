@@ -36,7 +36,7 @@ export const Asociaciones = () => {
 
     //Relaciones Para Junta
     Junta.belongsTo(Lugar, { foreignKey: "idmunicipio" })
-    Junta.belongsTo(TipoJunta, { foreignKey: "idtipojunta" })
+    Junta.belongsTo(TipoJunta, { foreignKey: "tipojunta" })
     Junta.belongsTo(Institucion, { foreignKey: "idinstitucion" })
     Junta.hasMany(MandatarioJunta, { foreignKey: "idjunta" })
 
@@ -44,7 +44,7 @@ export const Asociaciones = () => {
     Rol.hasMany(Usuario, { foreignKey: "idrol" });
 
     //Relaciones para TipoJunta
-    TipoJunta.hasMany(Junta, { foreignKey: "idtipojunta" })
+   TipoJunta.hasMany(Junta, { foreignKey: "tipojunta" })
 
     //Relaciones para Instituciones
     Institucion.hasMany(Junta, { foreignKey: "idinstitucion" })

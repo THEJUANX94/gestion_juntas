@@ -16,30 +16,67 @@ export default function CrearJunta() {
     idInstitucion: "",
   });
 
-  const [municipios, setMunicipios] = useState([]);
+  const [lugares, setLugares] = useState([]);
   const [instituciones, setInstituciones] = useState([]);
+  const [tiposJunta, setTiposJunta] = useState([]);
 
   useEffect(() => {
-    setMunicipios([
-      { id: "1", nombre: "Tunja" },
-      { id: "2", nombre: "Duitama" },
-      { id: "3", nombre: "Sogamoso" },
-    ]);
+    const fetchData = async () => {
+      try {
+        const [resLugares, resInst, resTipos] = await Promise.all([
+          fetch("http://localhost:3000/api/lugares"),
+          fetch("http://localhost:3000/api/instituciones"),
+          fetch("http://localhost:3000/api/tipojunta"),
+        ]);
 
-    setInstituciones([
-      { id: "1", nombre: "Gobernación de Boyacá" },
-      { id: "2", nombre: "Secretaría de Gobierno" },
-    ]);
+        const lugaresData = await resLugares.json();
+        const instData = await resInst.json();
+        const tiposData = await resTipos.json();
+
+        setLugares(lugaresData);
+        setInstituciones(instData);
+        setTiposJunta(tiposData);
+
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+        alert("Error cargando información del servidor");
+      }
+    };
+
+    fetchData();
   }, []);
 
+  // ==========================
+  // Manejo de inputs
+  // ==========================
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
-    console.log("Datos de la Junta:", formData);
-    alert("Junta creada exitosamente (modo demo)");
+    // ==========================
+  // Enviar al backend
+  // ==========================
+  const handleSubmit = async () => {
+
+    console.log("DATA QUE SE ENVÍA AL BACKEND:", formData);
+    try {
+      const resp = await fetch("http://localhost:3000/api/juntas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        return alert(`Error: ${data.message}`);
+      }
+
+      alert("Junta creada correctamente");
+    } catch (e) {
+      alert("Error de conexión con el servidor");
+    }
   };
 
   return (
@@ -63,7 +100,7 @@ export default function CrearJunta() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Municipio */}
+              {/* Lugar */}
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
                   Municipio <span className="text-[#E43440]">*</span>
@@ -72,12 +109,12 @@ export default function CrearJunta() {
                   name="idMunicipio"
                   value={formData.idMunicipio}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
                 >
                   <option value="">Seleccione un municipio</option>
-                  {municipios.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nombre}
+                  {lugares.map((l) => (
+                    <option key={l.IDLugar} value={l.IDLugar}>
+                      {l.NombreLugar}
                     </option>
                   ))}
                 </select>
@@ -92,12 +129,12 @@ export default function CrearJunta() {
                   name="idInstitucion"
                   value={formData.idInstitucion}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
                 >
                   <option value="">Seleccione una institución</option>
                   {instituciones.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.nombre}
+                    <option key={i.IDInstitucion} value={i.IDInstitucion}>
+                      {i.NombreInstitucion}
                     </option>
                   ))}
                 </select>
@@ -127,12 +164,14 @@ export default function CrearJunta() {
                   name="tipoJunta"
                   value={formData.tipoJunta}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
                 >
                   <option value="">Seleccione tipo</option>
-                  <option value="Comunal">ASOCIACION COMUNAL DE JUNTAS</option>
-                  <option value="Veredal">JUNTA DE ACCION COMUNAL</option>
-                  <option value="Barrial">JUNTA DE VIVIENDA COMUNITARIA</option>
+                  {tiposJunta.map((t) => (
+                    <option key={t.IDTipoJuntas} value={t.IDTipoJuntas}>
+                      {t.NombreTipoJunta}
+                    </option>
+                  ))}
                 </select>
               </div>
 

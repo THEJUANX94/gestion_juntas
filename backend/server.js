@@ -17,6 +17,10 @@ import CredencialesRoutes from "./src/routes/CredencialesRoutes.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import cargosRoutes from "./src/routes/cargosRoutes.js"
 import institucionesRoutes from "./src/routes/institucionesRoutes.js"
+import lugaresRoutes from "./src/routes/lugaresRoutes.js"
+import tipoJuntaRoutes from "./src/routes/tipoJuntaRoutes.js"
+import juntaRoutes from "./src/routes/juntasRoutes.js"
+
 import { logger } from './src/utils/logger.js';
 import { Asociaciones } from "./src/config/asociacionesBD.js";
 import { verifyMailerConnection } from "./src/utils/mailer.js";
@@ -186,6 +190,9 @@ app.use("/api/login", CredencialesRoutes)
 app.use("/api/auth", authRoutes);
 app.use("/api/cargos", cargosRoutes);
 app.use("/api/instituciones", institucionesRoutes);
+app.use("/api/lugares", lugaresRoutes);
+app.use("/api/tipojunta", tipoJuntaRoutes);
+app.use("/api/juntas", juntaRoutes);
 
 const frontendPath = path.join(__dirname, '../frontend/dist');
 
