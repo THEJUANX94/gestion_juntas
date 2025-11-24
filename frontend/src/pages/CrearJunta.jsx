@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Building2, Calendar } from "lucide-react";
+import { AlertMessage } from "../components/ui/AlertMessage";
+
 
 export default function CrearJunta() {
   const [formData, setFormData] = useState({
@@ -39,7 +41,11 @@ export default function CrearJunta() {
 
       } catch (error) {
         console.error("Error cargando datos:", error);
-        alert("Error cargando información del servidor");
+        AlertMessage.error(
+          "Error al cargar datos",
+          "No fue posible obtener la información desde el servidor"
+        );
+
       }
     };
 
@@ -54,12 +60,11 @@ export default function CrearJunta() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-    // ==========================
+  // ==========================
   // Enviar al backend
   // ==========================
   const handleSubmit = async () => {
 
-    console.log("DATA QUE SE ENVÍA AL BACKEND:", formData);
     try {
       const resp = await fetch("http://localhost:3000/api/juntas", {
         method: "POST",
@@ -70,12 +75,30 @@ export default function CrearJunta() {
       const data = await resp.json();
 
       if (!resp.ok) {
-        return alert(`Error: ${data.message}`);
+        return AlertMessage.error(`Error: ${data.message}`);
       }
 
-      alert("Junta creada correctamente");
+      AlertMessage.success("Éxito", "Junta creada correctamente");
+
+      setFormData({
+        razonSocial: "",
+        direccion: "",
+        numPersoneriaJuridica: "",
+        fechaCreacion: "",
+        zona: "",
+        fechaInicioPeriodo: "",
+        fechaFinPeriodo: "",
+        fechaAsamblea: "",
+        tipoJunta: "",
+        idMunicipio: "",
+        idInstitucion: "",
+      });
+
     } catch (e) {
-      alert("Error de conexión con el servidor");
+      AlertMessage.error(
+        "Error de conexión",
+        "No se pudo conectar con el servidor"
+      );
     }
   };
 
@@ -293,7 +316,7 @@ export default function CrearJunta() {
           {/* Botones de acción */}
           <div className="flex justify-center gap-4 pt-4">
             <button
-              onClick={() => alert("Cancelado")}
+              onClick={() => AlertMessage.info("Operación cancelada", "No se registró ninguna junta")}
               className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-lg shadow-sm transition-all"
             >
               Cancelar
