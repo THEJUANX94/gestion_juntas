@@ -2,6 +2,7 @@ import { Junta } from "../model/juntaModel.js";
 import { Lugar } from "../model/lugarModel.js";
 import { Institucion } from "../model/institucionModel.js";
 import { TipoJunta } from "../model/tipoJuntaModel.js";
+import { Reconocida } from "../model/reconocidaModel.js";
 
 export const crearJunta = async (req, res) => {
   try {
@@ -16,6 +17,7 @@ export const crearJunta = async (req, res) => {
       tipoJunta,
       idMunicipio,
       idInstitucion,
+      idReconocida,
       zona
     } = req.body;
 
@@ -121,7 +123,8 @@ export const crearJunta = async (req, res) => {
       Zona: zona,
       TipoJunta: tipoJunta,
       IDMunicipio: idMunicipio,
-      IDInstitucion: idInstitucion
+      IDInstitucion: idInstitucion,
+      IDReconocida: "123e4567-e89b-12d3-a456-426614174000"
     });
 
     return res.status(201).json({
@@ -182,7 +185,8 @@ export const obtenerJuntas = async (req, res) => {
       include: [
         { model: Lugar, attributes: ["IDLugar", "NombreLugar"] },
         { model: TipoJunta, attributes: ["IDTipoJuntas", "NombreTipoJunta"] },
-        { model: Institucion, attributes: ["IDInstitucion", "NombreInstitucion"] }
+        { model: Institucion, attributes: ["IDInstitucion", "NombreInstitucion"] },
+        { model: Reconocida, attributes: ["IDReconocida", "Nombre"] }
       ]
     });
 

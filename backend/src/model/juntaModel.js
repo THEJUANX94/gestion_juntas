@@ -73,6 +73,12 @@ export const Junta = sequelize.define("Junta", {
     type: DataTypes.UUID,
     allowNull: false,
     field: "idinstitucion"
+  },
+
+  IDReconocida: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: "idreconocida"
   }
 
 }, {

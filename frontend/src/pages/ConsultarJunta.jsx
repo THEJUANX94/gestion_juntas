@@ -188,6 +188,8 @@ export default function ConsultarJunta() {
                                     <tr>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Razón Social</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Fecha Creación</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold">Expedida por</th>
+                                        <th className="px-6 py-4 text-left text-sm font-semibold">Reconocida por</th>
                                         <th className="px-6 py-4 text-left text-sm font-semibold">Personería N°</th>
                                         <th className="px-6 py-4 text-center text-sm font-semibold">Acción</th>
                                     </tr>
@@ -212,6 +214,8 @@ export default function ConsultarJunta() {
                                                     })}
                                                 </td>
 
+                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.Institucion.NombreInstitucion }</td>
+                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.Reconocida?.Nombre}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-700">{junta.NumPersoneriaJuridica}</td>
                                                 <td className="px-6 py-4 text-center">
                                                     <Link
