@@ -11,15 +11,17 @@ import { TipoJunta } from '../model/tipoJuntaModel.js';
 import { Reconocida } from '../model/reconocidaModel.js';
 import { TipoDocumento } from '../model/tipoDocumentoModel.js';
 import { Comisiones } from '../model/comisionModel.js';
+import { Periodo } from "../model/periodoModel.js";
+import { PeriodoPorMandato } from "../model/periodopormandato.js";
 
 export const Asociaciones = () => {
     // Relaciones para MandatarioJunta (Tabla intermedia)
     MandatarioJunta.belongsTo(Usuario, { foreignKey: 'numeroidentificacion' });
     MandatarioJunta.belongsTo(Junta, { foreignKey: 'idjunta' });
     MandatarioJunta.belongsTo(Cargo, { foreignKey: "idcargo" })
-    MandatarioJunta.belongsTo(Comisiones, {
-        foreignKey: "idcomision",
-    });
+    MandatarioJunta.belongsTo(Comisiones, { foreignKey: "idcomision",});
+    MandatarioJunta.hasMany(PeriodoPorMandato, { foreignKey: "idjunta" }, { foreignKey: "numeroidentificacion" })
+
 
     // Relaciones para Users
     Usuario.belongsTo(Rol, { foreignKey: "idrol", as: "RolInfo" });
@@ -66,6 +68,10 @@ export const Asociaciones = () => {
         sourceKey: "IDReconocida"
     });
 
+    PeriodoPorMandato.belongsTo(Periodo, { foreignKey: "idperiodo" })
+    PeriodoPorMandato.belongsTo(MandatarioJunta, { foreignKey: "idjunta" }, { foreignKey: "numeroidentificacion"})
+
+    Periodo.hasMany(PeriodoPorMandato, { foreignKey: "idperiodo" })
 
     console.log("Asociaciones de Sequelize configuradas exitosamente.");
 };
