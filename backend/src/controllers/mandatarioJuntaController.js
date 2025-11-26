@@ -11,7 +11,7 @@ import { Lugar } from "../model/lugarModel.js";
 
 
 // ======================================================
-// 1️⃣ CREAR MANDATARIO
+//  CREAR MANDATARIO
 // ======================================================
 export const crearMandatario = async (req, res) => {
   try {
@@ -43,7 +43,7 @@ export const crearMandatario = async (req, res) => {
       return res.status(400).json({ message: "La junta no existe" });
     }
 
-    // 1️⃣ Crear o actualizar usuario
+
     let usuario = await Usuario.findByPk(documento);
 
     if (!usuario) {
@@ -59,35 +59,35 @@ export const crearMandatario = async (req, res) => {
         Celular: telefono,
         Correo: email,
         IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
-        IDTipoDocumento: tipoDocumento   // ← agregado correctamente
+        IDTipoDocumento: tipoDocumento  
       });
     } else {
       await usuario.update({
         Residencia: residencia,
         Celular: telefono,
         Correo: email,
-        IDTipoDocumento: tipoDocumento   // ← si cambia
+        IDTipoDocumento: tipoDocumento   
       });
     }
 
-    // 2️⃣ Crear Mandatario
+  
     const mandatario = await MandatarioJunta.create({
       NumeroIdentificacion: documento,
       IDJunta: idJunta,
       IDCargo: cargo || null,
-      IDComision: comision || null,     // ← este era el error
+      IDComision: comision || null,    
       Residencia: residencia,
       Expedido: expedido,
       Profesion: profesion
     });
 
-    // 3️⃣ Crear periodo
+
     const nuevoPeriodo = await Periodo.create({
       FechaInicio: fInicioPeriodo,
       FechaFin: fFinPeriodo
     });
 
-    // 4️⃣ Relación periodo–mandatario–junta
+
     await PeriodoPorMandato.create({
       IDPeriodo: nuevoPeriodo.IDPeriodo,
       NumeroIdentificacion: documento,
@@ -109,13 +109,13 @@ export const crearMandatario = async (req, res) => {
 
 
 // ======================================================
-// 2️⃣ OBTENER MIEMBROS DE LA JUNTA
+//  OBTENER MIEMBROS DE LA JUNTA
 // ======================================================
 export const getMiembrosJunta = async (req, res) => {
   const { id } = req.params;
 
   try {
-    console.log("🔍 Buscando miembros para junta:", id);
+    console.log("Buscando miembros para junta:", id);
 
     const miembros = await MandatarioJunta.findAll({
       where: { IDJunta: id },
@@ -228,7 +228,7 @@ export const getMiembrosJunta = async (req, res) => {
     res.json(resultado);
 
   } catch (error) {
-    console.error("❌ Error cargando miembros:", error);
+    console.error(" Error cargando miembros:", error);
     res.status(500).json({
       message: "Error cargando miembros",
       error: error.message
