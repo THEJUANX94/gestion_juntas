@@ -12,12 +12,12 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const doc = createDoc();
 
   // --- MAPEO DE DATOS CON VALORES POR DEFECTO ---
-  const municipio = (datosCertificado.NombreMunicipio || "ALMEIDA").toUpperCase();
-  const nombreOrganizacion = (datosCertificado.nombreOrganizacion || "ASOCIACION COMUNAL DE JUNTAS").toUpperCase();
-  const personeriaNumero = datosCertificado.personeriaNumero || "____";
-  const personeriaFecha = datosCertificado.personeriaFecha || "____-__-__";
-  const periodoInicio = datosCertificado.periodoInicio || "2022-07-01";
-  const periodoFin = datosCertificado.periodoFin || "2026-06-30";
+  const municipio = (datosCertificado.NombreMunicipio).toUpperCase();
+  const nombreOrganizacion = (datosCertificado.nombreOrganizacion).toUpperCase();
+  const personeriaNumero = datosCertificado.personeriaNumero;
+  const personeriaFecha = datosCertificado.personeriaFecha;
+  const periodoInicio = datosCertificado.periodoInicio;
+  const periodoFin = datosCertificado.periodoFin;
   const tipodocumento = datosCertificado.TipoCertificado
 
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;

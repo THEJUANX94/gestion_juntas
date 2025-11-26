@@ -13,11 +13,12 @@ const generarCertificadoJAC = async (datosCertificado) => {
 
   // --- MAPEO DE DATOS CON VALORES POR DEFECTO ---
   // Extraemos datos basándonos en el contenido de JAC.pdf [cite: 6, 7]
-  const municipio = (datosCertificado.NombreMunicipio || "ALMEIDA").toUpperCase();
-  const nombreOrganizacion = (datosCertificado.nombreOrganizacion || "JUNTA DE ACCIÓN COMUNAL CENTRAL").toUpperCase();
-  const personeriaNumero = datosCertificado.personeriaNumero || "345";
-  const personeriaFecha = datosCertificado.personeriaFecha || "10-06-1964";
-  const entidadExpidePersoneria = datosCertificado.entidadExpide || "Gobernación de Boyacá";
+  const municipio = (datosCertificado.NombreMunicipio).toUpperCase();
+  const nombreOrganizacion = (datosCertificado.nombreOrganizacion).toUpperCase();
+  const personeriaNumero = datosCertificado.personeriaNumero;
+  const personeriaFecha = datosCertificado.personeriaFecha;
+  const entidadExpidePersoneria = datosCertificado.entidadExpide;
+  const tipodocumento = datosCertificado.TipoCertificado
   
   // Datos de fechas y validez [cite: 9, 11]
   const fechaVencimiento = datosCertificado.periodoFin || "2026-06-30";
@@ -55,7 +56,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
 
   // --- CUERPO DE LA CERTIFICACIÓN ---
   // Texto extraído de [cite: 6]
-  const textoCertifica = `Que la ${nombreOrganizacion} del municipio de ${municipio}, Departamento de Boyacá, cuenta con Personería Juridica otorgada mediante resolución No.${personeriaNumero} de fecha ${personeriaFecha}, expedida por ${entidadExpidePersoneria}.`;
+  const textoCertifica = `Que la ${tipodocumento} del municipio de ${municipio}, Departamento de Boyacá, cuenta con Personería Juridica otorgada mediante resolución No.${personeriaNumero} de fecha ${personeriaFecha}, expedida por ${entidadExpidePersoneria}.`;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
