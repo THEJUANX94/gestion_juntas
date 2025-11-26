@@ -9,19 +9,24 @@ import { Credenciales } from '../model/credencialesModel.js';
 import { MandatarioJunta } from '../model/mandatarioJuntaModel.js';
 import { TipoJunta } from '../model/tipoJuntaModel.js';
 import { Reconocida } from '../model/reconocidaModel.js';
+import { TipoDocumento } from '../model/tipoDocumentoModel.js';
+import { Comisiones } from '../model/comisionModel.js';
 
 export const Asociaciones = () => {
     // Relaciones para MandatarioJunta (Tabla intermedia)
     MandatarioJunta.belongsTo(Usuario, { foreignKey: 'numeroidentificacion' });
     MandatarioJunta.belongsTo(Junta, { foreignKey: 'idjunta' });
     MandatarioJunta.belongsTo(Cargo, { foreignKey: "idcargo" })
+    MandatarioJunta.belongsTo(Comisiones, {
+        foreignKey: "idcomision",
+    });
 
     // Relaciones para Users
     Usuario.belongsTo(Rol, { foreignKey: "idrol", as: "RolInfo" });
     Usuario.hasMany(MandatarioJunta, { foreignKey: 'numeroidentificacion' });
     Usuario.hasMany(Firma, { foreignKey: "numeroidentificacion" });
     Usuario.hasOne(Credenciales, { foreignKey: "numeroidentificacion" });
-
+    Usuario.belongsTo(TipoDocumento, { foreignKey: "idtipodocumento"});
     // Relaciones para Municipios-Departamentos
     Lugar.hasMany(Lugar, { foreignKey: 'idotrolugar' });
     Lugar.hasMany(Junta, { foreignKey: "idmunicipio" })

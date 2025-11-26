@@ -200,3 +200,39 @@ export const obtenerJuntas = async (req, res) => {
     });
   }
 };
+
+export const getMiembrosJunta = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const miembros = await MandatarioJunta.findAll({
+      where: { IDJunta: id },
+      include: [
+        {
+          model: Usuario,
+          attributes: [
+            "NumeroIdentificacion",
+            "PrimerNombre",
+            "SegundoNombre",
+            "PrimerApellido",
+            "SegundoApellido",
+            "Sexo",
+            "FechaNacimiento",
+            "Celular",
+            "Correo"
+          ]
+        },
+        {
+          model: Cargo, // Si tienes tabla de cargos
+          attributes: ["NombreCargo"]
+        }
+      ]
+    });
+
+    res.json(miembros);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
