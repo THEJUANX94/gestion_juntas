@@ -4,7 +4,7 @@ import { crearCargo, eliminarCargo, obtenerCargos, obtenerCargoPorId } from '../
 
 const router = Router();
 
-router.get("/", verificarAuth, obtenerCargos);
+router.get("/", obtenerCargos);
 router.get("/:idcargo", verificarAuth, obtenerCargoPorId);
 router.delete("/idcargo", verificarAuth, eliminarCargo);
 router.post("/crearcargo", verificarAuth, crearCargo);

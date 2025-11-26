@@ -20,6 +20,9 @@ import institucionesRoutes from "./src/routes/institucionesRoutes.js"
 import lugaresRoutes from "./src/routes/lugaresRoutes.js"
 import tipoJuntaRoutes from "./src/routes/tipoJuntaRoutes.js"
 import juntaRoutes from "./src/routes/juntasRoutes.js"
+import tipoDocumentoRoutes from "./src/routes/tipoDocumentoRoutes.js";
+import comisionesRoutes from "./src/routes/comisionesRoutes.js";
+import mandatarioJuntaRoutes from "./src/routes/mandatarioJuntaRoutes.js";
 
 import { logger } from './src/utils/logger.js';
 import { Asociaciones } from "./src/config/asociacionesBD.js";
@@ -193,6 +196,10 @@ app.use("/api/instituciones", institucionesRoutes);
 app.use("/api/lugares", lugaresRoutes);
 app.use("/api/tipojunta", tipoJuntaRoutes);
 app.use("/api/juntas", juntaRoutes);
+app.use("/api/tipodocumento", tipoDocumentoRoutes);
+app.use("/api/comisiones", comisionesRoutes);
+app.use("/api/mandatario", mandatarioJuntaRoutes);
+
 
 const frontendPath = path.join(__dirname, '../frontend/dist');
 

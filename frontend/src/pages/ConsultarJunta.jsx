@@ -218,8 +218,7 @@ export default function ConsultarJunta() {
                                                 <td className="px-6 py-4 text-sm text-gray-700">{junta.Reconocida?.Nombre}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-700">{junta.NumPersoneriaJuridica}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <Link
-                                                        to={`/juntas/detalle-junta/${index}`}
+                                                    <Link to={`/juntas/detalle-junta/${junta.IDJunta}`}
                                                         className="inline-flex items-center gap-1 text-[#009E76] hover:text-[#007d5e] font-medium text-sm transition-colors"
                                                     >
                                                         Ver detalles

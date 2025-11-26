@@ -1,66 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail, MapPin, Search, Filter, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 
 export default function DetalleJunta() {
 
   const navigate = useNavigate();
 
+  const [miembros, setMiembros] = useState([]);
 
-  const [miembros] = useState([
-    {
-      cargo: "Presidente",
-      comision: "Otra",
-      periodo: "2022-2026",
-      tipoDoc: "C.C",
-      documento: "4047012",
-      expedido: "ALMEIDA",
-      nombre: "GILBERTO",
-      apellido: "SEGURA PARRA",
-      genero: "M",
-      edad: 60,
-      nacimiento: "1962-05-30",
-      residencia: "CENTRO",
-      telefono: "3227126139",
-      profesion: "AGRICULTOR",
-      email: "seguraniogil@yahoo.es",
-    },
-    {
-      cargo: "Vicepresidente",
-      comision: "Otra",
-      periodo: "2022-2026",
-      tipoDoc: "C.C",
-      documento: "1049610490",
-      expedido: "TUNJA",
-      nombre: "NURY STELLA",
-      apellido: "DAZA CASTAÑEDA",
-      genero: "F",
-      edad: 35,
-      nacimiento: "1987-04-04",
-      residencia: "BARRIO SAUCES",
-      telefono: "3212537301",
-      profesion: "AUXILIAR ADMINISTRATIVA",
-      email: "nuesdaca1523@gmail.com",
-    },
-    {
-      cargo: "Secretario",
-      comision: "Administrativa",
-      periodo: "2022-2026",
-      tipoDoc: "C.C",
-      documento: "1098765432",
-      expedido: "SOGAMOSO",
-      nombre: "CARLOS ANDRÉS",
-      apellido: "MARTÍNEZ LÓPEZ",
-      genero: "M",
-      edad: 42,
-      nacimiento: "1981-08-15",
-      residencia: "BARRIO NORTE",
-      telefono: "3145678901",
-      profesion: "CONTADOR",
-      email: "carlos.martinez@email.com",
-    },
-  ]);
+  const { id } = useParams();
+
+  useEffect(() => {
+  const cargarMiembros = async () => {
+    try {
+      const res = await fetch(`http://localhost:3000/juntas/${id}/miembros`);
+      const data = await res.json();
+
+      const transformados = data.map(m => ({
+        cargo: m.Cargo?.NombreCargo || "",
+        comision: m.Comision || "Otra",
+        periodo: `${m.FechaInicioPeriodo?.substring(0,4)}-${m.FechaFinPeriodo?.substring(0,4)}`,
+        tipoDoc: "C.C",
+        documento: m.Usuario?.NumeroIdentificacion || "",
+        expedido: m.Expedido || "",
+        nombre: m.Usuario?.PrimerNombre || "",
+        apellido: `${m.Usuario?.PrimerApellido || ""} ${m.Usuario?.SegundoApellido || ""}`,
+        genero: m.Usuario?.Sexo || "",
+        edad: calcularEdad(m.Usuario?.FechaNacimiento),
+        nacimiento: m.Usuario?.FechaNacimiento || "",
+        residencia: m.Residencia || "",
+        telefono: m.Usuario?.Celular || "",
+        profesion: m.Usuario?.Profesion || "",
+        email: m.Usuario?.Correo || "",
+      }));
+
+      setMiembros(transformados);
+    } catch (error) {
+      console.error("Error cargando miembros:", error);
+    }
+  };
+
+  cargarMiembros();
+}, [id]);
+
+  function calcularEdad(fecha) {
+  if (!fecha) return "";
+  const hoy = new Date();
+  const nacimiento = new Date(fecha);
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const m = hoy.getMonth() - nacimiento.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
+  return edad;
+}
+
+
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filtros, setFiltros] = useState({
@@ -149,7 +144,7 @@ export default function DetalleJunta() {
                 <p className="text-gray-500 mt-1">Gestión de mandatarios y miembros</p>
               </div>
               <button
-                onClick={() => navigate("/juntas/mandatario/crear")}
+                onClick={() => navigate(`/juntas/${id}/mandatario/buscar`)}
                 className="flex items-center gap-2 bg-[#64AF59] hover:bg-[#52934a] text-white px-5 py-3 rounded-lg font-medium shadow-md transition-all"
               >
                 <UserPlus size={20} />

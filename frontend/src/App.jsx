@@ -24,6 +24,7 @@ import CrearCargo from "./pages/CrearCargo";
 import CrearInstitucion from "./pages/CrearInstitucion";
 import ListarInstituciones from "./pages/ListarInstituciones";
 import CrearMandatario from "./pages/CrearMandatario";
+import BuscarMandatario from "./pages/BuscarMandatario";
 
 
 
@@ -42,7 +43,8 @@ export default function App() {
             <Route element={<MainLayout />}>
               <Route path="/juntas/crear" element={<CrearJunta />} />
               <Route path="/juntas/consultar" element={<ConsultarJunta />} />
-              <Route path="/juntas/mandatario/crear" element={<CrearMandatario />} />
+              <Route path="/juntas/:id/mandatario/crear" element={<CrearMandatario />} />
+              <Route path="/juntas/:id/mandatario/buscar" element={<BuscarMandatario />} />
               <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
               <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
               <Route path="cargos/listar" element={<ListarCargos/>}/>

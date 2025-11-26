@@ -33,17 +33,17 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
     }
   },
 
-  FechaInicioPeriodo: {
+ FechaInicioPeriodo: {
     type: DataTypes.DATE,
     allowNull: false,
     field: "fechainicioperiodo",
   },
 
-  FechaFinPeriodo: {
+   /*FechaFinPeriodo: {
     type: DataTypes.DATE,
     allowNull: false,
     field: "fechafinperiodo",
-  },
+  },*/
 
   Residencia: {
     type: DataTypes.STRING,
@@ -58,6 +58,6 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
   }
 
 }, {
-  tableName: "mandatariosjunta",
+  tableName: "mandatarioJuntas",
   timestamps: false,
 });
