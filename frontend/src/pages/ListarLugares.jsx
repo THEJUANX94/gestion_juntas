@@ -79,6 +79,13 @@ export default function ListarLugares() {
     );
     if (!confirmed) return;
 
+    // Actualización optimista en el estado
+    setLugares((prev) =>
+      prev.map((l) =>
+        l.IDLugar === item.IDLugar ? { ...l, activo: nuevoEstado } : l
+      )
+    );
+
     try {
       const res = await fetch(
         import.meta.env.VITE_PATH + `/lugares/${item.IDLugar}/estado`,
@@ -94,13 +101,15 @@ export default function ListarLugares() {
 
       if (!res.ok) throw new Error("Error al cambiar estado del lugar");
 
-      const actualizado = await res.json();
-
-      setLugares((prev) =>
-        prev.map((l) =>
-          l.IDLugar === item.IDLugar ? { ...l, activo: actualizado.ActivoLugar } : l
-        )
-      );
+      // Si quieres usar la respuesta del backend:
+      // const actualizado = await res.json();
+      // setLugares((prev) =>
+      //   prev.map((l) =>
+      //     l.IDLugar === item.IDLugar
+      //       ? { ...l, activo: actualizado.Activo }
+      //       : l
+      //   )
+      // );
 
       AlertMessage.success(
         "Estado actualizado",
@@ -108,12 +117,20 @@ export default function ListarLugares() {
       );
     } catch (error) {
       console.error(error);
+
+      // Si falla, revertimos el cambio visual
+      setLugares((prev) =>
+        prev.map((l) =>
+          l.IDLugar === item.IDLugar ? { ...l, activo: !nuevoEstado } : l
+        )
+      );
       AlertMessage.error(
         "Error",
         "No se pudo cambiar el estado del lugar."
       );
     }
   };
+
 
   const handleDelete = async (item) => {
     const confirmed = await AlertMessage.confirm(
@@ -278,13 +295,6 @@ export default function ListarLugares() {
                         ) : (
                           <ToggleLeft className="h-5 w-5 text-gray-400" />
                         )}
-                      </button>
-                      <button
-                        className="p-2 rounded hover:bg-gray-100"
-                        onClick={() => handleDelete(lugar)}
-                        title="Eliminar lugar"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
                       </button>
                     </div>
                   </td>
