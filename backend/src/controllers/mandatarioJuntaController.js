@@ -6,6 +6,8 @@ import { Junta } from "../model/juntaModel.js";
 import { Periodo } from "../model/periodoModel.js";
 import { PeriodoPorMandato } from "../model/periodopormandato.js";
 import { TipoDocumento } from "../model/tipoDocumentoModel.js";
+import { Lugar } from "../model/lugarModel.js";
+
 
 
 // ======================================================
@@ -133,8 +135,8 @@ export const getMiembrosJunta = async (req, res) => {
           ],
           include: [
             {
-              model: TipoDocumento,               // ← agregado
-              attributes: ["NombreTipo"]              // (CC, TI, etc)
+              model: TipoDocumento,
+              attributes: ["NombreTipo"]
             }
           ]
         },
@@ -144,7 +146,18 @@ export const getMiembrosJunta = async (req, res) => {
         },
         {
           model: Comisiones,
+          as: "Comision",        
           attributes: ["Nombre"]
+        },
+        {
+          model: Lugar,
+          as: "LugarExpedido",   
+          attributes: ["NombreLugar"]
+        },
+        {
+          model: Lugar,
+          as: "LugarResidencia", 
+          attributes: ["NombreLugar"]
         },
         {
           model: PeriodoPorMandato,
@@ -158,9 +171,10 @@ export const getMiembrosJunta = async (req, res) => {
           ]
         }
       ]
+
     });
 
-    console.log("✅ Miembros encontrados:", miembros.length);
+    console.log(" Miembros encontrados:", miembros.length);
 
 
     // ======================================================
@@ -171,33 +185,34 @@ export const getMiembrosJunta = async (req, res) => {
 
       if (!u) return null;
 
-      // Calcular edad
-      const nacimiento = new Date(u.FechaNacimiento);
-      const hoy = new Date();
-      let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    
+      const f = new Date(u.FechaNacimiento);
+      const nacimientoFormateado =
+        `${String(f.getDate()).padStart(2, "0")}/${String(f.getMonth() + 1).padStart(2, "0")}/${f.getFullYear()}`;
 
-      if (
-        hoy.getMonth() < nacimiento.getMonth() ||
-        (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate())
-      ) {
-        edad--;
-      }
+  
+      const hoy = new Date();
+      let edad = hoy.getFullYear() - f.getFullYear();
+      if (hoy < new Date(hoy.getFullYear(), f.getMonth(), f.getDate())) edad--;
 
       const periodos = m.PeriodoPorMandatos || [];
       const periodo = periodos.length ? periodos[0].Periodo : null;
 
       return {
         cargo: m.Cargo?.NombreCargo || "",
-        comision: m.Comisiones?.Nombre || "",
+        comision: m.Comision?.Nombre || "", 
 
         nombreCompleto: `${u.PrimerNombre} ${u.SegundoNombre ?? ""} ${u.PrimerApellido} ${u.SegundoApellido ?? ""}`.trim(),
 
         documento: u.NumeroIdentificacion,
-        tipoDocumento: u.TipoDocumento?.Nombre || "",  // ← AHORA CORRECTO
-        expedido: m.Expedido || "",
+        tipoDocumento: u.TipoDocumento?.NombreTipo || "",
+
+        expedido: m.LugarExpedido?.NombreLugar || "",   
+        residencia: m.LugarResidencia?.NombreLugar || "",
+
         genero: u.Sexo,
         edad,
-        nacimiento: u.FechaNacimiento,
+        nacimiento: nacimientoFormateado,
 
         profesion: m.Profesion || "",
 
@@ -205,7 +220,6 @@ export const getMiembrosJunta = async (req, res) => {
           ? `${new Date(periodo.FechaInicio).getFullYear()}-${new Date(periodo.FechaFin).getFullYear()}`
           : "",
 
-        residencia: m.Residencia || "",
         telefono: u.Celular,
         email: u.Correo
       };

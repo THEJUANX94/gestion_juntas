@@ -30,10 +30,24 @@ export const Asociaciones = () => {
     MandatarioJunta.belongsTo(Usuario, { foreignKey: 'numeroidentificacion' });
     MandatarioJunta.belongsTo(Junta, { foreignKey: 'idjunta' });
     MandatarioJunta.belongsTo(Cargo, { foreignKey: "idcargo" });
-    MandatarioJunta.belongsTo(Comisiones, { foreignKey: "idcomision" });
+    MandatarioJunta.belongsTo(Comisiones, {
+        foreignKey: "idcomision",
+        as: "Comision"
+    });
 
-    // ✅ Relación simplificada con PeriodoPorMandato
-    // La clave compuesta es (numeroidentificacion + idjunta)
+    MandatarioJunta.belongsTo(Lugar, {
+        as: "LugarExpedido",
+        foreignKey: "expedido",
+        targetKey: "IDLugar"
+    });
+
+    MandatarioJunta.belongsTo(Lugar, {
+        as: "LugarResidencia",
+        foreignKey: "residencia",
+        targetKey: "IDLugar"
+    });
+
+
     MandatarioJunta.hasMany(PeriodoPorMandato, {
         foreignKey: "numeroidentificacion",
         sourceKey: "numeroidentificacion"
@@ -59,7 +73,7 @@ export const Asociaciones = () => {
     PeriodoPorMandato.belongsTo(Periodo, { foreignKey: "IDPeriodo" });
 
 
-   
+
     PeriodoPorMandato.belongsTo(MandatarioJunta, {
         foreignKey: "numeroidentificacion",
         targetKey: "numeroidentificacion"
@@ -73,7 +87,11 @@ export const Asociaciones = () => {
     // ========================================
     // RELACIONES PARA COMISIONES
     // ========================================
-    Comisiones.hasMany(MandatarioJunta, { foreignKey: "idcomision" });
+    Comisiones.hasMany(MandatarioJunta, {
+        foreignKey: "idcomision",
+        as: "Mandatarios"
+    });
+
 
     // ========================================
     // RELACIONES PARA LUGAR (MUNICIPIOS/DEPARTAMENTOS)
