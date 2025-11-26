@@ -18,6 +18,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const personeriaFecha = datosCertificado.personeriaFecha || "____-__-__";
   const periodoInicio = datosCertificado.periodoInicio || "2022-07-01";
   const periodoFin = datosCertificado.periodoFin || "2026-06-30";
+  const tipodocumento = datosCertificado.TipoCertificado
 
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
   const anchoUtil = 210 - margenIzq - margenDer; // ~160mm
@@ -28,7 +29,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const resources = await addPDFHeader(doc, datosCertificado);
 
   // --- TÍTULO PRINCIPAL ---
-  const titulo = `POR MEDIO DE LA CUAL SE REALIZA LA INSCRIPCIÓN Y RECONOCIMIENTO DE DIGNATARIOS ELEGIDOS POR LA ${nombreOrganizacion}`;
+  const titulo = `POR MEDIO DE LA CUAL SE REALIZA LA INSCRIPCIÓN Y RECONOCIMIENTO DE DIGNATARIOS ELEGIDOS POR LA ${tipodocumento}`;
   const linesTitulo = doc.splitTextToSize(titulo, 140);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -36,7 +37,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   yPos += (linesTitulo.length * 5) + 5;
 
   // --- IDENTIFICACIÓN DE LA ORGANIZACIÓN ---
-  centerText(doc, `${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}`, yPos, 10, 'bold');
+  centerText(doc, `${tipodocumento} DEL MUNICIPIO DE ${municipio}`, yPos, 10, 'bold');
   yPos += 6;
 
   centerText(doc, `CON PERSONERIA N° ${personeriaNumero} DE FECHA ${personeriaFecha}`, yPos, 10, 'bold');
@@ -71,8 +72,8 @@ const generarAutoresolutorio = async (datosCertificado) => {
     "Que la ordenanza No 049 de 2019, establece que la Secretaría de Gobierno y Acción Comunal está compuesta entre otras por la Dirección de Participación y Acción Comunal, la cual tiene entre otras funciones ejercer las funciones de Inspección, Control y Vigilancia de los organismos de acción comunal de primero y segundo grado que existan en el Departamento de Boyacá.",
     "Que la Resolución 1513 del 22 de septiembre de 2021, 'Por la cual se dictan disposiciones para el normal desarrollo de la elección de Dignatarios y Directivos de los Órganos de Acción Comunal' estableció en su artículo 6 el cronograma electoral.",
     "Que la Ley 743 de 2002 en su artículo 30, establece en relación al periodo de los directivos y los dignatarios, lo siguiente: 'El período de los directivos y dignatarios de los organismos de acción comunal es el mismo de las corporaciones públicas nacional y territoriales, según el caso.'",
-    `Que La ${nombreOrganizacion} del Municipio de ${municipio}, realizó el proceso de elección de dignatarios de conformidad a las modalidades de elección establecidas en la ley.`,
-    `Que en razón a que la elección de dignatarios de la ${nombreOrganizacion} del Municipio de ${municipio}, se llevó a cabo conforme a la normativa vigente, es oportuno aplicar la referida normativa para el estudio de los requisitos establecidos para la elección y posterior inscripción de dignatarios.`,
+    `Que La ${tipodocumento} del Municipio de ${municipio}, realizó el proceso de elección de dignatarios de conformidad a las modalidades de elección establecidas en la ley.`,
+    `Que en razón a que la elección de dignatarios de la ${tipodocumento} del Municipio de ${municipio}, se llevó a cabo conforme a la normativa vigente, es oportuno aplicar la referida normativa para el estudio de los requisitos establecidos para la elección y posterior inscripción de dignatarios.`,
     "Que de conformidad con lo previsto en el artículo 18 del Decreto 890 de 2008 compilado en el artículo 2.3.2.2.18 del Decreto Único 1066 de 2015 se debe acreditar los requisitos de Acta de Asamblea, Listado de asistentes y Planchas o Listas presentadas.",
     `Con el objeto de verificar el cumplimiento de los requisitos mínimos de validez de la elección de dignatarios, la Dirección de Participación y Acción Comunal procedió con el análisis jurídico de la documentación aportada por la ${nombreOrganizacion} del Municipio de ${municipio}, encontrando que se ajusta de manera íntegra con los requisitos legales.`
   ];
@@ -118,7 +119,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const art1Label = "ARTÍCULO PRIMERO:";
   doc.text(art1Label, margenIzq, yPos);
 
-  const textoArt1 = `Inscribir a la ${nombreOrganizacion} del municipio de ${municipio}, Departamento de Boyacá, para el periodo comprendido.`;
+  const textoArt1 = `Inscribir a la ${tipodocumento} del municipio de ${municipio}, Departamento de Boyacá, para el periodo comprendido.`;
   doc.setFont('helvetica', 'normal');
   const splitArt1 = doc.splitTextToSize(textoArt1, anchoUtil - 5);
   doc.text(splitArt1, margenIzq + 5, yPos);
@@ -127,7 +128,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   // Tabla de dignatarios
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  centerText(doc, nombreOrganizacion, yPos, 9, 'bold');
+  centerText(doc, tipodocumento, yPos, 9, 'bold');
   yPos += 6;
 
   doc.setFontSize(9);
@@ -159,7 +160,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   doc.setFont('helvetica', 'bold');
   doc.text(art2Label, margenIzq, yPos);
 
-  const textoArt2 = `El periodo de los dignatarios elegidos por la ${nombreOrganizacion} del Municipio de ${municipio}, inicia el ${periodoInicio} y finaliza el ${periodoFin}.`;
+  const textoArt2 = `El periodo de los dignatarios elegidos por la ${tipodocumento} del Municipio de ${municipio}, inicia el ${periodoInicio} y finaliza el ${periodoFin}.`;
   doc.setFont('helvetica', 'normal');
   const splitArt2 = doc.splitTextToSize(textoArt2, anchoUtil - 5);
   doc.text(splitArt2, margenIzq + 5, yPos);
@@ -173,7 +174,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   doc.setFont('helvetica', 'bold');
   doc.text(art3Label, margenIzq, yPos);
 
-  const textoArt3 = `Comunicar el presente acto administrativo al representante legal de la ${nombreOrganizacion} del Municipio de ${municipio}, conforme a lo establecido en ley 1437 de 2011 artículo 70.`;
+  const textoArt3 = `Comunicar el presente acto administrativo al representante legal de la ${tipodocumento} del Municipio de ${municipio}, conforme a lo establecido en ley 1437 de 2011 artículo 70.`;
   doc.setFont('helvetica', 'normal');
   const splitArt3 = doc.splitTextToSize(textoArt3, anchoUtil - 5);
   doc.text(splitArt3, margenIzq + 5, yPos);
