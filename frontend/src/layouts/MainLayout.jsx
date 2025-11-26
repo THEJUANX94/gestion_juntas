@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Settings,
   HelpCircle,
-  Bell,
+  Landmark,
   User,
   Users,
   List,
@@ -10,7 +10,8 @@ import {
   LogOut,
   Building2,
   Handshake,
-  ScanEye
+  ScanEye,
+  MapPin
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -217,6 +218,17 @@ export default function MainLayout() {
                     {!collapsed && "Listar Instituciones"}
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/comisiones/listar"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/comisiones/listar"
+                    )}`}
+                  >
+                    <Landmark className="h-5 w-5" />
+                    {!collapsed && "Listar Comisiones"}
+                  </Link>
+                </li>
                  <li>
                   <Link
                     to="/lugares/listar"
@@ -224,7 +236,7 @@ export default function MainLayout() {
                       "/lugares/listar"
                     )}`}
                   >
-                    <Building2 className="h-5 w-5" />
+                    <MapPin className="h-5 w-5" />
                     {!collapsed && "Listar Lugares"}
                   </Link>
                 </li>
