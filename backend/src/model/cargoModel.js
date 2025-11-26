@@ -7,6 +7,7 @@ export const Cargo = sequelize.define("Cargo", {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
     field: "idcargo",
+    allowNull: true,
   },
 
   NombreCargo: {

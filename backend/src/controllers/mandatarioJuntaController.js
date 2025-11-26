@@ -3,107 +3,118 @@ import { MandatarioJunta } from "../model/mandatarioJuntaModel.js";
 import { Cargo } from "../model/cargoModel.js";
 import { Comisiones } from "../model/comisionModel.js";
 import { Junta } from "../model/juntaModel.js";
+import { Periodo } from "../model/periodoModel.js";
+import { PeriodoPorMandato } from "../model/periodopormandato.js";
+import { TipoDocumento } from "../model/tipoDocumentoModel.js";
 
 
+// ======================================================
+// 1️⃣ CREAR MANDATARIO
+// ======================================================
 export const crearMandatario = async (req, res) => {
   try {
-    const { id } = req.params;        // <-- ID de la junta enviado en la URL
+    const { id } = req.params;
     const idJunta = id;
 
     const {
       documento,
       tipoDocumento,
       expedido,
-      nombre,
-      apellido,
+      primernombre,
+      segundonombre,
+      primerapellido,
+      segundoapellido,
       genero,
       fNacimiento,
       residencia,
       telefono,
       profesion,
       email,
-      fAfiliacion,
-      periodo,
+      fInicioPeriodo,
+      fFinPeriodo,
       cargo,
       comision
     } = req.body;
 
-    // 1. Validar existencia de la Junta
     const existeJunta = await Junta.findByPk(idJunta);
     if (!existeJunta) {
       return res.status(400).json({ message: "La junta no existe" });
     }
 
-    // 2. Buscar o crear usuario
+    // 1️⃣ Crear o actualizar usuario
     let usuario = await Usuario.findByPk(documento);
 
     if (!usuario) {
       usuario = await Usuario.create({
         NumeroIdentificacion: documento,
-        TipoDocumento: tipoDocumento,
-        Expedido: expedido,
-        PrimerNombre: nombre,
-        PrimerApellido: apellido,
+        PrimerNombre: primernombre,
+        SegundoNombre: segundonombre,
+        PrimerApellido: primerapellido,
+        SegundoApellido: segundoapellido,
         Sexo: genero,
         FechaNacimiento: fNacimiento,
         Residencia: residencia,
         Celular: telefono,
-        Profesion: profesion,
         Correo: email,
-        IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16"
+        IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
+        IDTipoDocumento: tipoDocumento   // ← agregado correctamente
       });
     } else {
       await usuario.update({
-        Expedido: expedido,
         Residencia: residencia,
         Celular: telefono,
-        Profesion: profesion,
-        Correo: email
+        Correo: email,
+        IDTipoDocumento: tipoDocumento   // ← si cambia
       });
     }
 
-    // 3. Validar cargo único
-    if (cargo) {
-      const existeCargo = await MandatarioJunta.findOne({
-        where: {
-          IDJunta: idJunta,
-          IDCargo: cargo
-        }
-      });
-
-      if (existeCargo) {
-        return res.status(400).json({ message: "El cargo ya está asignado en esta junta" });
-      }
-    }
-
-    // 4. Crear Mandatario
-    const nuevoMandatario = await MandatarioJunta.create({
+    // 2️⃣ Crear Mandatario
+    const mandatario = await MandatarioJunta.create({
       NumeroIdentificacion: documento,
       IDJunta: idJunta,
       IDCargo: cargo || null,
-      IDComision: comision || null,
-      FechaInicioPeriodo: fAfiliacion,
-      Periodo: periodo
+      IDComision: comision || null,     // ← este era el error
+      Residencia: residencia,
+      Expedido: expedido,
+      Profesion: profesion
+    });
+
+    // 3️⃣ Crear periodo
+    const nuevoPeriodo = await Periodo.create({
+      FechaInicio: fInicioPeriodo,
+      FechaFin: fFinPeriodo
+    });
+
+    // 4️⃣ Relación periodo–mandatario–junta
+    await PeriodoPorMandato.create({
+      IDPeriodo: nuevoPeriodo.IDPeriodo,
+      NumeroIdentificacion: documento,
+      IDJunta: idJunta
     });
 
     res.json({
       message: "Mandatario creado correctamente",
-      data: nuevoMandatario
+      mandatario,
+      periodo: nuevoPeriodo
     });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al crear el mandatario" });
+    res.status(500).json({ message: "Error al crear el mandatario", error: error.message });
   }
 };
 
 
 
-
+// ======================================================
+// 2️⃣ OBTENER MIEMBROS DE LA JUNTA
+// ======================================================
 export const getMiembrosJunta = async (req, res) => {
   const { id } = req.params;
 
   try {
+    console.log("🔍 Buscando miembros para junta:", id);
+
     const miembros = await MandatarioJunta.findAll({
       where: { IDJunta: id },
       include: [
@@ -118,11 +129,13 @@ export const getMiembrosJunta = async (req, res) => {
             "Sexo",
             "FechaNacimiento",
             "Celular",
-            "Correo",
-            "Residencia",
-            "Profesion",
-            "TipoDocumento",
-            "Expedido"
+            "Correo"
+          ],
+          include: [
+            {
+              model: TipoDocumento,               // ← agregado
+              attributes: ["NombreTipo"]              // (CC, TI, etc)
+            }
           ]
         },
         {
@@ -130,50 +143,81 @@ export const getMiembrosJunta = async (req, res) => {
           attributes: ["NombreCargo"]
         },
         {
-          model: Comision,
+          model: Comisiones,
           attributes: ["Nombre"]
+        },
+        {
+          model: PeriodoPorMandato,
+          required: false,
+          where: { IDJunta: id },
+          include: [
+            {
+              model: Periodo,
+              attributes: ["FechaInicio", "FechaFin"]
+            }
+          ]
         }
       ]
     });
 
-    // ---- FORMATEAR RESPUESTA ----
+    console.log("✅ Miembros encontrados:", miembros.length);
+
+
+    // ======================================================
+    // FORMATEAR RESPUESTA
+    // ======================================================
     const resultado = miembros.map(m => {
       const u = m.Usuario;
+
+      if (!u) return null;
 
       // Calcular edad
       const nacimiento = new Date(u.FechaNacimiento);
       const hoy = new Date();
-      const edad = hoy.getFullYear() - nacimiento.getFullYear();
+      let edad = hoy.getFullYear() - nacimiento.getFullYear();
+
+      if (
+        hoy.getMonth() < nacimiento.getMonth() ||
+        (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() < nacimiento.getDate())
+      ) {
+        edad--;
+      }
+
+      const periodos = m.PeriodoPorMandatos || [];
+      const periodo = periodos.length ? periodos[0].Periodo : null;
 
       return {
-        // Parte del encabezado
         cargo: m.Cargo?.NombreCargo || "",
+        comision: m.Comisiones?.Nombre || "",
+
         nombreCompleto: `${u.PrimerNombre} ${u.SegundoNombre ?? ""} ${u.PrimerApellido} ${u.SegundoApellido ?? ""}`.trim(),
-        profesion: u.Profesion || "",
-        
-        // Información personal
+
         documento: u.NumeroIdentificacion,
-        tipoDocumento: u.TipoDocumento,
-        expedido: u.Expedido,
+        tipoDocumento: u.TipoDocumento?.Nombre || "",  // ← AHORA CORRECTO
+        expedido: m.Expedido || "",
         genero: u.Sexo,
         edad,
         nacimiento: u.FechaNacimiento,
 
-        // Cargo y comisión
-        comision: m.Comision?.Nombre || "",
-        periodo: `${m.FechaInicioPeriodo.getFullYear()}-${m.FechaFinPeriodo.getFullYear()}`,
+        profesion: m.Profesion || "",
 
-        // Contacto
-        residencia: u.Residencia,
+        periodo: periodo
+          ? `${new Date(periodo.FechaInicio).getFullYear()}-${new Date(periodo.FechaFin).getFullYear()}`
+          : "",
+
+        residencia: m.Residencia || "",
         telefono: u.Celular,
         email: u.Correo
       };
-    });
+    }).filter(Boolean);
 
     res.json(resultado);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error cargando miembros" });
+    console.error("❌ Error cargando miembros:", error);
+    res.status(500).json({
+      message: "Error cargando miembros",
+      error: error.message
+    });
   }
 };

@@ -18,8 +18,9 @@ export default function DetalleJunta() {
   useEffect(() => {
   const cargarMiembros = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/juntas/${id}/miembros`);
+      const res = await fetch(`http://localhost:3000/api/mandatario/${id}/miembros`);
       const data = await res.json();
+      console.log("Miembros cargados:", data);
 
       const transformados = data.map(m => ({
         cargo: m.Cargo?.NombreCargo || "",

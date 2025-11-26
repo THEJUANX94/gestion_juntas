@@ -5,22 +5,22 @@ import { useParams } from "react-router-dom";
 export default function AgregarMandatario() {
 
   const { id } = useParams();
-
   const [modo, setModo] = useState("cargo");
-
 
   const [tiposDocumento, setTiposDocumento] = useState([]);
   const [cargos, setCargos] = useState([]);
   const [comisiones, setComisiones] = useState([]);
-
+  const [lugares, setLugares] = useState([]);
 
   const [formData, setFormData] = useState({
     // Datos Personales
     documento: "",
     tipoDocumento: "C.C",
     expedido: "",
-    nombre: "",
-    apellido: "",
+    primernombre: "",
+    segundonombre: "",
+    primerapellido: "",
+    segundoapellido: "",
     genero: "",
     fNacimiento: "",
     residencia: "",
@@ -29,8 +29,8 @@ export default function AgregarMandatario() {
     email: "",
 
     // Datos Junta
-    fAfiliacion: "",
-    periodo: "2022-2026",
+    fInicioPeriodo: "",
+    fFinPeriodo: "",
     cargo: "",
     comision: ""
   });
@@ -40,10 +40,12 @@ export default function AgregarMandatario() {
       const resTipoDoc = await fetch("http://localhost:3000/api/tipodocumento");
       const resCargos = await fetch("http://localhost:3000/api/cargos");
       const resComisiones = await fetch("http://localhost:3000/api/comisiones");
+      const resLugares = await fetch("http://localhost:3000/api/lugares");
 
       setTiposDocumento(await resTipoDoc.json());
       setCargos(await resCargos.json());
       setComisiones(await resComisiones.json());
+      setLugares(await resLugares.json());
     };
 
     cargarDatos();
@@ -62,7 +64,6 @@ export default function AgregarMandatario() {
         body: JSON.stringify(formData)
       });
 
-
       const data = await res.json();
 
       if (!res.ok) {
@@ -78,7 +79,6 @@ export default function AgregarMandatario() {
       alert("Error de conexión al servidor");
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -98,16 +98,9 @@ export default function AgregarMandatario() {
 
             {/* DATOS PERSONALES */}
             <div>
-              <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-[#64AF59]">
-                Datos Personales
-              </h3>
-
+              <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-[#64AF59]">Datos Personales</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-
-                {/* Documento */}
                 <Input label="Documento" name="documento" value={formData.documento} onChange={handleChange} />
-
-                {/* Tipo Documento */}
                 <Select
                   label="Tipo Documento"
                   name="tipoDocumento"
@@ -115,17 +108,18 @@ export default function AgregarMandatario() {
                   onChange={handleChange}
                   options={tiposDocumento.map(t => ({ value: t.IDTipoDocumento, label: t.NombreTipo }))}
                 />
+                <Select
+                  label="Expedido en"
+                  name="expedido"
+                  value={formData.expedido}
+                  onChange={handleChange}
+                  options={lugares.map(t => ({ value: t.IDLugar, label: t.NombreLugar }))}
+                />
 
-                {/* Expedido */}
-                <Input label="Expedido" name="expedido" value={formData.expedido} onChange={handleChange} />
-
-                {/* Nombre */}
-                <Input label="Nombre" name="nombre" value={formData.nombre} onChange={handleChange} />
-
-                {/* Apellido */}
-                <Input label="Apellido" name="apellido" value={formData.apellido} onChange={handleChange} />
-
-                {/* Género */}
+                <Input label="Primer nombre" name="primernombre" value={formData.primernombre} onChange={handleChange} />
+                <Input label="Segundo nombre" name="segundonombre" value={formData.segundonombre} onChange={handleChange} />
+                <Input label="Primer apellido" name="primerapellido" value={formData.primerapellido} onChange={handleChange} />
+                <Input label="Segundo apellido" name="segundoapellido" value={formData.segundoapellido} onChange={handleChange} />
                 <Select
                   label="Género"
                   name="genero"
@@ -133,44 +127,33 @@ export default function AgregarMandatario() {
                   onChange={handleChange}
                   options={["Masculino", "Femenino", "Otro"]}
                 />
-
-                {/* Fecha nacimiento */}
-                <Input type="date" label="F Nacimiento" name="fNacimiento"
-                  value={formData.fNacimiento} onChange={handleChange}
+                <Input type="date" label="F Nacimiento" name="fNacimiento" value={formData.fNacimiento} onChange={handleChange} />
+                <Select
+                  label="Residencia"
+                  name="residencia"
+                  value={formData.residencia}
+                  onChange={handleChange}
+                  options={lugares.map(t => ({ value: t.IDLugar, label: t.NombreLugar }))}
                 />
-
-                {/* Residencia */}
-                <Input label="Residencia" name="residencia" value={formData.residencia} onChange={handleChange} />
-
-                {/* Teléfono */}
                 <Input label="Teléfono" name="telefono" value={formData.telefono} onChange={handleChange} />
-
-                {/* Profesión */}
                 <Input label="Profesión" name="profesion" value={formData.profesion} onChange={handleChange} />
-
-                {/* Email */}
                 <Input type="email" label="Email" name="email" value={formData.email} onChange={handleChange} />
-
               </div>
             </div>
 
             {/* DATOS JUNTA */}
             <div>
-              <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-[#64AF59]">
-                Datos Junta
-              </h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-[#64AF59]">Datos Junta</h3>
 
               {/* Switch cargo / comisión */}
               <div className="flex items-center gap-4 mb-6">
                 <span className="font-semibold">Asignar como:</span>
-
                 <button
                   onClick={() => setModo("cargo")}
                   className={`px-4 py-1.5 rounded-lg border ${modo === "cargo" ? "bg-[#009E76] text-white" : "bg-white"}`}
                 >
                   Cargo
                 </button>
-
                 <button
                   onClick={() => setModo("comision")}
                   className={`px-4 py-1.5 rounded-lg border ${modo === "comision" ? "bg-[#009E76] text-white" : "bg-white"}`}
@@ -180,23 +163,22 @@ export default function AgregarMandatario() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-
-                {/* fecha afiliación */}
+                {/* Fecha Inicio Periodo */}
                 <Input
                   type="date"
-                  label="F Afiliación"
-                  name="fAfiliacion"
-                  value={formData.fAfiliacion}
+                  label="Inicio de periodo"
+                  name="fInicioPeriodo"
+                  value={formData.fInicioPeriodo}
                   onChange={handleChange}
                 />
 
-                {/* periodo */}
-                <Select
-                  label="Periodo"
-                  name="periodo"
-                  value={formData.periodo}
+                {/* Fecha Fin Periodo */}
+                <Input
+                  type="date"
+                  label="Fin de periodo (editable)"
+                  name="fFinPeriodo"
+                  value={formData.fFinPeriodo}
                   onChange={handleChange}
-                  options={["2022-2026", "2018-2022", "2014-2018"]}
                 />
 
                 {/* SEGÚN SWITCH */}
@@ -241,7 +223,6 @@ export default function AgregarMandatario() {
 }
 
 /* ---------- COMPONENTES DE INPUT LIMPIOS ---------- */
-
 function Input({ label, name, value, onChange, type = "text" }) {
   return (
     <div className="flex items-center gap-4">
@@ -260,10 +241,7 @@ function Input({ label, name, value, onChange, type = "text" }) {
 function Select({ label, name, value, onChange, options }) {
   return (
     <div className="flex items-center gap-4">
-      <label className="text-sm font-semibold text-gray-700 w-32 text-right">
-        {label}:
-      </label>
-
+      <label className="text-sm font-semibold text-gray-700 w-32 text-right">{label}:</label>
       <select
         name={name}
         value={value}
@@ -271,20 +249,12 @@ function Select({ label, name, value, onChange, options }) {
         className="flex-1 border border-gray-300 rounded px-3 py-1.5 bg-white focus:ring-2 focus:ring-[#009E76] outline-none"
       >
         <option value="">Seleccione...</option>
-
         {options.map((op, index) => {
-          // Si es string → lo convertimos
           const value = typeof op === "string" ? op : op.value;
           const label = typeof op === "string" ? op : op.label;
-
-          return (
-            <option key={index} value={value}>
-              {label}
-            </option>
-          );
+          return <option key={index} value={value}>{label}</option>;
         })}
       </select>
     </div>
   );
 }
-
