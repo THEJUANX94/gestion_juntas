@@ -24,7 +24,7 @@ import CrearCargo from "./pages/CrearCargo";
 import CrearInstitucion from "./pages/CrearInstitucion";
 import ListarInstituciones from "./pages/ListarInstituciones";
 import CrearMandatario from "./pages/CrearMandatario";
-
+import ListarLugares from "./pages/ListarLugares";
 
 
 export default function App() {
@@ -50,6 +50,7 @@ export default function App() {
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />
               <Route path="instituciones/create" element={<CrearInstitucion/>} />
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />
+              <Route path="lugares/listar" element={<ListarLugares/>} />
               <Route path="usuarios/listar" element={<ListarUser />} />
               <Route path="usuarios/crear" element={<CreateUser />} />
               <Route path="usuarios/update/:id" element={<UpdateUser />} />

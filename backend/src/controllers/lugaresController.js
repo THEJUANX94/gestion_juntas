@@ -90,6 +90,28 @@ export const eliminarLugar = async (req, res) => {
   }
 };
 
+export const cambiarEstadoLugar = async (req, res) => {
+  try {
+    const { idlugar } = req.params;
+    const { Activo } = req.body; 
+
+    if (!idlugar) return res.status(400).json({ message: "ID no proporcionado" });
+    if (Activo === undefined)
+      return res.status(400).json({ message: "Activo es requerido" });
+
+    const lugar = await Lugar.findByPk(idlugar);
+    if (!lugar) return res.status(404).json({ message: "Lugar no encontrado" });
+
+    lugar.Activo = Activo;
+    await lugar.save();
+
+    return res.json(lugar);
+  } catch (error) {
+    console.error("Error al cambiar estado del lugar:", error);
+    return res.status(500).json({ message: "Error al cambiar estado del lugar", error: error.message });
+  }
+};
+
 export default {
   obtenerLugares,
   obtenerLugarPorId,

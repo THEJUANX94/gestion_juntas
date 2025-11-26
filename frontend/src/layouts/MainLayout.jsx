@@ -217,6 +217,17 @@ export default function MainLayout() {
                     {!collapsed && "Listar Instituciones"}
                   </Link>
                 </li>
+                 <li>
+                  <Link
+                    to="/lugares/listar"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/lugares/listar"
+                    )}`}
+                  >
+                    <Building2 className="h-5 w-5" />
+                    {!collapsed && "Listar Lugares"}
+                  </Link>
+                </li>
               </ul>
             </div>
 

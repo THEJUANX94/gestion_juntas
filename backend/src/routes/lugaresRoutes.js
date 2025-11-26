@@ -1,17 +1,18 @@
 import { Router } from "express";
-import { verificarAuth } from "../utils/authMiddleware.js";
 import {
   obtenerLugares,
   obtenerLugarPorId,
   eliminarLugar,
-  crearLugar
+  crearLugar,
+  cambiarEstadoLugar,
 } from "../controllers/lugaresController.js";
 
 const router = Router();
 
-router.get("/",  obtenerLugares);
-router.get("/:idlugar",  obtenerLugarPorId);
-router.delete("/:idlugar",  eliminarLugar);
-router.post("/crearlugar",  crearLugar);
+router.get("/", obtenerLugares);
+router.get("/:idlugar", obtenerLugarPorId);
+router.delete("/:idlugar", eliminarLugar);
+router.post("/crearlugar", crearLugar);
+router.patch("/:idlugar/estado", cambiarEstadoLugar);
 
 export default router;

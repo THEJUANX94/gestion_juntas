@@ -26,6 +26,12 @@ export const Lugar = sequelize.define("Lugar", {
       model: "lugar",
       key: "idlugar"
     }
+  },
+  Activo: {              
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    field: "activo",     
   }
 }, {
   tableName: "lugar",
