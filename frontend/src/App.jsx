@@ -29,6 +29,7 @@ import ListarInstituciones from "./pages/ListarInstituciones";
 import CrearMandatario from "./pages/CrearMandatario";
 import BuscarMandatario from "./pages/BuscarMandatario";
 import ListarLugares from "./pages/ListarLugares";
+import ValidacionQR from "./pages/ValidacionQR";
 
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
         <Routes>
           <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/validacionqr/:IDCertificado" element={<ValidacionQR/>} />
             <Route path="/login" element={<LoginUser />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />

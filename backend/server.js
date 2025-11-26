@@ -200,7 +200,6 @@ app.use("/api/juntas", juntaRoutes);
 app.use("/api/tipodocumento", tipoDocumentoRoutes);
 app.use("/api/comisiones", comisionesRoutes);
 app.use("/api/mandatario", mandatarioJuntaRoutes);
-
 app.use("/api/certificados", certificadosRoutes)
 
 const frontendPath = path.join(__dirname, '../frontend/dist');
