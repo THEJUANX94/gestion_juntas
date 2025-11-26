@@ -58,6 +58,6 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
   }
 
 }, {
-  tableName: "mandatariosjunta",
+  tableName: "mandatarioJuntas",
   timestamps: false,
 });

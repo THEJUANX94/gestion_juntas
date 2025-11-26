@@ -12,28 +12,28 @@ import { Reconocida } from '../model/reconocidaModel.js';
 
 export const Asociaciones = () => {
     // Relaciones para MandatarioJunta (Tabla intermedia)
-    MandatarioJunta.belongsTo(Usuario, { foreignKey: 'idusuario' });
+    MandatarioJunta.belongsTo(Usuario, { foreignKey: 'numeroidentificacion' });
     MandatarioJunta.belongsTo(Junta, { foreignKey: 'idjunta' });
     MandatarioJunta.belongsTo(Cargo, { foreignKey: "idcargo" })
 
     // Relaciones para Users
     Usuario.belongsTo(Rol, { foreignKey: "idrol", as: "RolInfo" });
-    Usuario.hasMany(MandatarioJunta, { foreignKey: 'idusuario' });
-    Usuario.hasMany(Firma, { foreignKey: "idusuario" });
-    Usuario.hasOne(Credenciales, { foreignKey: "idusuario" });
+    Usuario.hasMany(MandatarioJunta, { foreignKey: 'numeroidentificacion' });
+    Usuario.hasMany(Firma, { foreignKey: "numeroidentificacion" });
+    Usuario.hasOne(Credenciales, { foreignKey: "numeroidentificacion" });
 
     // Relaciones para Municipios-Departamentos
     Lugar.hasMany(Lugar, { foreignKey: 'idotrolugar' });
     Lugar.hasMany(Junta, { foreignKey: "idmunicipio" })
 
     //Relaciones para firma
-    Firma.belongsTo(Usuario, { foreignKey: "idusuario" });
+    Firma.belongsTo(Usuario, { foreignKey: "numeroidentificacion" });
 
     //Relaciones para Cargo
     Cargo.hasMany(MandatarioJunta, { foreignKey: "idcargo" })
 
     //Relaciones Credenciales
-    Credenciales.belongsTo(Usuario, { foreignKey: "idusuario" })
+    Credenciales.belongsTo(Usuario, { foreignKey: "numeroidentificacion" })
 
     //Relaciones Para Junta
     Junta.belongsTo(Lugar, { foreignKey: "idmunicipio" })

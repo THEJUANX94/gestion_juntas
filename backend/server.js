@@ -20,6 +20,7 @@ import institucionesRoutes from "./src/routes/institucionesRoutes.js"
 import lugaresRoutes from "./src/routes/lugaresRoutes.js"
 import tipoJuntaRoutes from "./src/routes/tipoJuntaRoutes.js"
 import juntaRoutes from "./src/routes/juntasRoutes.js"
+import certificadosRoutes from './src/routes/certificadosRoutes.js';
 
 import { logger } from './src/utils/logger.js';
 import { Asociaciones } from "./src/config/asociacionesBD.js";
@@ -32,8 +33,8 @@ const ID_ROL_ADMINISTRADOR = "4d41852c-4ee3-4798-bbe0-ca3a65660666";
 const allowedOrigins = [
   'http://172.20.1.31',
   'http://localhost:5173',
-  'https://certificacionalcaldes.boyaca.gov.co',
-  'https://certificacionalcaldes.boyaca.gov.co:3000'
+  'https://certificacion.boyaca.gov.co',
+  'https://certificacion.boyaca.gov.co:3000'
 ];
 
 const corsOptions = {
@@ -193,6 +194,7 @@ app.use("/api/instituciones", institucionesRoutes);
 app.use("/api/lugares", lugaresRoutes);
 app.use("/api/tipojunta", tipoJuntaRoutes);
 app.use("/api/juntas", juntaRoutes);
+app.use("/api/certificados", certificadosRoutes)
 
 const frontendPath = path.join(__dirname, '../frontend/dist');
 

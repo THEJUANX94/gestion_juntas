@@ -75,7 +75,7 @@ export default function LoginUser() {
             Gobernación de Boyacá
             <br />
             <span className="text-3xl font-semibold text-green-100">
-              Certificación de Alcaldes
+              Certificación
             </span>
           </h1>
           <p className="text-xl text-center opacity-90 max-w-md leading-relaxed">

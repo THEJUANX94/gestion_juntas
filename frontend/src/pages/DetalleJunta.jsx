@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail, MapPin, Search, Filter, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 
 export default function DetalleJunta() {
 
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // Obtener la junta desde el estado pasado por ConsultarJunta
+  const juntaData = location.state?.junta || null;
+  const juntaIdFromRoute = juntaData?.IDJunta || null;
 
   const [miembros] = useState([
     {
@@ -72,12 +76,108 @@ export default function DetalleJunta() {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   const acciones = [
-    { icon: FileText, label: "Consulta", color: "bg-[#009E76] hover:bg-[#007d5e]" },
-    { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]" },
-    { icon: Award, label: "Certificado JAC", color: "bg-[#64AF59] hover:bg-[#52934a]" },
-    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", ruta: '/juntas/crear'},
+    { icon: FileText, label: "Consulta", color: "bg-[#009E76] hover:bg-[#007d5e]", action: 'consulta' },
+    { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'autoresolutorio' },
+    { icon: Award, label: "Certificado JAC", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJAC' },
+    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", ruta: '/juntas/crear', action: 'certificadoJVC' },
     { icon: Database, label: "Datos Junta", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/1` },
   ];
+
+  // Generar PDF para un documento (Cedula). Por ahora usamos la misma ruta POST `/certificados`.
+  const generatePdfForDocumento = async (documento, tipo = 'autoresolutorio') => {
+    if (!documento) {
+      alert('No hay documento disponible para generar el certificado.');
+      return;
+    }
+
+    const API_BASE = import.meta.env.VITE_PATH || '';
+    // endpoint: por ahora usamos /certificados; en el futuro se pueden diferenciar por tipo
+    const endpoint = `${API_BASE}/certificados`;
+
+    const payload = {
+      Cedula: documento,
+      tipo: tipo
+    };
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Error generando PDF:', res.status, text);
+        alert('Error al generar el PDF: ' + res.status);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      const filename = `certificado_${documento}_${tipo}.pdf`;
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Excepción al generar PDF:', e);
+      alert('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
+    }
+  };
+
+  const generatePdfForJunta = async (IDJunta, tipo = 'autoresolutorio') => {
+    if (!IDJunta) {
+      alert('No hay ID de junta disponible para generar el certificado.');
+      return;
+    }
+
+    const API_BASE = import.meta.env.VITE_PATH || '';
+    const endpoint = `${API_BASE}/certificados`;
+
+    const payload = {
+      IDJunta,
+      tipo
+    };
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Error generando PDF para junta:', res.status, text);
+        alert('Error al generar el PDF: ' + res.status);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      const filename = `certificado_junta_${IDJunta}_${tipo}.pdf`;
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Excepción al generar PDF para junta:', e);
+      alert('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
+    }
+  };
 
   // Obtener valores únicos para los filtros
   const cargosUnicos = [...new Set(miembros.map(m => m.cargo))];
@@ -123,16 +223,22 @@ export default function DetalleJunta() {
           {acciones.map((accion, idx) => {
             const Icon = accion.icon;
 
+            const handleClick = () => {
+              if (accion.ruta) return navigate(accion.ruta);
+              // Generar por junta (ID de ruta) usando el tipo que coincide con la fábrica
+              const tipo = accion.action || 'autoresolutorio';
+              return generatePdfForJunta(juntaIdFromRoute, tipo);
+            };
+
             return (
               <button
                 key={idx}
-                onClick={() => navigate(accion.ruta)}
+                onClick={handleClick}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white ${accion.color} transition-all shadow-sm hover:shadow-md`}
               >
                 <Icon size={20} />
                 <span className="text-sm font-medium">{accion.label}</span>
               </button>
-              
             );
           })}
 

@@ -43,7 +43,7 @@ export default function CrearInstitucion() {
 					value={nombre}
 					onChange={(e) => setNombre(e.target.value)}
 					className="w-full border rounded px-3 py-2 mb-4"
-					placeholder="Ej. Alcaldía Municipal"
+					placeholder="Ej. Institución Municipal"
 				/>
 
 				<div className="flex gap-2">

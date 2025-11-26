@@ -13,8 +13,6 @@ const generarPDF = async (datosCertificado) => {
 
     // --- VARIABLES DEL SISTEMA (Mapeo de datosCertificado) ---
     // Asegúrate de pasar estos datos al llamar la función
-    const numeroAuto = datosCertificado.numeroAuto || "PENDIENTE";
-    const fechaAuto = datosCertificado.fechaAuto || new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const municipio = (datosCertificado.NombreMunicipio || "ALMEIDA").toUpperCase();
     const nombreOrganizacion = (datosCertificado.nombreOrganizacion || "ASOCIACION COMUNAL DE JUNTAS").toUpperCase();
     const personeriaNumero = datosCertificado.personeriaNumero || "____";
@@ -56,7 +54,7 @@ const generarPDF = async (datosCertificado) => {
 
     // --- GENERACIÓN DEL QR ---
     // Usamos el ID o el Número de Auto para validación
-    const validationUrl = `https://certificacionalcaldes.boyaca.gov.co/validacionqr/${datosCertificado.IDCertificado || numeroAuto}`;
+    const validationUrl = `https://certificacion.boyaca.gov.co/validacionqr/${datosCertificado.IDCertificado || numeroAuto}`;
     const qr = await generateQR(validationUrl);
 
     // --- FUNCIONES AUXILIARES ---
@@ -114,10 +112,6 @@ const generarPDF = async (datosCertificado) => {
     doc.addImage(qr, "PNG", 170, 10, 25, 25);
 
     yPos = 50;
-
-    // 2. TÍTULOS DEL AUTO
-    centerText(`AUTO No. ${numeroAuto} DE ${fechaAuto}`, yPos, 11, 'bold');
-    yPos += 8;
 
     const titulo1 = `POR MEDIO DE LA CUAL SE REALIZA LA INSCRIPCIÓN Y RECONOCIMIENTO DE DIGNATARIOS ELEGIDOS POR LA ${nombreOrganizacion}`;
     const linesTitulo = doc.splitTextToSize(titulo1, 140); // Más angosto para centrar mejor
