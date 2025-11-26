@@ -38,13 +38,11 @@ export default function ListarLugares() {
     fetchLugares();
   }, []);
 
-  // Búsqueda general
   const generalFiltered = lugares.filter((l) => {
     const texto = search.toLowerCase();
     return Object.values(l).some((valor) => String(valor).toLowerCase().includes(texto));
   });
 
-  // Filtros específicos
   const filtered = generalFiltered.filter((l) =>
     Object.keys(filtros).every((key) => {
       if (!filtros[key]) return true;
@@ -56,7 +54,6 @@ export default function ListarLugares() {
     })
   );
 
-  // Paginación
   const [page, setPage] = useState(1);
   const perPage = 10;
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -73,7 +70,6 @@ export default function ListarLugares() {
   const handleFiltro = (col, value) =>
     setFiltros((prev) => ({ ...prev, [col]: value }));
 
-  // 🟢 Cambiar estado activo/inactivo
   const handleToggleActivo = async (item) => {
     const nuevoEstado = !item.activo;
 
