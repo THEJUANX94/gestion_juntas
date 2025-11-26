@@ -131,7 +131,7 @@ export const validarCertificado = async (req, res) => {
     if (certificado) {
       logOperation(
         'Validación de Certificado Exitosa',
-        { IDCertificado, fechaCreacion: certificado.FechaCreacion, IDJunta: certificado.IDJunta },
+        { IDCertificado, fechaCreacion: certificado.FechaCreacion, TipoCertificado: certificado.TipoJunta },
         'info'
       );
       res.status(200).json({ valido: true, data: certificado });
