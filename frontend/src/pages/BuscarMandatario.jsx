@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { Search, UserPlus, Users, Mail, Phone, CreditCard } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 
 export default function BuscarMandatario() {
-    const { id } = useParams();
+
+  const navigate = useNavigate();
+
+
+  const { id: idJunta } = useParams();
 
   const [query, setQuery] = useState("");
   const [resultados, setResultados] = useState([]);
@@ -13,12 +17,12 @@ export default function BuscarMandatario() {
 
   const buscar = async () => {
     if (!query.trim()) return;
-    
+
     setLoading(true);
     setBuscado(true);
-    
+
     try {
-      const res = await fetch(`http://localhost:3000/api/mandatarios/buscar?query=${query}`);
+      const res = await fetch(`http://localhost:3000/api/mandatario/buscar?query=${query}`);
       const data = await res.json();
       setResultados(data);
     } catch (error) {
@@ -34,20 +38,15 @@ export default function BuscarMandatario() {
     }
   };
 
-const handleCrearNuevo = () => {
-  window.location.href = `/juntas/${id}/mandatario/crear`;
-};
-  
-const handleAgregarAJunta = async (user) => {
-  await fetch(`http://localhost:3000/api/mandatarios/crear/${id}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ IDUsuario: user.IDUsuario }),
-  });
+  const handleCrearNuevo = () => {
+    window.location.href = `/juntas/${idJunta}/mandatario/crear`;
+  };
 
-  alert("Mandatario agregado a la junta");
-};
+const handleAgregarAJunta = (user) => {
+  const idUsuario = user.IDUsuario || user.NumeroIdentificacion;
 
+  navigate(`/juntas/${idJunta}/mandatario/editar-datos/${idUsuario}`);
+};
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -62,7 +61,7 @@ const handleAgregarAJunta = async (user) => {
                 <p className="text-gray-500 mt-1">Busque mandatarios existentes o cree uno nuevo</p>
               </div>
             </div>
-            
+
             {/* Botón Crear Mandatario */}
             <button
               onClick={handleCrearNuevo}
@@ -139,7 +138,7 @@ const handleAgregarAJunta = async (user) => {
                 Se encontraron <span className="font-semibold text-[#009E76]">{resultados.length}</span> resultado(s)
               </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {resultados.map((user) => (
                 <div

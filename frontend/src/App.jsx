@@ -26,6 +26,7 @@ import ListarInstituciones from "./pages/ListarInstituciones";
 import CrearMandatario from "./pages/CrearMandatario";
 import BuscarMandatario from "./pages/BuscarMandatario";
 import ListarLugares from "./pages/ListarLugares";
+import EditarMandatarioExistente from "./pages/EditarMandatarioExistente";
 
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="/juntas/:id/mandatario/buscar" element={<BuscarMandatario />} />
               <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
               <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
+              <Route path="/juntas/:idJunta/mandatario/editar-datos/:idUsuario" element={<EditarMandatarioExistente />}/>
               <Route path="cargos/listar" element={<ListarCargos/>}/>
               <Route path="cargos/create" element={<CrearCargo/>} />
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />

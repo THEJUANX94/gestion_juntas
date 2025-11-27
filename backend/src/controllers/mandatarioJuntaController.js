@@ -7,6 +7,9 @@ import { Periodo } from "../model/periodoModel.js";
 import { PeriodoPorMandato } from "../model/periodopormandato.js";
 import { TipoDocumento } from "../model/tipoDocumentoModel.js";
 import { Lugar } from "../model/lugarModel.js";
+import { Op } from "sequelize";
+
+
 
 
 
@@ -232,6 +235,127 @@ export const getMiembrosJunta = async (req, res) => {
     res.status(500).json({
       message: "Error cargando miembros",
       error: error.message
+    });
+  }
+};
+
+
+
+export const buscarMandatarios = async (req, res) => {
+  const { query } = req.query;
+
+  try {
+    const resultados = await Usuario.findAll({
+      where: {
+        [Op.or]: [
+          { NumeroIdentificacion: { [Op.like]: `%${query}%` } },
+          { PrimerNombre: { [Op.like]: `%${query}%` } },
+          { SegundoNombre: { [Op.like]: `%${query}%` } },
+          { PrimerApellido: { [Op.like]: `%${query}%` } },
+          { SegundoApellido: { [Op.like]: `%${query}%` } },
+          { Correo: { [Op.like]: `%${query}%` } },
+          { Celular: { [Op.like]: `%${query}%` } }
+        ]
+      },
+      include: [
+        {
+          model: MandatarioJunta,
+          required: false,
+          include: [
+            {
+              model: Cargo,
+              required: false,
+              where: {
+                NombreCargo: { [Op.like]: `%${query}%` }
+              }
+            }
+          ]
+        }
+      ]
+    });
+
+    res.json(resultados);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error buscando mandatarios", error: error.message });
+  }
+};
+
+export const agregarMandatarioExistente = async (req, res) => {
+  try {
+    const { idJunta } = req.params;
+
+    const { 
+      IDUsuario, 
+      Residencia, 
+      Expedido, 
+      Profesion,
+
+      IDCargo,
+      IDComision,
+
+      fInicioPeriodo,
+      fFinPeriodo
+    } = req.body;
+
+    // ==============================
+    // VALIDACIONES OBLIGATORIAS
+    // ==============================
+    if (!IDUsuario) return res.status(400).json({ message: "Falta el IDUsuario" });
+    if (!Residencia) return res.status(400).json({ message: "Falta la Residencia" });
+    if (!Expedido) return res.status(400).json({ message: "Falta el lugar de expedición" });
+    if (!Profesion) return res.status(400).json({ message: "Falta la profesión" });
+
+    // Fechas obligatorias siempre
+    if (!fInicioPeriodo || !fFinPeriodo) {
+      return res.status(400).json({
+        message: "Debe ingresar Inicio y Fin del periodo."
+      });
+    }
+
+    const usuario = await Usuario.findByPk(IDUsuario);
+    if (!usuario) return res.status(404).json({ message: "El usuario no existe" });
+
+    const junta = await Junta.findByPk(idJunta);
+    if (!junta) return res.status(404).json({ message: "La junta no existe" });
+
+    const existe = await MandatarioJunta.findOne({
+      where: { NumeroIdentificacion: IDUsuario, IDJunta: idJunta }
+    });
+
+    if (existe) {
+      return res.status(400).json({ message: "El usuario ya pertenece a esta junta" });
+    }
+
+    // ==============================
+    // Crear MandatarioJunta
+    // ==============================
+    const mandatario = await MandatarioJunta.create({
+      NumeroIdentificacion: IDUsuario,
+      IDJunta: idJunta,
+      Residencia,
+      Expedido,
+      Profesion,
+
+      IDCargo: IDCargo || null,
+      IDComision: IDComision || null,
+
+      // Guardar con los nombres reales en BD
+      FechaInicio: fInicioPeriodo,
+      FechaFin: fFinPeriodo
+    });
+
+    res.json({
+      message: "Mandatario agregado correctamente",
+      mandatario
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ 
+      message: "Error al agregar el mandatario", 
+      error: error.message 
     });
   }
 };

@@ -33,7 +33,7 @@ const upload = multer({ storage });
 
 router.post("/", upload.single("Firma"), crearUsuario);
 router.get("/", verificarAuth, obtenerUsuarios);
-router.get("/:IDUsuario", verificarAuth, obtenerUsuarioPorId);
+router.get("/:NumeroIdentificacion", verificarAuth, obtenerUsuarioPorId);
 router.get("/verificar/:NumeroIdentificacion", verificarIdentificacion);
 router.get("/verificar-correo/:correo", verificarCorreo);
 router.put("/:IDUsuario", verificarAuth, actualizarUsuario);
