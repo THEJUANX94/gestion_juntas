@@ -3,107 +3,123 @@ import { MandatarioJunta } from "../model/mandatarioJuntaModel.js";
 import { Cargo } from "../model/cargoModel.js";
 import { Comisiones } from "../model/comisionModel.js";
 import { Junta } from "../model/juntaModel.js";
+import { Periodo } from "../model/periodoModel.js";
+import { PeriodoPorMandato } from "../model/periodopormandato.js";
+import { TipoDocumento } from "../model/tipoDocumentoModel.js";
+import { Lugar } from "../model/lugarModel.js";
+import { Op } from "sequelize";
 
 
+
+
+
+// ======================================================
+//  CREAR MANDATARIO
+// ======================================================
 export const crearMandatario = async (req, res) => {
   try {
-    const { id } = req.params;        // <-- ID de la junta enviado en la URL
+    const { id } = req.params;
     const idJunta = id;
 
     const {
       documento,
       tipoDocumento,
       expedido,
-      nombre,
-      apellido,
+      primernombre,
+      segundonombre,
+      primerapellido,
+      segundoapellido,
       genero,
       fNacimiento,
       residencia,
       telefono,
       profesion,
       email,
-      fAfiliacion,
-      periodo,
+      fInicioPeriodo,
+      fFinPeriodo,
       cargo,
       comision
     } = req.body;
 
-    // 1. Validar existencia de la Junta
     const existeJunta = await Junta.findByPk(idJunta);
     if (!existeJunta) {
       return res.status(400).json({ message: "La junta no existe" });
     }
 
-    // 2. Buscar o crear usuario
+
     let usuario = await Usuario.findByPk(documento);
 
     if (!usuario) {
       usuario = await Usuario.create({
         NumeroIdentificacion: documento,
-        TipoDocumento: tipoDocumento,
-        Expedido: expedido,
-        PrimerNombre: nombre,
-        PrimerApellido: apellido,
+        PrimerNombre: primernombre,
+        SegundoNombre: segundonombre,
+        PrimerApellido: primerapellido,
+        SegundoApellido: segundoapellido,
         Sexo: genero,
         FechaNacimiento: fNacimiento,
         Residencia: residencia,
         Celular: telefono,
-        Profesion: profesion,
         Correo: email,
-        IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16"
+        IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
+        IDTipoDocumento: tipoDocumento  
       });
     } else {
       await usuario.update({
-        Expedido: expedido,
         Residencia: residencia,
         Celular: telefono,
-        Profesion: profesion,
-        Correo: email
+        Correo: email,
+        IDTipoDocumento: tipoDocumento   
       });
     }
 
-    // 3. Validar cargo único
-    if (cargo) {
-      const existeCargo = await MandatarioJunta.findOne({
-        where: {
-          IDJunta: idJunta,
-          IDCargo: cargo
-        }
-      });
-
-      if (existeCargo) {
-        return res.status(400).json({ message: "El cargo ya está asignado en esta junta" });
-      }
-    }
-
-    // 4. Crear Mandatario
-    const nuevoMandatario = await MandatarioJunta.create({
+  
+    const mandatario = await MandatarioJunta.create({
       NumeroIdentificacion: documento,
       IDJunta: idJunta,
       IDCargo: cargo || null,
-      IDComision: comision || null,
-      FechaInicioPeriodo: fAfiliacion,
-      Periodo: periodo
+      IDComision: comision || null,    
+      Residencia: residencia,
+      Expedido: expedido,
+      Profesion: profesion
+    });
+
+
+    const nuevoPeriodo = await Periodo.create({
+      FechaInicio: fInicioPeriodo,
+      FechaFin: fFinPeriodo
+    });
+
+
+    await PeriodoPorMandato.create({
+      IDPeriodo: nuevoPeriodo.IDPeriodo,
+      NumeroIdentificacion: documento,
+      IDJunta: idJunta
     });
 
     res.json({
       message: "Mandatario creado correctamente",
-      data: nuevoMandatario
+      mandatario,
+      periodo: nuevoPeriodo
     });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al crear el mandatario" });
+    res.status(500).json({ message: "Error al crear el mandatario", error: error.message });
   }
 };
 
 
 
-
+// ======================================================
+//  OBTENER MIEMBROS DE LA JUNTA
+// ======================================================
 export const getMiembrosJunta = async (req, res) => {
   const { id } = req.params;
 
   try {
+    console.log("Buscando miembros para junta:", id);
+
     const miembros = await MandatarioJunta.findAll({
       where: { IDJunta: id },
       include: [
@@ -118,11 +134,13 @@ export const getMiembrosJunta = async (req, res) => {
             "Sexo",
             "FechaNacimiento",
             "Celular",
-            "Correo",
-            "Residencia",
-            "Profesion",
-            "TipoDocumento",
-            "Expedido"
+            "Correo"
+          ],
+          include: [
+            {
+              model: TipoDocumento,
+              attributes: ["NombreTipo"]
+            }
           ]
         },
         {
@@ -130,50 +148,214 @@ export const getMiembrosJunta = async (req, res) => {
           attributes: ["NombreCargo"]
         },
         {
-          model: Comision,
+          model: Comisiones,
+          as: "Comision",        
           attributes: ["Nombre"]
+        },
+        {
+          model: Lugar,
+          as: "LugarExpedido",   
+          attributes: ["NombreLugar"]
+        },
+        {
+          model: Lugar,
+          as: "LugarResidencia", 
+          attributes: ["NombreLugar"]
+        },
+        {
+          model: PeriodoPorMandato,
+          required: false,
+          where: { IDJunta: id },
+          include: [
+            {
+              model: Periodo,
+              attributes: ["FechaInicio", "FechaFin"]
+            }
+          ]
         }
       ]
+
     });
 
-    // ---- FORMATEAR RESPUESTA ----
+    console.log(" Miembros encontrados:", miembros.length);
+
+
+    // ======================================================
+    // FORMATEAR RESPUESTA
+    // ======================================================
     const resultado = miembros.map(m => {
       const u = m.Usuario;
 
-      // Calcular edad
-      const nacimiento = new Date(u.FechaNacimiento);
+      if (!u) return null;
+
+    
+      const f = new Date(u.FechaNacimiento);
+      const nacimientoFormateado =
+        `${String(f.getDate()).padStart(2, "0")}/${String(f.getMonth() + 1).padStart(2, "0")}/${f.getFullYear()}`;
+
+  
       const hoy = new Date();
-      const edad = hoy.getFullYear() - nacimiento.getFullYear();
+      let edad = hoy.getFullYear() - f.getFullYear();
+      if (hoy < new Date(hoy.getFullYear(), f.getMonth(), f.getDate())) edad--;
+
+      const periodos = m.PeriodoPorMandatos || [];
+      const periodo = periodos.length ? periodos[0].Periodo : null;
 
       return {
-        // Parte del encabezado
         cargo: m.Cargo?.NombreCargo || "",
+        comision: m.Comision?.Nombre || "", 
+
         nombreCompleto: `${u.PrimerNombre} ${u.SegundoNombre ?? ""} ${u.PrimerApellido} ${u.SegundoApellido ?? ""}`.trim(),
-        profesion: u.Profesion || "",
-        
-        // Información personal
+
         documento: u.NumeroIdentificacion,
-        tipoDocumento: u.TipoDocumento,
-        expedido: u.Expedido,
+        tipoDocumento: u.TipoDocumento?.NombreTipo || "",
+
+        expedido: m.LugarExpedido?.NombreLugar || "",   
+        residencia: m.LugarResidencia?.NombreLugar || "",
+
         genero: u.Sexo,
         edad,
-        nacimiento: u.FechaNacimiento,
+        nacimiento: nacimientoFormateado,
 
-        // Cargo y comisión
-        comision: m.Comision?.Nombre || "",
-        periodo: `${m.FechaInicioPeriodo.getFullYear()}-${m.FechaFinPeriodo.getFullYear()}`,
+        profesion: m.Profesion || "",
 
-        // Contacto
-        residencia: u.Residencia,
+        periodo: periodo
+          ? `${new Date(periodo.FechaInicio).getFullYear()}-${new Date(periodo.FechaFin).getFullYear()}`
+          : "",
+
         telefono: u.Celular,
         email: u.Correo
       };
-    });
+    }).filter(Boolean);
 
     res.json(resultado);
 
   } catch (error) {
+    console.error(" Error cargando miembros:", error);
+    res.status(500).json({
+      message: "Error cargando miembros",
+      error: error.message
+    });
+  }
+};
+
+
+
+export const buscarMandatarios = async (req, res) => {
+  const { query } = req.query;
+
+  try {
+    const resultados = await Usuario.findAll({
+      where: {
+        [Op.or]: [
+          { NumeroIdentificacion: { [Op.like]: `%${query}%` } },
+          { PrimerNombre: { [Op.like]: `%${query}%` } },
+          { SegundoNombre: { [Op.like]: `%${query}%` } },
+          { PrimerApellido: { [Op.like]: `%${query}%` } },
+          { SegundoApellido: { [Op.like]: `%${query}%` } },
+          { Correo: { [Op.like]: `%${query}%` } },
+          { Celular: { [Op.like]: `%${query}%` } }
+        ]
+      },
+      include: [
+        {
+          model: MandatarioJunta,
+          required: false,
+          include: [
+            {
+              model: Cargo,
+              required: false,
+              where: {
+                NombreCargo: { [Op.like]: `%${query}%` }
+              }
+            }
+          ]
+        }
+      ]
+    });
+
+    res.json(resultados);
+
+  } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error cargando miembros" });
+    res.status(500).json({ message: "Error buscando mandatarios", error: error.message });
+  }
+};
+
+export const agregarMandatarioExistente = async (req, res) => {
+  try {
+    const { idJunta } = req.params;
+
+    const { 
+      IDUsuario, 
+      Residencia, 
+      Expedido, 
+      Profesion,
+
+      IDCargo,
+      IDComision,
+
+      fInicioPeriodo,
+      fFinPeriodo
+    } = req.body;
+
+    // ==============================
+    // VALIDACIONES OBLIGATORIAS
+    // ==============================
+    if (!IDUsuario) return res.status(400).json({ message: "Falta el IDUsuario" });
+    if (!Residencia) return res.status(400).json({ message: "Falta la Residencia" });
+    if (!Expedido) return res.status(400).json({ message: "Falta el lugar de expedición" });
+    if (!Profesion) return res.status(400).json({ message: "Falta la profesión" });
+
+    // Fechas obligatorias siempre
+    if (!fInicioPeriodo || !fFinPeriodo) {
+      return res.status(400).json({
+        message: "Debe ingresar Inicio y Fin del periodo."
+      });
+    }
+
+    const usuario = await Usuario.findByPk(IDUsuario);
+    if (!usuario) return res.status(404).json({ message: "El usuario no existe" });
+
+    const junta = await Junta.findByPk(idJunta);
+    if (!junta) return res.status(404).json({ message: "La junta no existe" });
+
+    const existe = await MandatarioJunta.findOne({
+      where: { NumeroIdentificacion: IDUsuario, IDJunta: idJunta }
+    });
+
+    if (existe) {
+      return res.status(400).json({ message: "El usuario ya pertenece a esta junta" });
+    }
+
+    // ==============================
+    // Crear MandatarioJunta
+    // ==============================
+    const mandatario = await MandatarioJunta.create({
+      NumeroIdentificacion: IDUsuario,
+      IDJunta: idJunta,
+      Residencia,
+      Expedido,
+      Profesion,
+
+      IDCargo: IDCargo || null,
+      IDComision: IDComision || null,
+
+      // Guardar con los nombres reales en BD
+      FechaInicio: fInicioPeriodo,
+      FechaFin: fFinPeriodo
+    });
+
+    res.json({
+      message: "Mandatario agregado correctamente",
+      mandatario
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ 
+      message: "Error al agregar el mandatario", 
+      error: error.message 
+    });
   }
 };

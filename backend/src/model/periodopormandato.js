@@ -4,19 +4,20 @@ import { sequelize } from "../config/database.js";
 export const PeriodoPorMandato = sequelize.define("PeriodoPorMandato", {
   IDPeriodo: {
     type: DataTypes.UUID,
+    allowNull: false,
     primaryKey: true,
     field: "idperiodo",
     references: {
-        model: "periodo",
-        key: "idperiodo"
+      model: "periodo",
+      key: "idperiodo"
     }
   },
   NumeroIdentificacion: {
-    type: DataTypes.UUID,
+    type: DataTypes.TEXT,
     allowNull: false,
     field: "numeroidentificacion",
     references: {
-        model: "mandatarioJuntas",
+        model: "MandatarioJunta",
         key: "numeroidentificacion"
     }
   },
@@ -25,7 +26,7 @@ export const PeriodoPorMandato = sequelize.define("PeriodoPorMandato", {
     allowNull: false,
     field: "idjunta",
     references: {
-        model: "mandatarioJuntas",
+        model: "MandatarioJunta",
         key: "idjunta"
     }
   }

@@ -16,47 +16,54 @@ export default function DetalleJunta() {
   const { id } = useParams();
 
   useEffect(() => {
-  const cargarMiembros = async () => {
-    try {
-      const res = await fetch(`http://localhost:3000/juntas/${id}/miembros`);
-      const data = await res.json();
+    const cargarMiembros = async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/api/mandatario/${id}/miembros`);
+        const data = await res.json();
+        console.log("Miembros cargados:", data);
+        const transformados = data.map(m => {
+          const partesNombre = m.nombreCompleto?.split(" ") || [];
+          const nombre = partesNombre.slice(0, 2).join(" ");
+          const apellido = partesNombre.slice(2).join(" ");
 
-      const transformados = data.map(m => ({
-        cargo: m.Cargo?.NombreCargo || "",
-        comision: m.Comision || "Otra",
-        periodo: `${m.FechaInicioPeriodo?.substring(0,4)}-${m.FechaFinPeriodo?.substring(0,4)}`,
-        tipoDoc: "C.C",
-        documento: m.Usuario?.NumeroIdentificacion || "",
-        expedido: m.Expedido || "",
-        nombre: m.Usuario?.PrimerNombre || "",
-        apellido: `${m.Usuario?.PrimerApellido || ""} ${m.Usuario?.SegundoApellido || ""}`,
-        genero: m.Usuario?.Sexo || "",
-        edad: calcularEdad(m.Usuario?.FechaNacimiento),
-        nacimiento: m.Usuario?.FechaNacimiento || "",
-        residencia: m.Residencia || "",
-        telefono: m.Usuario?.Celular || "",
-        profesion: m.Usuario?.Profesion || "",
-        email: m.Usuario?.Correo || "",
-      }));
+          return {
+            cargo: m.cargo || "",
+            comision: m.comision || "No aplica",
+            periodo: m.periodo || "",
+            tipoDoc: m.tipoDocumento || "C.C",
+            documento: m.documento || "",
+            expedido: m.expedido || "",
+            nombre: nombre,
+            apellido: apellido,
+            genero: m.genero || "",
+            edad: m.edad || "",
+            nacimiento: m.nacimiento || "",
+            residencia: m.residencia || "",
+            telefono: m.telefono || "",
+            profesion: m.profesion || "",
+            email: m.email || "",
+          };
+        });
 
-      setMiembros(transformados);
-    } catch (error) {
-      console.error("Error cargando miembros:", error);
-    }
-  };
 
-  cargarMiembros();
-}, [id]);
+        setMiembros(transformados);
+      } catch (error) {
+        console.error("Error cargando miembros:", error);
+      }
+    };
+
+    cargarMiembros();
+  }, [id]);
 
   function calcularEdad(fecha) {
-  if (!fecha) return "";
-  const hoy = new Date();
-  const nacimiento = new Date(fecha);
-  let edad = hoy.getFullYear() - nacimiento.getFullYear();
-  const m = hoy.getMonth() - nacimiento.getMonth();
-  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
-  return edad;
-}
+    if (!fecha) return "";
+    const hoy = new Date();
+    const nacimiento = new Date(fecha);
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const m = hoy.getMonth() - nacimiento.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
+    return edad;
+  }
 
 
 
@@ -389,7 +396,10 @@ export default function DetalleJunta() {
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-4">
                         <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                          <p className="text-white font-bold text-lg">{m.cargo}</p>
+                          <p className="text-white font-bold text-lg">
+                            {m.cargo || m.comision}
+                          </p>
+
                         </div>
                         <div className="text-white">
                           <p className="font-semibold text-lg">{m.nombre} {m.apellido}</p>

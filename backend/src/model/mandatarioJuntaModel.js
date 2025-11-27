@@ -25,7 +25,7 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
 
   IDCargo: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true,
     field: "idcargo",
     references: {
       model: "cargos",
@@ -34,18 +34,43 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
   },
 
   Residencia: {
-    type: DataTypes.STRING,
+    type: DataTypes.UUID,
     allowNull: false,
     field: "residencia",
+    references: {
+      model: "lugares",
+      key: "idlugar"
+    }
   },
 
   Expedido: {
-    type: DataTypes.STRING,
+    type: DataTypes.UUID,
     allowNull: false,
     field: "expedido",
+    references: {
+      model: "lugares",
+      key: "idlugar"
+    }
+  },
+
+  IDComision: {
+  type: DataTypes.UUID,
+  allowNull: true,
+  field: "idcomision",
+  references: {
+    model: "comisiones",
+    key: "idcomision"
   }
+},
+
+  Profesion: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    field: "profesion",
+  },
 
 }, {
   tableName: "mandatarioJuntas",
   timestamps: false,
+  createdAt: 'createdAt'
 });

@@ -8,6 +8,5 @@ router.post("/", crearJunta);
 
 router.get("/", obtenerJuntas);
 
-router.get("/:id/miembros", getMiembrosJunta);
 
 export default router;
