@@ -45,7 +45,7 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Route>
-
+          <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
               <Route path="/juntas/crear" element={<CrearJunta />} />
               <Route path="/juntas/consultar" element={<ConsultarJunta />} />
@@ -69,7 +69,7 @@ export default function App() {
               <Route path="configuracion" element={<Configuracion />} />
               <Route path="logs" element={<Logs />} />
             </Route>
-          
+          </Route>
         </Routes>
       </AuthProvider>
     </Router >

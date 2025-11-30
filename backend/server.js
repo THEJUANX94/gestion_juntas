@@ -34,7 +34,7 @@ dotenv.config();
 const ID_ROL_ADMINISTRADOR = "4d41852c-4ee3-4798-bbe0-ca3a65660666";
 
 const allowedOrigins = [
-  'http://172.20.1.31',
+  'http://172.20.1.32',
   'http://localhost:5173',
   'https://certificacion.boyaca.gov.co',
   'https://certificacion.boyaca.gov.co:3000'
@@ -204,12 +204,12 @@ app.use("/api/certificados", certificadosRoutes)
 
 const frontendPath = path.join(__dirname, '../frontend/dist');
 
-/*app.use(express.static(frontendPath));
+app.use(express.static(frontendPath));
 
 app.use((req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
-*/
+
 const PORT = process.env.PORT || 3000;
 
 (async () => {

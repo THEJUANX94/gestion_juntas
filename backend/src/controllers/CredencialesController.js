@@ -19,30 +19,24 @@ export const loginUsuario = async (req, res) => {
 
             return res.status(400).json({ error: "Datos incompletos." });
         }
-        // Allow bypassing reCAPTCHA in non-production when DEBUG or SKIP_RECAPTCHA is enabled
-        const skipRecaptcha = process.env.SKIP_RECAPTCHA === 'true' || (process.env.NODE_ENV !== 'production' && !process.env.RECAPTCHA_SECRET);
-        let captchaData = { success: true };
 
-        if (!skipRecaptcha) {
-            const captchaResponse = await fetch(
-                `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
-                { method: "POST" }
+        const captchaResponse = await fetch(
+            `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
+            { method: "POST" }
+        );
+
+        captchaData = await captchaResponse.json();
+        if (!captchaData.success) {
+            logOperation(
+                "LOGIN_FALLIDO",
+                login,
+                { motivo: `Captcha inválido`, details: captchaData, ip: req.ip || 'N/A' },
+                "error"
             );
 
-            captchaData = await captchaResponse.json();
-            if (!captchaData.success) {
-                logOperation(
-                    "LOGIN_FALLIDO",
-                    login,
-                    { motivo: `Captcha inválido`, details: captchaData, ip: req.ip || 'N/A' },
-                    "error"
-                );
-
-                return res.status(400).json({ error: "Captcha inválido", details: captchaData });
-            }
-        } else {
-            logger && logger.info && logger.info({ message: 'reCAPTCHA saltado en entorno de desarrollo o por SKIP_RECAPTCHA' });
+            return res.status(400).json({ error: "Captcha inválido", details: captchaData });
         }
+
         const credencial = await Credenciales.findOne({
             where: {
                 Login: login,
@@ -102,7 +96,7 @@ export const loginUsuario = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 8 * 60 * 60 * 1000 // Expira en 8 horas
+            maxAge: 60 * 60 * 1000 // Expira en 8 horas
 
         });
         logOperation(
@@ -142,7 +136,7 @@ export const forgotPassword = async (req, res) => {
 
     try {
         const user = await Usuario.findOne({
-            where: { Correo: email } 
+            where: { Correo: email }
         });
 
         if (!user) {
@@ -162,7 +156,7 @@ export const forgotPassword = async (req, res) => {
         );
 
         const resetUrl = `${process.env.CLIENT_ORIGIN}/reset-password/${resetToken}`;
-        console.log(`[FORGOT] Enlace de restablecimiento generado: ${resetUrl}`); 
+        console.log(`[FORGOT] Enlace de restablecimiento generado: ${resetUrl}`);
 
         const mailOptions = {
             to: user.Correo,
@@ -174,11 +168,11 @@ export const forgotPassword = async (req, res) => {
             <a href="${resetUrl}">Cambiar Contraseña</a>
             <p>Este enlace expirará en 15 minutos. Si no solicitó esto, ignore este correo.</p>`
         };
-        
+
         console.log(`[FORGOT] Intentando enviar correo a: ${user.Correo} desde: ${process.env.EMAIL_USER}`);
-        
-        await sendMail(mailOptions); 
-        
+
+        await sendMail(mailOptions);
+
         console.log(`[FORGOT] ÉXITO: El correo se envió con éxito (o fue aceptado por el transportador).`)
 
         logOperation(
@@ -194,7 +188,7 @@ export const forgotPassword = async (req, res) => {
 
     } catch (error) {
         console.error(`[FORGOT] ERROR CRÍTICO en forgotPassword: ${error.message}`);
-        
+
         logOperation(
             "FORGOT_PASSWORD_ERROR",
             { email },
@@ -209,7 +203,7 @@ export const resetPassword = async (req, res) => {
     const { token } = req.params;
     const { newPassword } = req.body;
     let userId = null;
-    
+
     console.log(`[RESET] Solicitud de restablecimiento recibida. Token: ${token.substring(0, 10)}...`);
 
     if (!newPassword || newPassword.length < 8) {
@@ -220,7 +214,7 @@ export const resetPassword = async (req, res) => {
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         numeroIdentificacion = payload.numeroIdentificacion;
-        console.log(`[RESET] Token verificado. IDUsuario: ${numeroIdentificacion}`); 
+        console.log(`[RESET] Token verificado. IDUsuario: ${numeroIdentificacion}`);
 
         const credencial = await Credenciales.findOne({
             where: { numeroIdentificacion: numeroIdentificacion }
@@ -230,7 +224,7 @@ export const resetPassword = async (req, res) => {
             console.error(`[RESET] Error: Credencial no encontrada para IDUsuario: ${numeroIdentificacion}`);
             return res.status(404).json({ message: 'Credencial no encontrada o token inválido.' });
         }
-        
+
         console.log(`[RESET] Credencial encontrada. Hasheando nueva contraseña...`);
 
         const salt = await bcrypt.genSalt(10);
@@ -238,7 +232,7 @@ export const resetPassword = async (req, res) => {
 
         credencial.Contraseña = hashedPassword;
         await credencial.save();
-        
+
         console.log(`[RESET] ÉXITO: Contraseña actualizada para IDUsuario: ${numeroIdentificacion}`);
 
         logOperation(
@@ -251,7 +245,7 @@ export const resetPassword = async (req, res) => {
 
     } catch (error) {
         console.error(`[RESET] ERROR CRÍTICO en resetPassword (JWT o DB): ${error.message}`);
-        
+
         logOperation(
             "RESET_PASSWORD_ERROR",
             { numeroIdentificacion: numeroIdentificacion || 'N/A' },

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { verificarAuth } from "../utils/authMiddleware.js";
 import {
   obtenerLugares,
   obtenerLugarPorId,
@@ -9,10 +10,10 @@ import {
 
 const router = Router();
 
-router.get("/", obtenerLugares);
-router.get("/:idlugar", obtenerLugarPorId);
-router.delete("/:idlugar", eliminarLugar);
-router.post("/crearlugar", crearLugar);
-router.patch("/:idlugar/estado", cambiarEstadoLugar);
+router.get("/", verificarAuth, obtenerLugares);
+router.get("/:idlugar", verificarAuth, obtenerLugarPorId);
+router.delete("/:idlugar", verificarAuth, eliminarLugar);
+router.post("/crearlugar", verificarAuth, crearLugar);
+router.patch("/:idlugar/estado", verificarAuth, cambiarEstadoLugar);
 
 export default router;
