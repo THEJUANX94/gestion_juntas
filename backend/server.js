@@ -34,7 +34,7 @@ dotenv.config();
 const ID_ROL_ADMINISTRADOR = "4d41852c-4ee3-4798-bbe0-ca3a65660666";
 
 const allowedOrigins = [
-  'http://172.20.1.32',
+  'http://172.20.1.32:3000',
   'http://localhost:5173',
   'https://certificacion.boyaca.gov.co',
   'https://certificacion.boyaca.gov.co:3000'
