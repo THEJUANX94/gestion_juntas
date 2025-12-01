@@ -62,23 +62,23 @@ export const crearMandatario = async (req, res) => {
         Celular: telefono,
         Correo: email,
         IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
-        IDTipoDocumento: tipoDocumento  
+        IDTipoDocumento: tipoDocumento
       });
     } else {
       await usuario.update({
         Residencia: residencia,
         Celular: telefono,
         Correo: email,
-        IDTipoDocumento: tipoDocumento   
+        IDTipoDocumento: tipoDocumento
       });
     }
 
-  
+
     const mandatario = await MandatarioJunta.create({
       NumeroIdentificacion: documento,
       IDJunta: idJunta,
       IDCargo: cargo || null,
-      IDComision: comision || null,    
+      IDComision: comision || null,
       Residencia: residencia,
       Expedido: expedido,
       Profesion: profesion
@@ -120,6 +120,26 @@ export const getMiembrosJunta = async (req, res) => {
   try {
     console.log("Buscando miembros para junta:", id);
 
+    // ============================================
+    // 1. Obtener información de la junta (sin Periodo)
+    // ============================================
+    const junta = await Junta.findOne({
+      where: { IDJunta: id }
+    });
+
+    if (!junta) {
+      return res.status(404).json({ message: "Junta no encontrada" });
+    }
+
+    // periodo global de la junta
+    const periodoJunta = {
+      inicio: junta.FechaInicioPeriodo,
+      fin: junta.FechaFinPeriodo
+    };
+
+    // ============================================
+    // 2. Obtener miembros
+    // ============================================
     const miembros = await MandatarioJunta.findAll({
       where: { IDJunta: id },
       include: [
@@ -143,101 +163,86 @@ export const getMiembrosJunta = async (req, res) => {
             }
           ]
         },
-        {
-          model: Cargo,
-          attributes: ["NombreCargo"]
-        },
-        {
-          model: Comisiones,
-          as: "Comision",        
-          attributes: ["Nombre"]
-        },
-        {
-          model: Lugar,
-          as: "LugarExpedido",   
-          attributes: ["NombreLugar"]
-        },
-        {
-          model: Lugar,
-          as: "LugarResidencia", 
-          attributes: ["NombreLugar"]
-        },
+        { model: Cargo, attributes: ["NombreCargo"] },
+        { model: Comisiones, as: "Comision", attributes: ["Nombre"] },
+        { model: Lugar, as: "LugarExpedido", attributes: ["NombreLugar"] },
+        { model: Lugar, as: "LugarResidencia", attributes: ["NombreLugar"] },
+
         {
           model: PeriodoPorMandato,
+          as: "Periodos",       
           required: false,
-          where: { IDJunta: id },
+          where: { IDJunta: id },  
           include: [
             {
               model: Periodo,
+              as: "Periodo",
               attributes: ["FechaInicio", "FechaFin"]
             }
           ]
         }
       ]
-
     });
 
-    console.log(" Miembros encontrados:", miembros.length);
+    console.log("Miembros encontrados:", miembros.length);
 
-
-    // ======================================================
-    // FORMATEAR RESPUESTA
-    // ======================================================
+    // ============================================
+    // 3. Formatear respuesta
+    // ============================================
     const resultado = miembros.map(m => {
       const u = m.Usuario;
 
-      if (!u) return null;
+      const f = new Date(u.FechaNacimiento + "T00:00:00");
+      const nacimiento = `${String(f.getUTCDate()).padStart(2, "0")}/${String(f.getUTCMonth() + 1).padStart(2, "0")}/${f.getUTCFullYear()}`;
 
-    
-      const f = new Date(u.FechaNacimiento);
-      const nacimientoFormateado =
-        `${String(f.getDate()).padStart(2, "0")}/${String(f.getMonth() + 1).padStart(2, "0")}/${f.getFullYear()}`;
-
-  
+      // edad
       const hoy = new Date();
-      let edad = hoy.getFullYear() - f.getFullYear();
-      if (hoy < new Date(hoy.getFullYear(), f.getMonth(), f.getDate())) edad--;
+      let edad = hoy.getFullYear() - f.getUTCFullYear();
+      if (hoy < new Date(hoy.getFullYear(), f.getUTCMonth(), f.getUTCDate())) edad--;
 
-      const periodos = m.PeriodoPorMandatos || [];
-      const periodo = periodos.length ? periodos[0].Periodo : null;
+      const periodoMandato = m.Periodos?.[0]?.Periodo || null;
+ 
+
+
 
       return {
         cargo: m.Cargo?.NombreCargo || "",
-        comision: m.Comision?.Nombre || "", 
-
+        comision: m.Comision?.Nombre || "",
         nombreCompleto: `${u.PrimerNombre} ${u.SegundoNombre ?? ""} ${u.PrimerApellido} ${u.SegundoApellido ?? ""}`.trim(),
-
         documento: u.NumeroIdentificacion,
         tipoDocumento: u.TipoDocumento?.NombreTipo || "",
-
-        expedido: m.LugarExpedido?.NombreLugar || "",   
+        expedido: m.LugarExpedido?.NombreLugar || "",
         residencia: m.LugarResidencia?.NombreLugar || "",
-
         genero: u.Sexo,
         edad,
-        nacimiento: nacimientoFormateado,
-
+        nacimiento,
         profesion: m.Profesion || "",
 
-        periodo: periodo
-          ? `${new Date(periodo.FechaInicio).getFullYear()}-${new Date(periodo.FechaFin).getFullYear()}`
-          : "",
+
+
+        periodoJunta: `${new Date(periodoJunta.inicio).getFullYear()} - ${new Date(periodoJunta.fin).getFullYear()}`,
+
+
+        inicioMandato: periodoMandato?.FechaInicio || null,
+        finMandato: periodoMandato?.FechaFin || null,
+
 
         telefono: u.Celular,
         email: u.Correo
       };
-    }).filter(Boolean);
+    });
 
     res.json(resultado);
 
   } catch (error) {
-    console.error(" Error cargando miembros:", error);
+    console.error("Error cargando miembros:", error);
     res.status(500).json({
       message: "Error cargando miembros",
       error: error.message
     });
   }
 };
+
 
 
 
@@ -286,10 +291,10 @@ export const agregarMandatarioExistente = async (req, res) => {
   try {
     const { idJunta } = req.params;
 
-    const { 
-      IDUsuario, 
-      Residencia, 
-      Expedido, 
+    const {
+      IDUsuario,
+      Residencia,
+      Expedido,
       Profesion,
 
       IDCargo,
@@ -341,7 +346,6 @@ export const agregarMandatarioExistente = async (req, res) => {
       IDCargo: IDCargo || null,
       IDComision: IDComision || null,
 
-      // Guardar con los nombres reales en BD
       FechaInicio: fInicioPeriodo,
       FechaFin: fFinPeriodo
     });
@@ -353,9 +357,9 @@ export const agregarMandatarioExistente = async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ 
-      message: "Error al agregar el mandatario", 
-      error: error.message 
+    res.status(500).json({
+      message: "Error al agregar el mandatario",
+      error: error.message
     });
   }
 };
