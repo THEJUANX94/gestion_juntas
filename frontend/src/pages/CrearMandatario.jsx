@@ -15,7 +15,7 @@ export default function AgregarMandatario() {
   const [formData, setFormData] = useState({
     // Datos Personales
     documento: "",
-    tipoDocumento: "C.C",
+    tipoDocumento: "",
     expedido: "",
     primernombre: "",
     segundonombre: "",
@@ -28,7 +28,6 @@ export default function AgregarMandatario() {
     profesion: "",
     email: "",
 
-    // Datos Junta
     fInicioPeriodo: "",
     fFinPeriodo: "",
     cargo: "",
@@ -52,11 +51,64 @@ export default function AgregarMandatario() {
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+
+    let newValue = value;
+
+    if (name === "documento") {
+      newValue = newValue.replace(/\D/g, "");
+      if (newValue.length > 10) return;
+    }
+
+    if (name === "telefono") {
+      newValue = newValue.replace(/\D/g, "");
+      if (newValue.length > 10) return;
+    }
+
+    if (
+      ["primernombre", "segundonombre", "primerapellido", "segundoapellido"].includes(name)
+    ) {
+      newValue = newValue.replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑ\s]/g, "");
+    }
+
+    if (type === "text" && name !== "email") {
+      newValue = newValue.toUpperCase();
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: newValue,
+    }));
   };
 
+
+
   const handleSubmit = async () => {
+
+    if (!/^\d{6,10}$/.test(formData.documento)) {
+      alert("El documento debe tener entre 6 y 10 números");
+      return;
+    }
+
+  
+    if (!/^\d{10}$/.test(formData.telefono)) {
+      alert("El teléfono debe tener exactamente 10 dígitos");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      alert("Ingrese un correo válido con dominio (ej: usuario@correo.com)");
+      return;
+    }
+
+    const camposNombre = ["primernombre", "primerapellido"];
+    for (let campo of camposNombre) {
+      if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(formData[campo])) {
+        alert(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
+        return;
+      }
+    }
+
     try {
       const res = await fetch(`http://localhost:3000/api/mandatario/crear/${id}`, {
         method: "POST",

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Building2, Calendar } from "lucide-react";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import Select from "react-select";
+
 
 
 export default function CrearJunta() {
@@ -21,6 +23,11 @@ export default function CrearJunta() {
   const [lugares, setLugares] = useState([]);
   const [instituciones, setInstituciones] = useState([]);
   const [tiposJunta, setTiposJunta] = useState([]);
+
+  const opcionesMunicipios = lugares.map(l => ({
+    value: l.IDLugar,
+    label: l.NombreLugar,
+  }));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,9 +63,28 @@ export default function CrearJunta() {
   // Manejo de inputs
   // ==========================
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+
+
+    if (name === "numPersoneriaJuridica") {
+      if (!/^\d*$/.test(value)) return;
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+      return;
+    }
+
+    const finalValue = type === "text" ? value.toUpperCase() : value;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: finalValue,
+    }));
   };
+
+
 
   // ==========================
   // Enviar al backend
@@ -128,20 +154,19 @@ export default function CrearJunta() {
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
                   Municipio <span className="text-[#E43440]">*</span>
                 </label>
-                <select
-                  name="idMunicipio"
-                  value={formData.idMunicipio}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
-                >
-                  <option value="">Seleccione un municipio</option>
-                  {lugares.map((l) => (
-                    <option key={l.IDLugar} value={l.IDLugar}>
-                      {l.NombreLugar}
-                    </option>
-                  ))}
-                </select>
+
+                <Select
+                  options={opcionesMunicipios}
+                  value={opcionesMunicipios.find(o => o.value === formData.idMunicipio)}
+                  onChange={(selected) =>
+                    setFormData(prev => ({ ...prev, idMunicipio: selected.value }))
+                  }
+                  placeholder="Selecciona un municipio..."
+                  isSearchable={true}
+                  className="text-black"
+                />
               </div>
+
 
               {/* Institución */}
               <div>

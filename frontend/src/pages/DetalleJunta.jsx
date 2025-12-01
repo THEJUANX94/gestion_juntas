@@ -406,9 +406,15 @@ export default function DetalleJunta() {
                           <p className="text-white/80 text-sm">{m.profesion}</p>
                         </div>
                       </div>
-                      <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-2.5 rounded-lg transition-colors">
+                      <button
+                        onClick={() =>
+                          navigate(`/juntas/${id}/miembro/${m.documento}/editar`, { state: { miembro: m } })
+                        }
+                        className="bg-white/20 hover:bg-white/30 p-2.5 rounded-lg"
+                      >
                         <Edit2 size={20} className="text-white" />
                       </button>
+
                     </div>
                   </div>
 

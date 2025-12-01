@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Search, Filter, ExternalLink, FileSearch } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import Select from "react-select";
+
 
 
 export default function ConsultarJunta() {
@@ -14,6 +16,12 @@ export default function ConsultarJunta() {
     const [juntas, setJuntas] = useState([]);
     const [consultado, setConsultado] = useState(false);
     const [tiposJunta, setTiposJunta] = useState([]);
+
+    const opcionesMunicipios = municipios.map(m => ({
+        value: m.IDLugar,
+        label: m.NombreLugar,
+    }));
+
 
     useEffect(() => {
         const loadData = async () => {
@@ -132,23 +140,22 @@ export default function ConsultarJunta() {
                         {/* Municipio */}
                         <div>
                             <label className="block text-sm font-semibold mb-2 text-gray-700">
-                                Municipio
+                                Municipio <span className="text-[#E43440]">*</span>
                             </label>
-                            <select
-                                name="municipio"
-                                value={filtros.municipio}
-                                onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
-                            >
-                                <option value="">Todos los municipios</option>
-                                {municipios.map((m) => (
-                                    <option key={m.IDLugar} value={m.IDLugar}>
-                                        {m.NombreLugar}
-                                    </option>
 
-                                ))}
-                            </select>
+                            <Select
+                                options={opcionesMunicipios}
+                                value={opcionesMunicipios.find(o => o.value === filtros.municipio)}
+                                onChange={(selected) =>
+                                    setFiltros(prev => ({ ...prev, municipio: selected.value }))
+                                }
+                                placeholder="Selecciona un municipio..."
+                                isSearchable={true}
+                                className="text-black"
+                            />
+
                         </div>
+
 
                         {/* Botones */}
                         <div className="flex gap-3">
@@ -214,7 +221,7 @@ export default function ConsultarJunta() {
                                                     })}
                                                 </td>
 
-                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.Institucion.NombreInstitucion }</td>
+                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.Institucion.NombreInstitucion}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-700">{junta.Reconocida?.Nombre}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-700">{junta.NumPersoneriaJuridica}</td>
                                                 <td className="px-6 py-4 text-center">

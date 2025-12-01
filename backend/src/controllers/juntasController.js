@@ -109,6 +109,12 @@ export const crearJunta = async (req, res) => {
       });
     }
 
+        if (new Date(fechaAsamblea) > new Date()) {
+      return res.status(400).json({
+        message: "La fecha de la asamblea no puede ser en el futuro"
+      });
+    }
+
     // ------------------------------------------
     // CREAR JUNTA
     // ------------------------------------------
