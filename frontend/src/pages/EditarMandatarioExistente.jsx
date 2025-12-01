@@ -81,12 +81,33 @@ export default function EditarMandatarioExistente() {
     // ===============================
     // Manejo de cambios
     // ===============================
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value,
-        });
-    };
+const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "IDCargo") {
+        setForm((prev) => ({
+            ...prev,
+            IDCargo: value,
+            IDComision: value ? "" : prev.IDComision, 
+        }));
+        return;
+    }
+
+    if (name === "IDComision") {
+        setForm((prev) => ({
+            ...prev,
+            IDComision: value,
+            IDCargo: value ? "" : prev.IDCargo, 
+        }));
+        return;
+    }
+
+    setForm({
+        ...form,
+        [name]: value,
+    });
+};
+
 
     // ===============================
     // Enviar formulario
@@ -201,6 +222,7 @@ export default function EditarMandatarioExistente() {
                             name="IDCargo"
                             value={form.IDCargo}
                             onChange={handleChange}
+                            disabled={!!form.IDComision}
                             className="w-full border rounded-lg p-3"
                         >
                             <option value="">Seleccione un cargo</option>
@@ -222,6 +244,7 @@ export default function EditarMandatarioExistente() {
                             name="IDComision"
                             value={form.IDComision}
                             onChange={handleChange}
+                            disabled={!!form.IDCargo}
                             className="w-full border rounded-lg p-3"
                         >
                             <option value="">Seleccione comisión</option>

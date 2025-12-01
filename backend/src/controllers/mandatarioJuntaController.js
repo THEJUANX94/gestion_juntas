@@ -9,17 +9,67 @@ import { TipoDocumento } from "../model/tipoDocumentoModel.js";
 import { Lugar } from "../model/lugarModel.js";
 import { Op } from "sequelize";
 
+export const validarPeriodoMandato = (junta, inicio, fin) => {
+  const inicioJunta = new Date(junta.FechaInicioPeriodo);
+  const finJunta = new Date(junta.FechaFinPeriodo);
+
+  if (inicio < inicioJunta || fin > finJunta) {
+    return `El periodo del mandatario (${inicio.toISOString()} - ${fin.toISOString()})
+            debe estar dentro del periodo de la junta
+            (${junta.FechaInicioPeriodo} - ${junta.FechaFinPeriodo}).`;
+  }
+  return null;
+};
 
 
+export const validarPresidenteUnico = async (documento, cargoID, idJunta) => {
+  const cargoPresidente = await Cargo.findOne({
+    where: { NombreCargo: "Presidente" }
+  });
+
+  if (!cargoPresidente || cargoID !== cargoPresidente.IDCargo) return null;
+
+  const juntaActual = await Junta.findByPk(idJunta);
+  if (!juntaActual) return "La junta no existe.";
+
+  const presidente = await MandatarioJunta.findOne({
+    where: {
+      NumeroIdentificacion: documento,
+      IDCargo: cargoPresidente.IDCargo
+    },
+    include: [
+      {
+        model: Junta,
+        where: { TipoJunta: juntaActual.TipoJunta }
+      }
+    ]
+  });
+
+  return presidente
+    ? `El usuario ya es presidente en otra junta del mismo tipo (${juntaActual.TipoJunta}).`
+    : null;
+};
 
 
-// ======================================================
-//  CREAR MANDATARIO
-// ======================================================
+export const crearPeriodoYVinculo = async (documento, idJunta, inicio, fin) => {
+  const periodo = await Periodo.create({
+    FechaInicio: inicio,
+    FechaFin: fin
+  });
+
+  await PeriodoPorMandato.create({
+    IDPeriodo: periodo.IDPeriodo,
+    NumeroIdentificacion: documento,
+    IDJunta: idJunta
+  });
+
+  return periodo;
+};
+
+
 export const crearMandatario = async (req, res) => {
   try {
-    const { id } = req.params;
-    const idJunta = id;
+    const idJunta = req.params.id;
 
     const {
       documento,
@@ -41,28 +91,19 @@ export const crearMandatario = async (req, res) => {
       comision
     } = req.body;
 
-    const existeJunta = await Junta.findByPk(idJunta);
-    if (!existeJunta) {
-      return res.status(400).json({ message: "La junta no existe" });
-    }
+    const junta = await Junta.findByPk(idJunta);
+    if (!junta) return res.status(404).json({ message: "La junta no existe" });
 
-    const inicioMandato = new Date(fInicioPeriodo);
-    const finMandato = new Date(fFinPeriodo);
+    // Validar periodo
+    const errorPeriodo = validarPeriodoMandato(junta, new Date(fInicioPeriodo), new Date(fFinPeriodo));
+    if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
 
-    const inicioJunta = new Date(junta.FechaInicioPeriodo);
-    const finJunta = new Date(junta.FechaFinPeriodo);
+    // Validar presidente único
+    const errorCargo = await validarPresidenteUnico(documento, cargo, idJunta);
+    if (errorCargo) return res.status(400).json({ message: errorCargo });
 
-    if (inicioMandato < inicioJunta || finMandato > finJunta) {
-      return res.status(400).json({
-        message: `El periodo del mandatario (${fInicioPeriodo} - ${fFinPeriodo}) 
-              debe estar dentro del periodo de la junta (${junta.FechaInicioPeriodo} - ${junta.FechaFinPeriodo}).`
-      });
-    }
-
-
-
+    // Crear o actualizar usuario
     let usuario = await Usuario.findByPk(documento);
-
     if (!usuario) {
       usuario = await Usuario.create({
         NumeroIdentificacion: documento,
@@ -78,16 +119,9 @@ export const crearMandatario = async (req, res) => {
         IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
         IDTipoDocumento: tipoDocumento
       });
-    } else {
-      await usuario.update({
-        Residencia: residencia,
-        Celular: telefono,
-        Correo: email,
-        IDTipoDocumento: tipoDocumento
-      });
     }
 
-
+    // Crear mandatario
     const mandatario = await MandatarioJunta.create({
       NumeroIdentificacion: documento,
       IDJunta: idJunta,
@@ -98,31 +132,20 @@ export const crearMandatario = async (req, res) => {
       Profesion: profesion
     });
 
-
-    const nuevoPeriodo = await Periodo.create({
-      FechaInicio: fInicioPeriodo,
-      FechaFin: fFinPeriodo
-    });
-
-
-    await PeriodoPorMandato.create({
-      IDPeriodo: nuevoPeriodo.IDPeriodo,
-      NumeroIdentificacion: documento,
-      IDJunta: idJunta
-    });
+    // Crear periodo + vincular
+    const periodo = await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo);
 
     res.json({
       message: "Mandatario creado correctamente",
       mandatario,
-      periodo: nuevoPeriodo
+      periodo
     });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error al crear el mandatario", error: error.message });
+    res.status(500).json({ message: "Error al crear mandatario", error: error.message });
   }
 };
-
 
 
 // ======================================================
@@ -332,39 +355,32 @@ export const agregarMandatarioExistente = async (req, res) => {
     } = req.body;
 
     // ==============================
-    // VALIDACIONES
+    // VALIDACIONES BÁSICAS
     // ==============================
     if (!IDUsuario) return res.status(400).json({ message: "Falta el IDUsuario" });
     if (!Residencia) return res.status(400).json({ message: "Falta la Residencia" });
     if (!Profesion) return res.status(400).json({ message: "Falta la profesión" });
-
     if (!fInicioPeriodo || !fFinPeriodo) {
       return res.status(400).json({
         message: "Debe ingresar Inicio y Fin del periodo."
       });
     }
 
+    // usuario y junta
     const usuario = await Usuario.findByPk(IDUsuario);
     if (!usuario) return res.status(404).json({ message: "El usuario no existe" });
 
     const junta = await Junta.findByPk(idJunta);
     if (!junta) return res.status(404).json({ message: "La junta no existe" });
 
-
     const inicioMandato = new Date(fInicioPeriodo);
     const finMandato = new Date(fFinPeriodo);
 
-    const inicioJunta = new Date(junta.FechaInicioPeriodo);
-    const finJunta = new Date(junta.FechaFinPeriodo);
+    // Validar periodo usando función global
+    const errorPeriodo = validarPeriodoMandato(junta, inicioMandato, finMandato);
+    if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
 
-    if (inicioMandato < inicioJunta || finMandato > finJunta) {
-      return res.status(400).json({
-        message: `El periodo del mandatario (${fInicioPeriodo} - ${fFinPeriodo}) 
-              debe estar dentro del periodo de la junta (${junta.FechaInicioPeriodo} - ${junta.FechaFinPeriodo}).`
-      });
-    }
-
-
+    // Validar si ya pertenece
     const existe = await MandatarioJunta.findOne({
       where: { NumeroIdentificacion: IDUsuario, IDJunta: idJunta }
     });
@@ -373,15 +389,18 @@ export const agregarMandatarioExistente = async (req, res) => {
       return res.status(400).json({ message: "El usuario ya pertenece a esta junta" });
     }
 
+    // Validar presidente único usando tu función
+    const errorCargo = await validarPresidenteUnico(IDUsuario, IDCargo, idJunta);
+    if (errorCargo) return res.status(400).json({ message: errorCargo });
+
+    // Obtener último EXPEDIDO registrado
     const ultimoMandato = await MandatarioJunta.findOne({
       where: { NumeroIdentificacion: IDUsuario },
       order: [['IDJunta', 'DESC']]
     });
 
-
-
     // ==============================
-    // 1. CREAR MandatarioJunta
+    // Crear Mandatario
     // ==============================
     const mandatario = await MandatarioJunta.create({
       NumeroIdentificacion: IDUsuario,
@@ -393,22 +412,13 @@ export const agregarMandatarioExistente = async (req, res) => {
       IDComision: IDComision || null
     });
 
-    // ==============================
-    // 2. CREAR el nuevo periodo
-    // ==============================
-    const nuevoPeriodo = await Periodo.create({
-      FechaInicio: fInicioPeriodo,
-      FechaFin: fFinPeriodo
-    });
-
-    // ==============================
-    // 3. ENLAZAR periodo con mandatario + junta
-    // ==============================
-    await PeriodoPorMandato.create({
-      IDPeriodo: nuevoPeriodo.IDPeriodo,
-      NumeroIdentificacion: IDUsuario,
-      IDJunta: idJunta
-    });
+    // Crear periodo vinculado
+    const nuevoPeriodo = await crearPeriodoYVinculo(
+      IDUsuario,
+      idJunta,
+      fInicioPeriodo,
+      fFinPeriodo
+    );
 
     res.json({
       message: "Mandatario agregado correctamente",

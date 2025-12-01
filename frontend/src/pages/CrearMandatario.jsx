@@ -75,6 +75,17 @@ export default function AgregarMandatario() {
 
     if (type === "text" && name !== "email") {
       newValue = newValue.toUpperCase();
+
+    }
+
+    if (name === "cargo") {
+      setFormData(prev => ({ ...prev, cargo: newValue, comision: "" }));
+      return;
+    }
+
+    if (name === "comision") {
+      setFormData(prev => ({ ...prev, comision: newValue, cargo: "" }));
+      return;
     }
 
     setFormData((prev) => ({
@@ -92,14 +103,14 @@ export default function AgregarMandatario() {
       return;
     }
 
-  
+
     if (!/^\d{10}$/.test(formData.telefono)) {
       alert("El teléfono debe tener exactamente 10 dígitos");
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      alert("Ingrese un correo válido con dominio (ej: usuario@correo.com)");
+    if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
+      alert("El correo debe tener un dominio válido, como usuario@correo.com");
       return;
     }
 
@@ -244,6 +255,7 @@ export default function AgregarMandatario() {
                     value={formData.cargo}
                     onChange={handleChange}
                     options={cargos.map(c => ({ value: c.IDCargo, label: c.NombreCargo }))}
+                    disabled={modo === "comision"}
                   />
                 ) : (
                   <Select
@@ -252,6 +264,7 @@ export default function AgregarMandatario() {
                     value={formData.comision}
                     onChange={handleChange}
                     options={comisiones.map(c => ({ value: c.IDComision, label: c.Nombre }))}
+                    disabled={modo === "cargo"}
                   />
                 )}
               </div>
@@ -293,7 +306,7 @@ function Input({ label, name, value, onChange, type = "text" }) {
   );
 }
 
-function Select({ label, name, value, onChange, options }) {
+function Select({ label, name, value, onChange, options, disabled }) {
   return (
     <div className="flex items-center gap-4">
       <label className="text-sm font-semibold text-gray-700 w-32 text-right">{label}:</label>
@@ -301,15 +314,19 @@ function Select({ label, name, value, onChange, options }) {
         name={name}
         value={value}
         onChange={onChange}
-        className="flex-1 border border-gray-300 rounded px-3 py-1.5 bg-white focus:ring-2 focus:ring-[#009E76] outline-none"
+        disabled={disabled}
+        className={`flex-1 border border-gray-300 rounded px-3 py-1.5 bg-white 
+          ${disabled ? "bg-gray-200 cursor-not-allowed" : "focus:ring-2 focus:ring-[#009E76]"}
+        `}
       >
         <option value="">Seleccione...</option>
         {options.map((op, index) => {
-          const value = typeof op === "string" ? op : op.value;
-          const label = typeof op === "string" ? op : op.label;
-          return <option key={index} value={value}>{label}</option>;
+          const val = typeof op === "string" ? op : op.value;
+          const lab = typeof op === "string" ? op : op.label;
+          return <option key={index} value={val}>{lab}</option>;
         })}
       </select>
     </div>
   );
 }
+
