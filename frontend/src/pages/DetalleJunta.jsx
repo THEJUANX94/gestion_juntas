@@ -27,9 +27,11 @@ export default function DetalleJunta() {
           const apellido = partesNombre.slice(2).join(" ");
 
           return {
-            cargo: m.cargo || "",
+            cargo: m.cargo || "No aplica",
             comision: m.comision || "No aplica",
-            periodo: m.periodo || "",
+            periodo: m.periodoJunta || "",
+            inicioMandato: m.inicioMandato || "",
+            finMandato: m.finMandato || "",
             tipoDoc: m.tipoDocumento || "C.C",
             documento: m.documento || "",
             expedido: m.expedido || "",
@@ -64,6 +66,14 @@ export default function DetalleJunta() {
     if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) edad--;
     return edad;
   }
+
+  const formatear = (fecha) => {
+  if (!fecha) return "";
+  const f = new Date(fecha);
+  return `${f.getDate().toString().padStart(2,"0")}/${(f.getMonth()+1)
+    .toString().padStart(2,"0")}/${f.getFullYear()}`;
+};
+
 
 
 
@@ -453,6 +463,10 @@ export default function DetalleJunta() {
                         <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Cargo y Comisión</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Cargo:</span>
+                            <span className="text-sm font-medium text-gray-900">{m.cargo}</span>
+                          </div>
+                          <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Comisión:</span>
                             <span className="text-sm font-medium text-gray-900">{m.comision}</span>
                           </div>
@@ -460,6 +474,15 @@ export default function DetalleJunta() {
                             <span className="text-sm text-gray-600">Periodo:</span>
                             <span className="text-sm font-medium text-gray-900">{m.periodo}</span>
                           </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Fecha Inicio Periodo Mandato:</span>
+                            <span className="text-sm font-medium text-gray-900">{formatear(m.inicioMandato)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Fecha Fin Periodo Mandato:</span>
+                            <span className="text-sm font-medium text-gray-900">{formatear(m.finMandato)}</span>
+                          </div>
+                          
                         </div>
                       </div>
 
