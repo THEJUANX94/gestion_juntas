@@ -46,6 +46,20 @@ export const crearMandatario = async (req, res) => {
       return res.status(400).json({ message: "La junta no existe" });
     }
 
+    const inicioMandato = new Date(fInicioPeriodo);
+    const finMandato = new Date(fFinPeriodo);
+
+    const inicioJunta = new Date(junta.FechaInicioPeriodo);
+    const finJunta = new Date(junta.FechaFinPeriodo);
+
+    if (inicioMandato < inicioJunta || finMandato > finJunta) {
+      return res.status(400).json({
+        message: `El periodo del mandatario (${fInicioPeriodo} - ${fFinPeriodo}) 
+              debe estar dentro del periodo de la junta (${junta.FechaInicioPeriodo} - ${junta.FechaFinPeriodo}).`
+      });
+    }
+
+
 
     let usuario = await Usuario.findByPk(documento);
 
@@ -170,9 +184,9 @@ export const getMiembrosJunta = async (req, res) => {
 
         {
           model: PeriodoPorMandato,
-          as: "Periodos",       
+          as: "Periodos",
           required: false,
-          where: { IDJunta: id },  
+          where: { IDJunta: id },
           include: [
             {
               model: Periodo,
@@ -201,7 +215,7 @@ export const getMiembrosJunta = async (req, res) => {
       if (hoy < new Date(hoy.getFullYear(), f.getUTCMonth(), f.getUTCDate())) edad--;
 
       const periodoMandato = m.Periodos?.[0]?.Periodo || null;
- 
+
 
 
 
@@ -254,12 +268,12 @@ export const buscarMandatarios = async (req, res) => {
       where: {
         [Op.or]: [
           { NumeroIdentificacion: { [Op.like]: `%${query}%` } },
-          { PrimerNombre: { [Op.like]: `%${query}%` } },
-          { SegundoNombre: { [Op.like]: `%${query}%` } },
-          { PrimerApellido: { [Op.like]: `%${query}%` } },
-          { SegundoApellido: { [Op.like]: `%${query}%` } },
-          { Correo: { [Op.like]: `%${query}%` } },
-          { Celular: { [Op.like]: `%${query}%` } }
+          { PrimerNombre: { [Op.iLike]: `%${query}%` } },
+          { SegundoNombre: { [Op.iLike]: `%${query}%` } },
+          { PrimerApellido: { [Op.iLike]: `%${query}%` } },
+          { SegundoApellido: { [Op.iLike]: `%${query}%` } },
+          { Correo: { [Op.iLike]: `%${query}%` } },
+          { Celular: { [Op.iLike]: `%${query}%` } }
         ]
       },
       include: [
@@ -287,6 +301,22 @@ export const buscarMandatarios = async (req, res) => {
   }
 };
 
+export const validarMandatarioEnJunta = async (req, res) => {
+  try {
+    const { idJunta, idUsuario } = req.params;
+
+    const existe = await MandatarioJunta.findOne({
+      where: { NumeroIdentificacion: idUsuario, IDJunta: idJunta }
+    });
+
+    res.json({ existe: !!existe });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error validando mandatario" });
+  }
+};
+
+
 export const agregarMandatarioExistente = async (req, res) => {
   try {
     const { idJunta } = req.params;
@@ -294,25 +324,20 @@ export const agregarMandatarioExistente = async (req, res) => {
     const {
       IDUsuario,
       Residencia,
-      Expedido,
       Profesion,
-
       IDCargo,
       IDComision,
-
       fInicioPeriodo,
       fFinPeriodo
     } = req.body;
 
     // ==============================
-    // VALIDACIONES OBLIGATORIAS
+    // VALIDACIONES
     // ==============================
     if (!IDUsuario) return res.status(400).json({ message: "Falta el IDUsuario" });
     if (!Residencia) return res.status(400).json({ message: "Falta la Residencia" });
-    if (!Expedido) return res.status(400).json({ message: "Falta el lugar de expedición" });
     if (!Profesion) return res.status(400).json({ message: "Falta la profesión" });
 
-    // Fechas obligatorias siempre
     if (!fInicioPeriodo || !fFinPeriodo) {
       return res.status(400).json({
         message: "Debe ingresar Inicio y Fin del periodo."
@@ -325,6 +350,21 @@ export const agregarMandatarioExistente = async (req, res) => {
     const junta = await Junta.findByPk(idJunta);
     if (!junta) return res.status(404).json({ message: "La junta no existe" });
 
+
+    const inicioMandato = new Date(fInicioPeriodo);
+    const finMandato = new Date(fFinPeriodo);
+
+    const inicioJunta = new Date(junta.FechaInicioPeriodo);
+    const finJunta = new Date(junta.FechaFinPeriodo);
+
+    if (inicioMandato < inicioJunta || finMandato > finJunta) {
+      return res.status(400).json({
+        message: `El periodo del mandatario (${fInicioPeriodo} - ${fFinPeriodo}) 
+              debe estar dentro del periodo de la junta (${junta.FechaInicioPeriodo} - ${junta.FechaFinPeriodo}).`
+      });
+    }
+
+
     const existe = await MandatarioJunta.findOne({
       where: { NumeroIdentificacion: IDUsuario, IDJunta: idJunta }
     });
@@ -333,26 +373,47 @@ export const agregarMandatarioExistente = async (req, res) => {
       return res.status(400).json({ message: "El usuario ya pertenece a esta junta" });
     }
 
+    const ultimoMandato = await MandatarioJunta.findOne({
+      where: { NumeroIdentificacion: IDUsuario },
+      order: [['IDJunta', 'DESC']]
+    });
+
+
+
     // ==============================
-    // Crear MandatarioJunta
+    // 1. CREAR MandatarioJunta
     // ==============================
     const mandatario = await MandatarioJunta.create({
       NumeroIdentificacion: IDUsuario,
       IDJunta: idJunta,
       Residencia,
-      Expedido,
       Profesion,
-
+      Expedido: ultimoMandato?.Expedido || null,
       IDCargo: IDCargo || null,
-      IDComision: IDComision || null,
+      IDComision: IDComision || null
+    });
 
+    // ==============================
+    // 2. CREAR el nuevo periodo
+    // ==============================
+    const nuevoPeriodo = await Periodo.create({
       FechaInicio: fInicioPeriodo,
       FechaFin: fFinPeriodo
     });
 
+    // ==============================
+    // 3. ENLAZAR periodo con mandatario + junta
+    // ==============================
+    await PeriodoPorMandato.create({
+      IDPeriodo: nuevoPeriodo.IDPeriodo,
+      NumeroIdentificacion: IDUsuario,
+      IDJunta: idJunta
+    });
+
     res.json({
       message: "Mandatario agregado correctamente",
-      mandatario
+      mandatario,
+      periodo: nuevoPeriodo
     });
 
   } catch (error) {

@@ -82,6 +82,21 @@ export default function CrearJunta() {
       ...prev,
       [name]: finalValue,
     }));
+
+
+    if (name === "fechaInicioPeriodo") {
+      const fechaInicio = new Date(value);
+      const fechaFin = new Date(fechaInicio);
+      fechaFin.setFullYear(fechaFin.getFullYear() + 4);
+
+      setFormData(prev => ({
+        ...prev,
+        fechaInicioPeriodo: value,
+        fechaFinPeriodo: fechaFin.toISOString().split("T")[0]
+      }));
+      return;
+    }
+
   };
 
 
@@ -331,9 +346,10 @@ export default function CrearJunta() {
                   type="date"
                   name="fechaFinPeriodo"
                   value={formData.fechaFinPeriodo}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#64AF59] focus:border-transparent outline-none transition-all"
+                  readOnly
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-100 cursor-not-allowed"
                 />
+
               </div>
             </div>
           </div>

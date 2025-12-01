@@ -27,7 +27,7 @@ export default function DetalleJunta() {
           const apellido = partesNombre.slice(2).join(" ");
 
           return {
-            cargo: m.cargo || "No aplica",
+            cargo: m.cargo || "",
             comision: m.comision || "No aplica",
             periodo: m.periodoJunta || "",
             inicioMandato: m.inicioMandato || "",
@@ -462,10 +462,6 @@ export default function DetalleJunta() {
                       <div>
                         <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Cargo y Comisión</h4>
                         <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Cargo:</span>
-                            <span className="text-sm font-medium text-gray-900">{m.cargo}</span>
-                          </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Comisión:</span>
                             <span className="text-sm font-medium text-gray-900">{m.comision}</span>

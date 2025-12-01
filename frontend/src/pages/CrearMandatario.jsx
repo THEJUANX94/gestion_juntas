@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { UserPlus, Save } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function AgregarMandatario() {
 
+  const navigate = useNavigate();
   const { id } = useParams();
   const [modo, setModo] = useState("cargo");
 
@@ -124,6 +126,7 @@ export default function AgregarMandatario() {
       }
 
       alert("Mandatario creado correctamente");
+      navigate(`/juntas/detalle-junta/${idJunta}`);
       console.log("Respuesta:", data);
 
     } catch (error) {

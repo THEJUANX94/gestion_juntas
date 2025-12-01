@@ -42,11 +42,27 @@ export default function BuscarMandatario() {
     window.location.href = `/juntas/${idJunta}/mandatario/crear`;
   };
 
-const handleAgregarAJunta = (user) => {
+const handleAgregarAJunta = async (user) => {
   const idUsuario = user.IDUsuario || user.NumeroIdentificacion;
 
-  navigate(`/juntas/${idJunta}/mandatario/editar-datos/${idUsuario}`);
+  try {
+    const res = await fetch(`http://localhost:3000/api/mandatario/validar/${idJunta}/${idUsuario}`);
+    const data = await res.json();
+
+    if (data.existe) {
+      alert("Este mandatario ya pertenece a esta junta.");
+      return;
+    }
+
+    // Si NO existe → permitir navegar
+    navigate(`/juntas/${idJunta}/mandatario/editar-datos/${idUsuario}`);
+
+  } catch (error) {
+    console.error(error);
+    alert("Error validando mandatario");
+  }
 };
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">

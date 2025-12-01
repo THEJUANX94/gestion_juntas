@@ -13,7 +13,6 @@ export default function EditarMandatarioExistente() {
 
     const [form, setForm] = useState({
         Residencia: "",
-        Expedido: "",
         Profesion: "",
         IDCargo: "",
         IDComision: "",
@@ -164,27 +163,6 @@ export default function EditarMandatarioExistente() {
                         <select
                             name="Residencia"
                             value={form.Residencia}
-                            onChange={handleChange}
-                            className="w-full border rounded-lg p-3"
-                        >
-                            <option value="">Seleccione municipio</option>
-                            {municipios.map((m) => (
-                                <option key={m.IDLugar} value={m.IDLugar}>
-                                    {m.NombreLugar}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Expedido */}
-                    <div>
-                        <label className="font-semibold text-gray-700 flex items-center gap-2 mb-1">
-                            <MapPin size={18} />
-                            Documento expedido en
-                        </label>
-                        <select
-                            name="Expedido"
-                            value={form.Expedido}
                             onChange={handleChange}
                             className="w-full border rounded-lg p-3"
                         >

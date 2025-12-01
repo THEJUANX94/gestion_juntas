@@ -66,19 +66,6 @@ export const crearJunta = async (req, res) => {
     }
 
     // ------------------------------------------
-    // VALIDAR DUPLICADO DE PERSONERÍA JURÍDICA
-    // ------------------------------------------
-    const existePersoneria = await Junta.findOne({
-      where: { NumPersoneriaJuridica: numPersoneriaJuridica }
-    });
-
-    if (existePersoneria) {
-      return res.status(409).json({
-        message: "Ya existe una junta con esa personería jurídica"
-      });
-    }
-
-    // ------------------------------------------
     // VALIDAR DUPLICADO DE RAZÓN SOCIAL EN MISMO MUNICIPIO
     // ------------------------------------------
     const existeRazonLugar = await Junta.findOne({
