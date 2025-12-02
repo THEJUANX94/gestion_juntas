@@ -3,6 +3,9 @@ import { Lugar } from "../model/lugarModel.js";
 import { Institucion } from "../model/institucionModel.js";
 import { TipoJunta } from "../model/tipoJuntaModel.js";
 import { Reconocida } from "../model/reconocidaModel.js";
+import { PeriodoPorMandato } from "../model/periodopormandato.js";
+import { Periodo } from "../model/periodoModel.js";
+import { MandatarioJunta } from "../model/mandatarioJuntaModel.js";
 
 export const crearJunta = async (req, res) => {
   try {
@@ -228,4 +231,75 @@ export const getMiembrosJunta = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+export const eliminarJunta = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ------------------------------------------
+    // VALIDAR QUE LA JUNTA EXISTA
+    // ------------------------------------------
+    const junta = await Junta.findByPk(id);
+    if (!junta) {
+      return res.status(404).json({
+        message: "La junta no existe"
+      });
+    }
+
+    // ------------------------------------------
+    // OBTENER TODOS LOS MANDATARIOS DE ESA JUNTA
+    // ------------------------------------------
+    const mandatarios = await MandatarioJunta.findAll({
+      where: { IDJunta: id }
+    });
+
+    // ------------------------------------------
+    // ELIMINAR PERIODOS DE TODOS LOS MANDATARIOS
+    // ------------------------------------------
+    for (const m of mandatarios) {
+      const periodosPorMandato = await PeriodoPorMandato.findAll({
+        where: {
+          IDJunta: id,
+          NumeroIdentificacion: m.NumeroIdentificacion
+        }
+      });
+
+      for (const pm of periodosPorMandato) {
+        // 1. eliminar relación
+        await PeriodoPorMandato.destroy({ where: { IDPeriodo: pm.IDPeriodo } });
+
+        // 2. eliminar periodo
+        await Periodo.destroy({ where: { IDPeriodo: pm.IDPeriodo } });
+      }
+    }
+
+    // ------------------------------------------
+    // ELIMINAR MANDATARIOS ASOCIADOS A LA JUNTA
+    // ------------------------------------------
+    await MandatarioJunta.destroy({
+      where: { IDJunta: id }
+    });
+
+    // ------------------------------------------
+    // ELIMINAR LA JUNTA
+    // ------------------------------------------
+    await Junta.destroy({
+      where: { IDJunta: id }
+    });
+
+    return res.json({
+      message: "Junta eliminada correctamente junto con todos sus mandatarios y periodos"
+    });
+
+  } catch (error) {
+    console.error("Error eliminando junta:", error);
+    return res.status(500).json({
+      message: "Error interno del servidor",
+      error: error.message
+    });
+  }
+};
+
 

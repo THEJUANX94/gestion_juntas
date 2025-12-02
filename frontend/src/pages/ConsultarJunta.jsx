@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, ExternalLink, FileSearch } from "lucide-react";
+import { Search, Filter, ExternalLink, FileSearch, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import Select from "react-select";
@@ -96,6 +96,39 @@ export default function ConsultarJunta() {
         setJuntas([]);
         setConsultado(false);
     };
+
+    const eliminarJunta = async (idJunta) => {
+        const confirm = await AlertMessage.confirm(
+            "¿Eliminar junta?",
+            "Esta acción no se puede deshacer. ¿Desea continuar?"
+        );
+
+        console.log("Resultado confirmación:", confirm)
+
+        if (!confirm) return;
+
+
+        try {
+            const resp = await fetch(`http://localhost:3000/api/juntas/${idJunta}`, {
+                method: "DELETE",
+            });
+
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                return AlertMessage.error("Error", data.message || "No se pudo eliminar");
+            }
+
+            AlertMessage.success("Eliminada", "La junta fue eliminada exitosamente");
+
+            // ❗ Removerla de la tabla sin recargar toda la pantalla
+            setJuntas(prev => prev.filter(j => j.IDJunta !== idJunta));
+
+        } catch (e) {
+            AlertMessage.error("Error", "No se pudo comunicarse con el servidor");
+        }
+    };
+
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
@@ -225,15 +258,29 @@ export default function ConsultarJunta() {
                                                 <td className="px-6 py-4 text-sm text-gray-700">{junta.Reconocida?.Nombre}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-700">{junta.NumPersoneriaJuridica}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <Link
-                                                        to={`/juntas/detalle-junta/${junta.IDJunta}`}
-                                                        state={{ junta }}
-                                                        className="inline-flex items-center gap-1 text-[#009E76] hover:text-[#007d5e] font-medium text-sm transition-colors"
-                                                    >
-                                                        Ver detalles
-                                                        <ExternalLink size={16} />
-                                                    </Link>
+                                                    <div className="flex justify-center items-center gap-4">
+
+                                                        {/* Ver detalles */}
+                                                        <Link
+                                                            to={`/juntas/detalle-junta/${junta.IDJunta}`}
+                                                            state={{ junta }}
+                                                            className="inline-flex items-center gap-1 text-[#009E76] hover:text-[#007d5e] font-medium text-sm transition-colors"
+                                                        >
+                                                            Ver detalles
+                                                            <ExternalLink size={16} />
+                                                        </Link>
+
+                                                        {/* Eliminar */}
+                                                        <button
+                                                            onClick={() => eliminarJunta(junta.IDJunta)}
+                                                            className="text-red-500 hover:text-red-700 transition-colors"
+                                                            title="Eliminar junta"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
                                                 </td>
+
 
                                             </tr>
                                         ))
