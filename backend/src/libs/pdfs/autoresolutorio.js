@@ -12,12 +12,13 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const doc = createDoc();
 
   // --- MAPEO DE DATOS CON VALORES POR DEFECTO ---
-  const municipio = (datosCertificado.NombreMunicipio || "ALMEIDA").toUpperCase();
-  const nombreOrganizacion = (datosCertificado.nombreOrganizacion || "ASOCIACION COMUNAL DE JUNTAS").toUpperCase();
-  const personeriaNumero = datosCertificado.personeriaNumero || "____";
-  const personeriaFecha = datosCertificado.personeriaFecha || "____-__-__";
-  const periodoInicio = datosCertificado.periodoInicio || "2022-07-01";
-  const periodoFin = datosCertificado.periodoFin || "2026-06-30";
+  const municipio = (datosCertificado.NombreMunicipio).toUpperCase();
+  const nombreOrganizacion = (datosCertificado.nombreOrganizacion).toUpperCase();
+  const personeriaNumero = datosCertificado.personeriaNumero;
+  const personeriaFecha = datosCertificado.personeriaFecha;
+  const periodoInicio = datosCertificado.periodoInicio;
+  const periodoFin = datosCertificado.periodoFin;
+  const tipodocumento = datosCertificado.TipoCertificado
 
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
   const anchoUtil = 210 - margenIzq - margenDer; // ~160mm
@@ -28,7 +29,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const resources = await addPDFHeader(doc, datosCertificado);
 
   // --- TÍTULO PRINCIPAL ---
-  const titulo = `POR MEDIO DE LA CUAL SE REALIZA LA INSCRIPCIÓN Y RECONOCIMIENTO DE DIGNATARIOS ELEGIDOS POR LA ${nombreOrganizacion}`;
+  const titulo = `POR MEDIO DE LA CUAL SE REALIZA LA INSCRIPCIÓN Y RECONOCIMIENTO DE DIGNATARIOS ELEGIDOS POR LA ${tipodocumento}`;
   const linesTitulo = doc.splitTextToSize(titulo, 140);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -36,7 +37,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   yPos += (linesTitulo.length * 5) + 5;
 
   // --- IDENTIFICACIÓN DE LA ORGANIZACIÓN ---
-  centerText(doc, `${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}`, yPos, 10, 'bold');
+  centerText(doc, `${tipodocumento} DEL MUNICIPIO DE ${municipio}`, yPos, 10, 'bold');
   yPos += 6;
 
   centerText(doc, `CON PERSONERIA N° ${personeriaNumero} DE FECHA ${personeriaFecha}`, yPos, 10, 'bold');
@@ -71,8 +72,8 @@ const generarAutoresolutorio = async (datosCertificado) => {
     "Que la ordenanza No 049 de 2019, establece que la Secretaría de Gobierno y Acción Comunal está compuesta entre otras por la Dirección de Participación y Acción Comunal, la cual tiene entre otras funciones ejercer las funciones de Inspección, Control y Vigilancia de los organismos de acción comunal de primero y segundo grado que existan en el Departamento de Boyacá.",
     "Que la Resolución 1513 del 22 de septiembre de 2021, 'Por la cual se dictan disposiciones para el normal desarrollo de la elección de Dignatarios y Directivos de los Órganos de Acción Comunal' estableció en su artículo 6 el cronograma electoral.",
     "Que la Ley 743 de 2002 en su artículo 30, establece en relación al periodo de los directivos y los dignatarios, lo siguiente: 'El período de los directivos y dignatarios de los organismos de acción comunal es el mismo de las corporaciones públicas nacional y territoriales, según el caso.'",
-    `Que La ${nombreOrganizacion} del Municipio de ${municipio}, realizó el proceso de elección de dignatarios de conformidad a las modalidades de elección establecidas en la ley.`,
-    `Que en razón a que la elección de dignatarios de la ${nombreOrganizacion} del Municipio de ${municipio}, se llevó a cabo conforme a la normativa vigente, es oportuno aplicar la referida normativa para el estudio de los requisitos establecidos para la elección y posterior inscripción de dignatarios.`,
+    `Que La ${tipodocumento} del Municipio de ${municipio}, realizó el proceso de elección de dignatarios de conformidad a las modalidades de elección establecidas en la ley.`,
+    `Que en razón a que la elección de dignatarios de la ${tipodocumento} del Municipio de ${municipio}, se llevó a cabo conforme a la normativa vigente, es oportuno aplicar la referida normativa para el estudio de los requisitos establecidos para la elección y posterior inscripción de dignatarios.`,
     "Que de conformidad con lo previsto en el artículo 18 del Decreto 890 de 2008 compilado en el artículo 2.3.2.2.18 del Decreto Único 1066 de 2015 se debe acreditar los requisitos de Acta de Asamblea, Listado de asistentes y Planchas o Listas presentadas.",
     `Con el objeto de verificar el cumplimiento de los requisitos mínimos de validez de la elección de dignatarios, la Dirección de Participación y Acción Comunal procedió con el análisis jurídico de la documentación aportada por la ${nombreOrganizacion} del Municipio de ${municipio}, encontrando que se ajusta de manera íntegra con los requisitos legales.`
   ];
@@ -110,35 +111,65 @@ const generarAutoresolutorio = async (datosCertificado) => {
   // --- ARTÍCULOS ---
 
   // ARTÍCULO PRIMERO
-  result = checkPageBreak(doc, yPos, 15);
-  yPos = result.yPos;
-
+  // ARTÍCULO PRIMERO
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   const art1Label = "ARTÍCULO PRIMERO:";
-  doc.text(art1Label, margenIzq, yPos);
 
-  const textoArt1 = `Inscribir a la ${nombreOrganizacion} del municipio de ${municipio}, Departamento de Boyacá, para el periodo comprendido.`;
+  const textoArt1 = `Inscribir a la ${tipodocumento} del municipio de ${municipio}, Departamento de Boyacá, para el periodo comprendido.`;
   doc.setFont('helvetica', 'normal');
   const splitArt1 = doc.splitTextToSize(textoArt1, anchoUtil - 5);
+  // calcular espacio necesario (incluye una línea para la etiqueta)
+  let heightNeededArt1 = (splitArt1.length * 5) + 8;
+  result = checkPageBreak(doc, yPos, heightNeededArt1);
+  yPos = result.yPos;
+
+  // Imprimir etiqueta en su propia línea
+  doc.setFont('helvetica', 'bold');
+  doc.text(art1Label, margenIzq, yPos);
+  yPos += 6;
+
+  // Imprimir texto del artículo
+  doc.setFont('helvetica', 'normal');
   doc.text(splitArt1, margenIzq + 5, yPos);
   yPos += (splitArt1.length * 5) + 5;
 
   // Tabla de dignatarios
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  centerText(doc, nombreOrganizacion, yPos, 9, 'bold');
+  centerText(doc, tipodocumento, yPos, 9, 'bold');
   yPos += 6;
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
 
   if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
+    // Ancho del recuadro y márgenes
+    const anchoRecuadro = anchoUtil - 10;
+    const margenRecuadro = margenIzq + 5;
+    
     datosCertificado.dignatarios.forEach(d => {
-      result = checkPageBreak(doc, yPos, 6);
+      // Preparar texto del mandatario
+      const textoMandatario = `${d.cargo || ''}: ${d.nombre || ''} (CC: ${d.cedula || ''})`;
+      const lineasMandatario = doc.splitTextToSize(textoMandatario, anchoRecuadro - 4);
+      
+      // Altura del recuadro: 2 puntos por línea más padding
+      const altoRecuadro = (lineasMandatario.length * 4) + 6;
+      
+      // Verificar salto de página
+      result = checkPageBreak(doc, yPos, altoRecuadro + 2);
       yPos = result.yPos;
-      doc.text(`${d.cargo || ''}: ${d.nombre || ''} (CC: ${d.cedula || ''})`, margenIzq + 10, yPos);
-      yPos += 5;
+      
+      // Dibujar recuadro
+      doc.setDrawColor(0, 100, 0); // Verde oscuro
+      doc.rect(margenRecuadro, yPos, anchoRecuadro, altoRecuadro);
+      
+      // Imprimir texto dentro del recuadro
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      doc.text(lineasMandatario, margenRecuadro + 2, yPos + 3, { maxWidth: anchoRecuadro - 4 });
+      
+      yPos += altoRecuadro + 3; // Espacio entre recuadros
     });
   } else {
     doc.text('[ESPACIO PARA LISTADO DE DIGNATARIOS]', margenIzq + 10, yPos);
@@ -151,45 +182,55 @@ const generarAutoresolutorio = async (datosCertificado) => {
   yPos += 8;
 
   // ARTÍCULO SEGUNDO
-  result = checkPageBreak(doc, yPos, 15);
-  yPos = result.yPos;
-
-  const art2Label = "ARTÍCULO SEGUNDO:";
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text(art2Label, margenIzq, yPos);
+  const art2Label = "ARTÍCULO SEGUNDO:";
 
-  const textoArt2 = `El periodo de los dignatarios elegidos por la ${nombreOrganizacion} del Municipio de ${municipio}, inicia el ${periodoInicio} y finaliza el ${periodoFin}.`;
+  const textoArt2 = `El periodo de los dignatarios elegidos por la ${tipodocumento} del Municipio de ${municipio}, inicia el ${periodoInicio} y finaliza el ${periodoFin}.`;
   doc.setFont('helvetica', 'normal');
   const splitArt2 = doc.splitTextToSize(textoArt2, anchoUtil - 5);
+  let heightNeededArt2 = (splitArt2.length * 5) + 8;
+  result = checkPageBreak(doc, yPos, heightNeededArt2);
+  yPos = result.yPos;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text(art2Label, margenIzq, yPos);
+  yPos += 6;
+
+  doc.setFont('helvetica', 'normal');
   doc.text(splitArt2, margenIzq + 5, yPos);
   yPos += (splitArt2.length * 5) + 5;
 
   // ARTÍCULO TERCERO
-  result = checkPageBreak(doc, yPos, 15);
-  yPos = result.yPos;
-
   const art3Label = "ARTÍCULO TERCERO:";
-  doc.setFont('helvetica', 'bold');
-  doc.text(art3Label, margenIzq, yPos);
-
-  const textoArt3 = `Comunicar el presente acto administrativo al representante legal de la ${nombreOrganizacion} del Municipio de ${municipio}, conforme a lo establecido en ley 1437 de 2011 artículo 70.`;
+  const textoArt3 = `Comunicar el presente acto administrativo al representante legal de la ${tipodocumento} del Municipio de ${municipio}, conforme a lo establecido en ley 1437 de 2011 artículo 70.`;
   doc.setFont('helvetica', 'normal');
   const splitArt3 = doc.splitTextToSize(textoArt3, anchoUtil - 5);
+  let heightNeededArt3 = (splitArt3.length * 5) + 8;
+  result = checkPageBreak(doc, yPos, heightNeededArt3);
+  yPos = result.yPos;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text(art3Label, margenIzq, yPos);
+  yPos += 6;
+
+  doc.setFont('helvetica', 'normal');
   doc.text(splitArt3, margenIzq + 5, yPos);
   yPos += (splitArt3.length * 5) + 5;
 
   // ARTÍCULO CUARTO
-  result = checkPageBreak(doc, yPos, 10);
-  yPos = result.yPos;
-
   const art4Label = "ARTÍCULO CUARTO:";
-  doc.setFont('helvetica', 'bold');
-  doc.text(art4Label, margenIzq, yPos);
-
   const textoArt4 = "Contra el presente Auto no proceden recursos de conformidad con el artículo 75 de la Ley 1437 de 2011.";
   doc.setFont('helvetica', 'normal');
   const splitArt4 = doc.splitTextToSize(textoArt4, anchoUtil - 5);
+  let heightNeededArt4 = (splitArt4.length * 5) + 8;
+  result = checkPageBreak(doc, yPos, heightNeededArt4);
+  yPos = result.yPos;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text(art4Label, margenIzq, yPos);
+  yPos += 6;
+
+  doc.setFont('helvetica', 'normal');
   doc.text(splitArt4, margenIzq + 5, yPos);
   yPos += (splitArt4.length * 5) + 8;
 

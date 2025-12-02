@@ -9,9 +9,9 @@ import {
 
 const router = Router();
 
-router.get("/",  obtenerTiposJunta);
-router.get("/:idtipojunta",  obtenerTipoJuntaPorId);
-router.delete("/:idtipojunta", eliminarTipoJunta);
-router.post("/creartipojunta", crearTipoJunta);
+router.get("/",  verificarAuth, obtenerTiposJunta);
+router.get("/:idtipojunta",  verificarAuth, obtenerTipoJuntaPorId);
+router.delete("/:idtipojunta", verificarAuth, eliminarTipoJunta);
+router.post("/creartipojunta", verificarAuth, crearTipoJunta);
 
 export default router;

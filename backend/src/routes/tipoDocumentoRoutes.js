@@ -6,7 +6,7 @@ import {
 
 const router = Router();
 
-router.get("/",  obtenerTipoDocumento);
+router.get("/",  verificarAuth, obtenerTipoDocumento);
 
 
 export default router;

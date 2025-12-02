@@ -34,7 +34,9 @@ dotenv.config();
 const ID_ROL_ADMINISTRADOR = "4d41852c-4ee3-4798-bbe0-ca3a65660666";
 
 const allowedOrigins = [
-  'http://172.20.1.31',
+  'http://172.20.1.32:3000',
+  'http://172.20.1.32',
+  'https://172.20.1.32',
   'http://localhost:5173',
   'https://certificacion.boyaca.gov.co',
   'https://certificacion.boyaca.gov.co:3000'
@@ -45,6 +47,7 @@ const corsOptions = {
   if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log("🚫 Bloqueado por CORS. Origen intentando entrar:", origin);
       callback(new Error('Not allowed by CORS'));
     } 
   },
@@ -200,17 +203,16 @@ app.use("/api/juntas", juntaRoutes);
 app.use("/api/tipodocumento", tipoDocumentoRoutes);
 app.use("/api/comisiones", comisionesRoutes);
 app.use("/api/mandatario", mandatarioJuntaRoutes);
-
 app.use("/api/certificados", certificadosRoutes)
 
 const frontendPath = path.join(__dirname, '../frontend/dist');
 
-/*app.use(express.static(frontendPath));
+app.use(express.static(frontendPath));
 
 app.use((req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
-*/
+
 const PORT = process.env.PORT || 3000;
 
 (async () => {

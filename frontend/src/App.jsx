@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
-//import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 import MainLayout from "./layouts/MainLayout";
 import HomeLayout from "./layouts/HomeLayout";
@@ -20,6 +20,9 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import DatosJunta from "./pages/DatosJunta";
 import ListarCargos from "./pages/ListarCargos";
+import ListarComisiones from "./pages/ListarComisiones";
+import CrearComision from "./pages/CrearComision";
+import UpdateComision from "./pages/UpdateComision";
 import CrearCargo from "./pages/CrearCargo";
 import CrearInstitucion from "./pages/CrearInstitucion";
 import ListarInstituciones from "./pages/ListarInstituciones";
@@ -28,6 +31,7 @@ import BuscarMandatario from "./pages/BuscarMandatario";
 import ListarLugares from "./pages/ListarLugares";
 import EditarMandatarioExistente from "./pages/EditarMandatarioExistente";
 import EditarMandatario from "./pages/EditarMandatario";
+import ValidacionQR from "./pages/ValidacionQR";
 
 
 export default function App() {
@@ -37,11 +41,12 @@ export default function App() {
         <Routes>
           <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/validacionqr/:IDCertificado" element={<ValidacionQR/>} />
             <Route path="/login" element={<LoginUser />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Route>
-
+          <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
               <Route path="/juntas/crear" element={<CrearJunta />} />
               <Route path="/juntas/consultar" element={<ConsultarJunta />} />
@@ -52,6 +57,9 @@ export default function App() {
               <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
               <Route path="/juntas/:idJunta/mandatario/editar-datos/:idUsuario" element={<EditarMandatarioExistente />}/>
               <Route path="cargos/listar" element={<ListarCargos/>}/>
+              <Route path="comisiones/listar" element={<ListarComisiones/>} />
+              <Route path="comisiones/create" element={<CrearComision/>} />
+              <Route path="comisiones/update/:id" element={<UpdateComision/>} />
               <Route path="cargos/create" element={<CrearCargo/>} />
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />
               <Route path="instituciones/create" element={<CrearInstitucion/>} />
@@ -63,7 +71,7 @@ export default function App() {
               <Route path="configuracion" element={<Configuracion />} />
               <Route path="logs" element={<Logs />} />
             </Route>
-          
+          </Route>
         </Routes>
       </AuthProvider>
     </Router >

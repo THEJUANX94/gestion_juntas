@@ -1,17 +1,18 @@
 import { Router } from "express";
 import {getMiembrosJunta, crearMandatario, buscarMandatarios, agregarMandatarioExistente, validarMandatarioEnJunta, eliminarMandatario, actualizarMandatario, obtenerMandatario } from "../controllers/mandatarioJuntaController.js";
+import { verificarAuth } from "../utils/authMiddleware.js";
 
 const router = Router();
 
-router.post("/crear/:id", crearMandatario);
-router.put("/editar/:idJunta/:documento", crearMandatario);
-router.get("/:id/miembros", getMiembrosJunta);
-router.get("/:idJunta/:documento", obtenerMandatario);
-router.put("/actualizar/:idJunta/:documento", actualizarMandatario);
-router.get("/buscar", buscarMandatarios);
-router.post ("/agregar-existente/:idJunta", agregarMandatarioExistente)
-router.get("/validar/:idJunta/:idUsuario", validarMandatarioEnJunta);
-router.delete("/:documento", eliminarMandatario);
+router.post("/crear/:id", verificarAuth, crearMandatario);
+router.put("/editar/:idJunta/:documento", verificarAuth, crearMandatario);
+router.get("/:id/miembros", verificarAuth, getMiembrosJunta);
+router.get("/:idJunta/:documento", verificarAuth, obtenerMandatario);
+router.put("/actualizar/:idJunta/:documento", verificarAuth, actualizarMandatario);
+router.get("/buscar", verificarAuth, buscarMandatarios);
+router.post ("/agregar-existente/:idJunta", verificarAuth, agregarMandatarioExistente)
+router.get("/validar/:idJunta/:idUsuario", verificarAuth, validarMandatarioEnJunta);
+router.delete("/:documento", verificarAuth, eliminarMandatario);
 
 
 
