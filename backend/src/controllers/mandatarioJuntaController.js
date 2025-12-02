@@ -434,3 +434,61 @@ export const agregarMandatarioExistente = async (req, res) => {
     });
   }
 };
+
+// ======================================================
+//  ELIMINAR MANDATARIO DE UNA JUNTA
+// ======================================================
+export const eliminarMandatario = async (req, res) => {
+  try {
+    const { documento } = req.params;
+
+    // 1. Verificar que exista el mandatario en alguna junta
+    const mandatario = await MandatarioJunta.findOne({
+      where: { NumeroIdentificacion: documento }
+    });
+
+    if (!mandatario) {
+      return res.status(404).json({
+        message: "El mandatario no existe o no pertenece a ninguna junta"
+      });
+    }
+
+    const idJunta = mandatario.IDJunta;
+
+    // 2. Buscar periodos vinculados a este mandato
+    const periodosMandato = await PeriodoPorMandato.findAll({
+      where: {
+        NumeroIdentificacion: documento,
+        IDJunta: idJunta
+      }
+    });
+
+    // 3. Eliminar relaciones periodo-junta-mandato
+    for (const p of periodosMandato) {
+      await PeriodoPorMandato.destroy({
+        where: { IDPeriodo: p.IDPeriodo }
+      });
+
+      await Periodo.destroy({
+        where: { IDPeriodo: p.IDPeriodo }
+      });
+    }
+
+    // 4. Eliminar el mandatario de la junta
+    await MandatarioJunta.destroy({
+      where: { NumeroIdentificacion: documento, IDJunta: idJunta }
+    });
+
+    return res.json({
+      message: "Mandatario eliminado correctamente de la junta"
+    });
+
+  } catch (error) {
+    console.error("Error eliminando mandatario:", error);
+    return res.status(500).json({
+      message: "Error eliminando mandatario",
+      error: error.message
+    });
+  }
+};
+

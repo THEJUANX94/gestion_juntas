@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail, MapPin, Search, Filter, X } from "lucide-react";
+import { FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail, MapPin, Search, Filter, X, Trash2 } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-
+import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function DetalleJunta() {
 
@@ -32,7 +32,7 @@ export default function DetalleJunta() {
             periodo: m.periodoJunta || "",
             inicioMandato: m.inicioMandato || "",
             finMandato: m.finMandato || "",
-            tipoDoc: m.tipoDocumento || "C.C",
+            tipoDoc: m.tipoDocumento || "",
             documento: m.documento || "",
             expedido: m.expedido || "",
             nombre: nombre,
@@ -68,11 +68,11 @@ export default function DetalleJunta() {
   }
 
   const formatear = (fecha) => {
-  if (!fecha) return "";
-  const f = new Date(fecha);
-  return `${f.getDate().toString().padStart(2,"0")}/${(f.getMonth()+1)
-    .toString().padStart(2,"0")}/${f.getFullYear()}`;
-};
+    if (!fecha) return "";
+    const f = new Date(fecha);
+    return `${f.getDate().toString().padStart(2, "0")}/${(f.getMonth() + 1)
+      .toString().padStart(2, "0")}/${f.getFullYear()}`;
+  };
 
 
 
@@ -190,6 +190,37 @@ export default function DetalleJunta() {
       alert('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
     }
   };
+
+  const handleEliminarMiembro = async (documento) => {
+    const result = await AlertMessage.confirm(
+      "¿Eliminar mandatario?",
+      "Esta acción no se puede deshacer. ¿Deseas continuar?"
+    );
+
+    if (!confirm) return;
+
+    try {
+      const resp = await fetch(`http://localhost:3000/api/mandatario/${documento}`, {
+        method: "DELETE",
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        return AlertMessage.error("Error", data.message || "No se pudo eliminar el mandatario");
+      }
+
+      AlertMessage.success("Eliminado", "El mandatario fue eliminado exitosamente");
+
+      // Actualizar estado en pantalla
+      setMiembros(prev => prev.filter(m => m.documento !== documento));
+
+    } catch (e) {
+      AlertMessage.error("Error", "No se pudo comunicar con el servidor");
+    }
+  };
+
+
 
   // Obtener valores únicos para los filtros
   const cargosUnicos = [...new Set(miembros.map(m => m.cargo))];
@@ -425,6 +456,14 @@ export default function DetalleJunta() {
                         <Edit2 size={20} className="text-white" />
                       </button>
 
+                      {/* Botón eliminar */}
+                      <button
+                        onClick={() => handleEliminarMiembro(m.documento)}
+                        className="bg-white/20 hover:bg-red-500/40 p-2.5 rounded-lg transition"
+                      >
+                        <Trash2 size={20} className="text-white" />
+                      </button>
+
                     </div>
                   </div>
 
@@ -478,7 +517,7 @@ export default function DetalleJunta() {
                             <span className="text-sm text-gray-600">Fecha Fin Periodo Mandato:</span>
                             <span className="text-sm font-medium text-gray-900">{formatear(m.finMandato)}</span>
                           </div>
-                          
+
                         </div>
                       </div>
 
