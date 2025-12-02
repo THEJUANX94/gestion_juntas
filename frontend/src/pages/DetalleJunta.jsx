@@ -449,7 +449,7 @@ export default function DetalleJunta() {
                       </div>
                       <button
                         onClick={() =>
-                          navigate(`/juntas/${id}/miembro/${m.documento}/editar`, { state: { miembro: m } })
+                          navigate(`/juntas/mandatario/editar/${id}/${m.documento}`, { state: { miembro: m } })
                         }
                         className="bg-white/20 hover:bg-white/30 p-2.5 rounded-lg"
                       >

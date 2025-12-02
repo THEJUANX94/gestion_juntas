@@ -39,4 +39,5 @@ router.get("/verificar-correo/:correo", verificarCorreo);
 router.put("/:IDUsuario", verificarAuth, actualizarUsuario);
 router.delete("/:IDUsuario", verificarAuth, eliminarUsuario);
 
+
 export default router;

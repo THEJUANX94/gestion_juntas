@@ -35,7 +35,8 @@ export const validarPresidenteUnico = async (documento, cargoID, idJunta) => {
   const presidente = await MandatarioJunta.findOne({
     where: {
       NumeroIdentificacion: documento,
-      IDCargo: cargoPresidente.IDCargo
+      IDCargo: cargoPresidente.IDCargo,
+      IDJunta: { [Op.ne]: idJunta } // ✅ Excluir la junta actual
     },
     include: [
       {
@@ -146,6 +147,28 @@ export const crearMandatario = async (req, res) => {
     res.status(500).json({ message: "Error al crear mandatario", error: error.message });
   }
 };
+
+export const verificarDocumento = async (req, res) => {
+  try {
+    const { documento } = req.params;
+
+    const usuario = await Usuario.findByPk(documento);
+
+    if (usuario) {
+      return res.json({ existe: true, message: "El documento ya existe en el sistema" });
+    }
+
+    return res.json({ existe: false });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error verificando documento",
+      error: error.message
+    });
+  }
+};
+
 
 
 // ======================================================
@@ -434,6 +457,228 @@ export const agregarMandatarioExistente = async (req, res) => {
     });
   }
 };
+
+// ======================================================
+//  OBTENER DATOS DE UN MANDATARIO ESPECÍFICO
+// ======================================================
+export const obtenerMandatario = async (req, res) => {
+  try {
+    const { idJunta, documento } = req.params;
+
+    // 1. Buscar el mandatario en la junta
+    const mandatario = await MandatarioJunta.findOne({
+      where: { 
+        NumeroIdentificacion: documento,
+        IDJunta: idJunta 
+      },
+      include: [
+        {
+          model: Usuario,
+          attributes: [
+            'NumeroIdentificacion',
+            'IDTipoDocumento',
+            'PrimerNombre',
+            'SegundoNombre',
+            'PrimerApellido',
+            'SegundoApellido',
+            'Sexo',
+            'FechaNacimiento',
+            'Celular',
+            'Correo'
+          ]
+        },
+        {
+          model: Cargo,
+          attributes: ['IDCargo', 'NombreCargo']
+        },
+        {
+          model: Comisiones,
+          as: "Comision",
+          attributes: ['IDComision', 'Nombre']
+        }
+      ]
+    });
+
+    if (!mandatario) {
+      return res.status(404).json({ 
+        message: "Mandatario no encontrado en esta junta" 
+      });
+    }
+
+    // 2. Buscar el periodo del mandato
+    const periodoMandato = await PeriodoPorMandato.findOne({
+      where: { 
+        NumeroIdentificacion: documento,
+        IDJunta: idJunta 
+      },
+      include: [{
+        model: Periodo,
+        as: "Periodo",
+        attributes: ['FechaInicio', 'FechaFin']
+      }]
+    });
+
+    // 3. Construir respuesta
+    const response = {
+      documento: mandatario.Usuario.NumeroIdentificacion,
+      tipoDocumento: mandatario.Usuario.IDTipoDocumento,
+      expedido: mandatario.Expedido,
+      primernombre: mandatario.Usuario.PrimerNombre,
+      segundonombre: mandatario.Usuario.SegundoNombre || "",
+      primerapellido: mandatario.Usuario.PrimerApellido,
+      segundoapellido: mandatario.Usuario.SegundoApellido || "",
+      genero: mandatario.Usuario.Sexo,
+      fNacimiento: mandatario.Usuario.FechaNacimiento,
+      residencia: mandatario.Residencia,
+      telefono: mandatario.Usuario.Celular,
+      profesion: mandatario.Profesion,
+      email: mandatario.Usuario.Correo,
+      fInicioPeriodo: periodoMandato?.Periodo?.FechaInicio || null,
+      fFinPeriodo: periodoMandato?.Periodo?.FechaFin || null,
+      cargo: mandatario.IDCargo || "",
+      comision: mandatario.IDComision || ""
+    };
+
+    return res.json(response);
+
+  } catch (error) {
+    console.error("Error obteniendo mandatario:", error);
+    return res.status(500).json({
+      message: "Error al obtener datos del mandatario",
+      error: error.message
+    });
+  }
+};
+
+
+export const actualizarMandatario = async (req, res) => {
+  try {
+    const { idJunta, documento } = req.params;
+
+    const {
+      tipoDocumento,
+      expedido,
+      primernombre,
+      segundonombre,
+      primerapellido,
+      segundoapellido,
+      genero,
+      fNacimiento,
+      residencia,
+      telefono,
+      profesion,
+      email,
+      fInicioPeriodo,
+      fFinPeriodo,
+      cargo,
+      comision
+    } = req.body;
+
+    // ✅ Validar campos obligatorios
+    if (!primernombre || !primerapellido) {
+      return res.status(400).json({ 
+        message: "Primer nombre y primer apellido son obligatorios" 
+      });
+    }
+
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ message: "Email inválido" });
+    }
+
+    if (!fInicioPeriodo || !fFinPeriodo) {
+      return res.status(400).json({ 
+        message: "Debe ingresar fecha de inicio y fin del periodo" 
+      });
+    }
+
+    // Validar que la junta exista
+    const junta = await Junta.findByPk(idJunta);
+    if (!junta) return res.status(404).json({ message: "La junta no existe" });
+
+    // Validar que el mandatario exista
+    const mandatario = await MandatarioJunta.findOne({
+      where: { NumeroIdentificacion: documento, IDJunta: idJunta }
+    });
+
+    if (!mandatario) {
+      return res.status(404).json({ 
+        message: "El mandatario no existe en esta junta" 
+      });
+    }
+
+    // Validar periodo dentro del periodo de la junta
+    const errorPeriodo = validarPeriodoMandato(
+      junta,
+      new Date(fInicioPeriodo),
+      new Date(fFinPeriodo)
+    );
+
+    if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
+
+    // Validar presidente único
+    const errorCargo = await validarPresidenteUnico(documento, cargo, idJunta);
+    if (errorCargo) return res.status(400).json({ message: errorCargo });
+
+    // Actualizar datos del usuario
+    const usuario = await Usuario.findByPk(documento);
+
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    await usuario.update({
+      IDTipoDocumento: tipoDocumento,
+      PrimerNombre: primernombre,
+      SegundoNombre: segundonombre || null,
+      PrimerApellido: primerapellido,
+      SegundoApellido: segundoapellido || null,
+      Sexo: genero,
+      FechaNacimiento: fNacimiento,
+      Residencia: residencia,
+      Celular: telefono,
+      Correo: email
+    });
+
+    // Actualizar datos del mandatario
+    await mandatario.update({
+      IDCargo: cargo || null,
+      IDComision: comision || null,
+      Residencia: residencia,
+      Expedido: expedido,
+      Profesion: profesion
+    });
+
+    // ✅ Actualizar o crear periodo
+    const periodoMandato = await PeriodoPorMandato.findOne({
+      where: { NumeroIdentificacion: documento, IDJunta: idJunta }
+    });
+
+    if (periodoMandato) {
+      const periodo = await Periodo.findByPk(periodoMandato.IDPeriodo);
+      if (periodo) {
+        await periodo.update({
+          FechaInicio: fInicioPeriodo,
+          FechaFin: fFinPeriodo
+        });
+      }
+    } else {
+      // Si no existe periodo, crearlo
+      await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo);
+    }
+
+    return res.json({
+      message: "Mandatario actualizado correctamente"
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error al actualizar mandatario",
+      error: error.message
+    });
+  }
+};
+
 
 // ======================================================
 //  ELIMINAR MANDATARIO DE UNA JUNTA
