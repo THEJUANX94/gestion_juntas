@@ -50,7 +50,8 @@ export const Asociaciones = () => {
 
     MandatarioJunta.hasMany(PeriodoPorMandato, {
         foreignKey: "numeroidentificacion",
-        sourceKey: "numeroidentificacion"
+        sourceKey: "numeroidentificacion",
+        as: "Periodos"
     });
 
     // ========================================
@@ -68,15 +69,24 @@ export const Asociaciones = () => {
     // ========================================
     // RELACIONES PARA PERIODO Y PERIODOPORMANDAT0
     // ========================================
-    Periodo.hasMany(PeriodoPorMandato, { foreignKey: "IDPeriodo" });
+    Periodo.hasMany(PeriodoPorMandato, {
+        foreignKey: "idperiodo",  
+        sourceKey: "IDPeriodo", 
+        as: "Mandatos"
+            
+    });
 
-    PeriodoPorMandato.belongsTo(Periodo, { foreignKey: "IDPeriodo" });
-
+    PeriodoPorMandato.belongsTo(Periodo, {
+        foreignKey: "idperiodo",  
+        targetKey: "IDPeriodo",
+        as: "Periodo"     
+    });
 
 
     PeriodoPorMandato.belongsTo(MandatarioJunta, {
         foreignKey: "numeroidentificacion",
-        targetKey: "numeroidentificacion"
+        targetKey: "numeroidentificacion",
+        as: "Mandatario"
     });
 
     // ========================================

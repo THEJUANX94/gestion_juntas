@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import { FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail, MapPin, Search, Filter, X } from "lucide-react";
+import { FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail, MapPin, Search, Filter, X, Trash2 } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-
+import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function DetalleJunta() {
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Obtener la junta desde el estado pasado por ConsultarJunta
+
   const juntaData = location.state?.junta || null;
   const juntaIdFromRoute = juntaData?.IDJunta || null;
   const [miembros, setMiembros] = useState([]);
@@ -29,8 +29,10 @@ export default function DetalleJunta() {
           return {
             cargo: m.cargo || "",
             comision: m.comision || "No aplica",
-            periodo: m.periodo || "",
-            tipoDoc: m.tipoDocumento || "C.C",
+            periodo: m.periodoJunta || "",
+            inicioMandato: m.inicioMandato || "",
+            finMandato: m.finMandato || "",
+            tipoDoc: m.tipoDocumento || "",
             documento: m.documento || "",
             expedido: m.expedido || "",
             nombre: nombre,
@@ -65,6 +67,14 @@ export default function DetalleJunta() {
     return edad;
   }
 
+  const formatear = (fecha) => {
+    if (!fecha) return "";
+    const f = new Date(fecha);
+    return `${f.getDate().toString().padStart(2, "0")}/${(f.getMonth() + 1)
+      .toString().padStart(2, "0")}/${f.getFullYear()}`;
+  };
+
+
 
 
 
@@ -81,11 +91,11 @@ export default function DetalleJunta() {
     { icon: FileText, label: "Consulta", color: "bg-[#009E76] hover:bg-[#007d5e]", action: 'consulta' },
     { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'autoresolutorio' },
     { icon: Award, label: "Certificado JAC", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJAC' },
-    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJVC' },
-    { icon: Database, label: "Datos Junta", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/1` },
+    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", ruta: '/juntas/crear', action: 'certificadoJVC' },
+    { icon: Database, label: "Organismo Comunal", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/${id}` },
   ];
 
-  // Generar PDF para un documento (Cedula). Por ahora usamos la misma ruta POST `/certificados`.
+
   const generatePdfForDocumento = async (documento, tipo = 'autoresolutorio') => {
     if (!documento) {
       alert('No hay documento disponible para generar el certificado.');
@@ -93,7 +103,6 @@ export default function DetalleJunta() {
     }
 
     const API_BASE = import.meta.env.VITE_PATH || '';
-    // endpoint: por ahora usamos /certificados; en el futuro se pueden diferenciar por tipo
     const endpoint = `${API_BASE}/certificados`;
 
     const payload = {
@@ -181,12 +190,42 @@ export default function DetalleJunta() {
     }
   };
 
-  // Obtener valores únicos para los filtros
+  const handleEliminarMiembro = async (documento) => {
+    const result = await AlertMessage.confirm(
+      "¿Eliminar mandatario?",
+      "Esta acción no se puede deshacer. ¿Deseas continuar?"
+    );
+
+    if (!confirm) return;
+
+    try {
+      const resp = await fetch(`http://localhost:3000/api/mandatario/${documento}`, {
+        method: "DELETE",
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        return AlertMessage.error("Error", data.message || "No se pudo eliminar el mandatario");
+      }
+
+      AlertMessage.success("Eliminado", "El mandatario fue eliminado exitosamente");
+
+
+      setMiembros(prev => prev.filter(m => m.documento !== documento));
+
+    } catch (e) {
+      AlertMessage.error("Error", "No se pudo comunicar con el servidor");
+    }
+  };
+
+
+
   const cargosUnicos = [...new Set(miembros.map(m => m.cargo))];
   const periodosUnicos = [...new Set(miembros.map(m => m.periodo))];
   const comisionesUnicas = [...new Set(miembros.map(m => m.comision))];
 
-  // Función de filtrado
+
   const miembrosFiltrados = miembros.filter(miembro => {
     const cumpleBusqueda =
       miembro.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -227,7 +266,7 @@ export default function DetalleJunta() {
 
             const handleClick = () => {
               if (accion.ruta) return navigate(accion.ruta);
-              // Generar por junta (ID de ruta) usando el tipo que coincide con la fábrica
+    
               const tipo = accion.action || 'autoresolutorio';
               return generatePdfForJunta(juntaIdFromRoute, tipo);
             };
@@ -406,9 +445,23 @@ export default function DetalleJunta() {
                           <p className="text-white/80 text-sm">{m.profesion}</p>
                         </div>
                       </div>
-                      <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-2.5 rounded-lg transition-colors">
+                      <button
+                        onClick={() =>
+                          navigate(`/juntas/mandatario/editar/${id}/${m.documento}`, { state: { miembro: m } })
+                        }
+                        className="bg-white/20 hover:bg-white/30 p-2.5 rounded-lg"
+                      >
                         <Edit2 size={20} className="text-white" />
                       </button>
+
+                      {/* Botón eliminar */}
+                      <button
+                        onClick={() => handleEliminarMiembro(m.documento)}
+                        className="bg-white/20 hover:bg-red-500/40 p-2.5 rounded-lg transition"
+                      >
+                        <Trash2 size={20} className="text-white" />
+                      </button>
+
                     </div>
                   </div>
 
@@ -420,8 +473,12 @@ export default function DetalleJunta() {
                         <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Información Personal</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Documento:</span>
-                            <span className="text-sm font-medium text-gray-900">{m.tipoDoc} {m.documento}</span>
+                            <span className="text-sm text-gray-600">Tipo Documento:</span>
+                            <span className="text-sm font-medium text-gray-900">{m.tipoDoc}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Numero Documento:</span>
+                            <span className="text-sm font-medium text-gray-900"> {m.documento}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Expedido:</span>
@@ -454,6 +511,15 @@ export default function DetalleJunta() {
                             <span className="text-sm text-gray-600">Periodo:</span>
                             <span className="text-sm font-medium text-gray-900">{m.periodo}</span>
                           </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Fecha Inicio Periodo Mandato:</span>
+                            <span className="text-sm font-medium text-gray-900">{formatear(m.inicioMandato)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Fecha Fin Periodo Mandato:</span>
+                            <span className="text-sm font-medium text-gray-900">{formatear(m.finMandato)}</span>
+                          </div>
+
                         </div>
                       </div>
 

@@ -30,6 +30,7 @@ import CrearMandatario from "./pages/CrearMandatario";
 import BuscarMandatario from "./pages/BuscarMandatario";
 import ListarLugares from "./pages/ListarLugares";
 import EditarMandatarioExistente from "./pages/EditarMandatarioExistente";
+import EditarMandatario from "./pages/EditarMandatario";
 import ValidacionQR from "./pages/ValidacionQR";
 
 
@@ -50,6 +51,7 @@ export default function App() {
               <Route path="/juntas/crear" element={<CrearJunta />} />
               <Route path="/juntas/consultar" element={<ConsultarJunta />} />
               <Route path="/juntas/:id/mandatario/crear" element={<CrearMandatario />} />
+              <Route path="/juntas/mandatario/editar/:id/:documento" element={<EditarMandatario />} />
               <Route path="/juntas/:id/mandatario/buscar" element={<BuscarMandatario />} />
               <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
               <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />

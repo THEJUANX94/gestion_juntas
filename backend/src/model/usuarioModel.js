@@ -10,17 +10,17 @@ export const Usuario = sequelize.define("Usuario", {
     allowNull: false,
     unique: true,
   },
-  PrimerApellido:{
+  PrimerApellido: {
     field: "primerapellido",
     type: DataTypes.STRING,
-  } ,
+  },
   SegundoApellido: {
     field: "segundoapellido",
     type: DataTypes.STRING,
   },
   PrimerNombre: {
     field: "primernombre",
-    type:  DataTypes.STRING,
+    type: DataTypes.STRING,
   },
   SegundoNombre: {
     field: "segundonombre",
@@ -39,7 +39,7 @@ export const Usuario = sequelize.define("Usuario", {
     type: DataTypes.STRING,
   },
   Correo: {
-    field : "correo",
+    field: "correo",
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
@@ -49,12 +49,23 @@ export const Usuario = sequelize.define("Usuario", {
     field: "celular",
     type: DataTypes.STRING,
   },
+
+  IDTipoDocumento: {
+    field: "idtipodocumento",
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: "tipodocumento",
+      key: "idtipodocumento"
+    }
+  },
+
   IDRol: {
     field: "idrol",
     type: DataTypes.UUID,
     allowNull: false,
     references: {
-      model: "roles", 
+      model: "roles",
       key: "idrol"
     },
     field: "idrol"

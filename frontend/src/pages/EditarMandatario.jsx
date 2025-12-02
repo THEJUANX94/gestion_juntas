@@ -1,21 +1,19 @@
 import { useState, useEffect } from "react";
-import { UserPlus, Save } from "lucide-react";
+import { Save, UserCog } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
 
-export default function AgregarMandatario() {
-
+export default function EditarMandatario() {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const [modo, setModo] = useState("cargo");
+  const { id, documento } = useParams();
 
+  const [modo, setModo] = useState("cargo");
   const [tiposDocumento, setTiposDocumento] = useState([]);
   const [cargos, setCargos] = useState([]);
   const [comisiones, setComisiones] = useState([]);
   const [lugares, setLugares] = useState([]);
 
   const [formData, setFormData] = useState({
-    // Datos Personales
     documento: "",
     tipoDocumento: "",
     expedido: "",
@@ -29,32 +27,66 @@ export default function AgregarMandatario() {
     telefono: "",
     profesion: "",
     email: "",
-
     fInicioPeriodo: "",
     fFinPeriodo: "",
     cargo: "",
     comision: ""
   });
 
+  // CARGAR DATOS DEL BACKEND
   useEffect(() => {
-    const cargarDatos = async () => {
-      const resTipoDoc = await fetch("http://localhost:3000/api/tipodocumento");
-      const resCargos = await fetch("http://localhost:3000/api/cargos");
-      const resComisiones = await fetch("http://localhost:3000/api/comisiones");
-      const resLugares = await fetch("http://localhost:3000/api/lugares");
+    const loadData = async () => {
+      try {
+        // Cargar selects
+        const resTipoDoc = await fetch("http://localhost:3000/api/tipodocumento");
+        const resCargos = await fetch("http://localhost:3000/api/cargos");
+        const resComisiones = await fetch("http://localhost:3000/api/comisiones");
+        const resLugares = await fetch("http://localhost:3000/api/lugares");
 
-      setTiposDocumento(await resTipoDoc.json());
-      setCargos(await resCargos.json());
-      setComisiones(await resComisiones.json());
-      setLugares(await resLugares.json());
+        setTiposDocumento(await resTipoDoc.json());
+        setCargos(await resCargos.json());
+        setComisiones(await resComisiones.json());
+        setLugares(await resLugares.json());
+
+        // Cargar datos del mandatario
+        const resMand = await fetch(`http://localhost:3000/api/mandatario/${id}/${documento}`);
+        const mand = await resMand.json();
+
+        setFormData({
+          documento: mand.documento,
+          tipoDocumento: mand.tipoDocumento,
+          expedido: mand.expedido,
+          primernombre: mand.primernombre,
+          segundonombre: mand.segundonombre,
+          primerapellido: mand.primerapellido,
+          segundoapellido: mand.segundoapellido,
+          genero: mand.genero,
+          fNacimiento: mand.fNacimiento?.split("T")[0] || "",
+          residencia: mand.residencia,
+          telefono: mand.telefono,
+          profesion: mand.profesion,
+          email: mand.email,
+          fInicioPeriodo: mand.fInicioPeriodo?.split("T")[0] || "",
+          fFinPeriodo: mand.fFinPeriodo?.split("T")[0] || "",
+          cargo: mand.cargo || "",
+          comision: mand.comision || ""
+        });
+
+        // Definir modo inicial
+        setModo(mand.cargo ? "cargo" : "comision");
+
+      } catch (err) {
+        alert("Error cargando datos del mandatario");
+        console.error(err);
+      }
     };
 
-    cargarDatos();
-  }, []);
+    loadData();
+  }, [documento]);
 
+  // HANDLE CHANGE
   const handleChange = (e) => {
     const { name, value, type } = e.target;
-
     let newValue = value;
 
     if (name === "documento") {
@@ -67,15 +99,12 @@ export default function AgregarMandatario() {
       if (newValue.length > 10) return;
     }
 
-    if (
-      ["primernombre", "segundonombre", "primerapellido", "segundoapellido"].includes(name)
-    ) {
+    if (["primernombre", "segundonombre", "primerapellido", "segundoapellido"].includes(name)) {
       newValue = newValue.replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑ\s]/g, "");
     }
 
     if (type === "text" && name !== "email") {
       newValue = newValue.toUpperCase();
-
     }
 
     if (name === "cargo") {
@@ -88,21 +117,16 @@ export default function AgregarMandatario() {
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: newValue,
-    }));
+    setFormData(prev => ({ ...prev, [name]: newValue }));
   };
 
-
-
+  // ENVIAR FORMULARIO
   const handleSubmit = async () => {
-
+    // Validaciones (mismas que en crear)
     if (!/^\d{6,10}$/.test(formData.documento)) {
       alert("El documento debe tener entre 6 y 10 números");
       return;
     }
-
 
     if (!/^\d{10}$/.test(formData.telefono)) {
       alert("El teléfono debe tener exactamente 10 dígitos");
@@ -123,8 +147,8 @@ export default function AgregarMandatario() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/api/mandatario/crear/${id}`, {
-        method: "POST",
+      const res = await fetch(`http://localhost:3000/api/mandatario/actualizar/${id}/${documento}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
@@ -136,9 +160,8 @@ export default function AgregarMandatario() {
         return;
       }
 
-      alert("Mandatario creado correctamente");
+      alert("Mandatario actualizado correctamente");
       navigate(`/juntas/detalle-junta/${id}`);
-      console.log("Respuesta:", data);
 
     } catch (error) {
       console.error(error);
@@ -153,10 +176,10 @@ export default function AgregarMandatario() {
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <UserPlus className="text-[#009E76]" size={32} />
-            <h1 className="text-3xl font-bold text-gray-800">Agregar Mandatario</h1>
+            <UserCog className="text-[#009E76]" size={32} />
+            <h1 className="text-3xl font-bold text-gray-800">Editar Mandatario</h1>
           </div>
-          <p className="text-gray-500">Complete toda la información del nuevo mandatario</p>
+          <p className="text-gray-500">Modifique la información del mandatario</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
@@ -166,7 +189,13 @@ export default function AgregarMandatario() {
             <div>
               <h3 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b-2 border-[#64AF59]">Datos Personales</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                <Input label="Documento" name="documento" value={formData.documento} onChange={handleChange} />
+                <Input 
+                  label="Documento" 
+                  name="documento" 
+                  value={formData.documento} 
+                  onChange={handleChange}
+                  disabled={true}
+                />
                 <Select
                   label="Tipo Documento"
                   name="tipoDocumento"
@@ -229,7 +258,6 @@ export default function AgregarMandatario() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                {/* Fecha Inicio Periodo */}
                 <Input
                   type="date"
                   label="Inicio de periodo"
@@ -238,16 +266,14 @@ export default function AgregarMandatario() {
                   onChange={handleChange}
                 />
 
-                {/* Fecha Fin Periodo */}
                 <Input
                   type="date"
-                  label="Fin de periodo (editable)"
+                  label="Fin de periodo"
                   name="fFinPeriodo"
                   value={formData.fFinPeriodo}
                   onChange={handleChange}
                 />
 
-                {/* SEGÚN SWITCH */}
                 {modo === "cargo" ? (
                   <Select
                     label="Cargo"
@@ -277,7 +303,7 @@ export default function AgregarMandatario() {
                   className="flex items-center gap-2 bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white font-semibold px-6 py-2.5 rounded-lg shadow-md transition-all"
                 >
                   <Save size={18} />
-                  Insertar registro
+                  Actualizar registro
                 </button>
               </div>
 
@@ -291,7 +317,7 @@ export default function AgregarMandatario() {
 }
 
 /* ---------- COMPONENTES DE INPUT LIMPIOS ---------- */
-function Input({ label, name, value, onChange, type = "text" }) {
+function Input({ label, name, value, onChange, type = "text", disabled = false }) {
   return (
     <div className="flex items-center gap-4">
       <label className="text-sm font-semibold text-gray-700 w-32 text-right">{label}:</label>
@@ -300,7 +326,10 @@ function Input({ label, name, value, onChange, type = "text" }) {
         name={name}
         value={value}
         onChange={onChange}
-        className="flex-1 border border-gray-300 rounded px-3 py-1.5 focus:ring-2 focus:ring-[#009E76] outline-none"
+        disabled={disabled}
+        className={`flex-1 border border-gray-300 rounded px-3 py-1.5 outline-none
+          ${disabled ? "bg-gray-100 cursor-not-allowed" : "focus:ring-2 focus:ring-[#009E76]"}
+        `}
       />
     </div>
   );
@@ -329,4 +358,3 @@ function Select({ label, name, value, onChange, options, disabled }) {
     </div>
   );
 }
-

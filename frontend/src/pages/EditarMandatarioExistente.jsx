@@ -13,7 +13,6 @@ export default function EditarMandatarioExistente() {
 
     const [form, setForm] = useState({
         Residencia: "",
-        Expedido: "",
         Profesion: "",
         IDCargo: "",
         IDComision: "",
@@ -82,12 +81,33 @@ export default function EditarMandatarioExistente() {
     // ===============================
     // Manejo de cambios
     // ===============================
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value,
-        });
-    };
+const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "IDCargo") {
+        setForm((prev) => ({
+            ...prev,
+            IDCargo: value,
+            IDComision: value ? "" : prev.IDComision, 
+        }));
+        return;
+    }
+
+    if (name === "IDComision") {
+        setForm((prev) => ({
+            ...prev,
+            IDComision: value,
+            IDCargo: value ? "" : prev.IDCargo, 
+        }));
+        return;
+    }
+
+    setForm({
+        ...form,
+        [name]: value,
+    });
+};
+
 
     // ===============================
     // Enviar formulario
@@ -176,27 +196,6 @@ export default function EditarMandatarioExistente() {
                         </select>
                     </div>
 
-                    {/* Expedido */}
-                    <div>
-                        <label className="font-semibold text-gray-700 flex items-center gap-2 mb-1">
-                            <MapPin size={18} />
-                            Documento expedido en
-                        </label>
-                        <select
-                            name="Expedido"
-                            value={form.Expedido}
-                            onChange={handleChange}
-                            className="w-full border rounded-lg p-3"
-                        >
-                            <option value="">Seleccione municipio</option>
-                            {municipios.map((m) => (
-                                <option key={m.IDLugar} value={m.IDLugar}>
-                                    {m.NombreLugar}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
                     {/* Profesión */}
                     <div>
                         <label className="font-semibold text-gray-700 flex items-center gap-2 mb-1">
@@ -223,6 +222,7 @@ export default function EditarMandatarioExistente() {
                             name="IDCargo"
                             value={form.IDCargo}
                             onChange={handleChange}
+                            disabled={!!form.IDComision}
                             className="w-full border rounded-lg p-3"
                         >
                             <option value="">Seleccione un cargo</option>
@@ -244,6 +244,7 @@ export default function EditarMandatarioExistente() {
                             name="IDComision"
                             value={form.IDComision}
                             onChange={handleChange}
+                            disabled={!!form.IDCargo}
                             className="w-full border rounded-lg p-3"
                         >
                             <option value="">Seleccione comisión</option>
