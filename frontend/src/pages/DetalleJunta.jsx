@@ -8,7 +8,7 @@ export default function DetalleJunta() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Obtener la junta desde el estado pasado por ConsultarJunta
+
   const juntaData = location.state?.junta || null;
   const juntaIdFromRoute = juntaData?.IDJunta || null;
   const [miembros, setMiembros] = useState([]);
@@ -92,10 +92,10 @@ export default function DetalleJunta() {
     { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'autoresolutorio' },
     { icon: Award, label: "Certificado JAC", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJAC' },
     { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", ruta: '/juntas/crear', action: 'certificadoJVC' },
-    { icon: Database, label: "Datos Junta", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/1` },
+    { icon: Database, label: "Organismo Comunal", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/${id}` },
   ];
 
-  // Generar PDF para un documento (Cedula). Por ahora usamos la misma ruta POST `/certificados`.
+
   const generatePdfForDocumento = async (documento, tipo = 'autoresolutorio') => {
     if (!documento) {
       alert('No hay documento disponible para generar el certificado.');
@@ -103,7 +103,6 @@ export default function DetalleJunta() {
     }
 
     const API_BASE = import.meta.env.VITE_PATH || '';
-    // endpoint: por ahora usamos /certificados; en el futuro se pueden diferenciar por tipo
     const endpoint = `${API_BASE}/certificados`;
 
     const payload = {
@@ -212,7 +211,7 @@ export default function DetalleJunta() {
 
       AlertMessage.success("Eliminado", "El mandatario fue eliminado exitosamente");
 
-      // Actualizar estado en pantalla
+
       setMiembros(prev => prev.filter(m => m.documento !== documento));
 
     } catch (e) {
@@ -222,12 +221,11 @@ export default function DetalleJunta() {
 
 
 
-  // Obtener valores únicos para los filtros
   const cargosUnicos = [...new Set(miembros.map(m => m.cargo))];
   const periodosUnicos = [...new Set(miembros.map(m => m.periodo))];
   const comisionesUnicas = [...new Set(miembros.map(m => m.comision))];
 
-  // Función de filtrado
+
   const miembrosFiltrados = miembros.filter(miembro => {
     const cumpleBusqueda =
       miembro.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -268,7 +266,7 @@ export default function DetalleJunta() {
 
             const handleClick = () => {
               if (accion.ruta) return navigate(accion.ruta);
-              // Generar por junta (ID de ruta) usando el tipo que coincide con la fábrica
+    
               const tipo = accion.action || 'autoresolutorio';
               return generatePdfForJunta(juntaIdFromRoute, tipo);
             };
@@ -475,8 +473,12 @@ export default function DetalleJunta() {
                         <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Información Personal</h4>
                         <div className="space-y-2">
                           <div className="flex justify-between">
-                            <span className="text-sm text-gray-600">Documento:</span>
-                            <span className="text-sm font-medium text-gray-900">{m.tipoDoc} {m.documento}</span>
+                            <span className="text-sm text-gray-600">Tipo Documento:</span>
+                            <span className="text-sm font-medium text-gray-900">{m.tipoDoc}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Numero Documento:</span>
+                            <span className="text-sm font-medium text-gray-900"> {m.documento}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Expedido:</span>

@@ -1,212 +1,426 @@
-import { useState } from "react";
-import { Save, Calendar, FileText, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Building2, Calendar, Users, Save, FileText } from "lucide-react";
+import Select from "react-select";
 
-export default function DatosJunta() {
+export default function EditarJunta() {
+
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    periodo: "2022-2026",
-    fechaAsamblea: "2016-04-24",
-    fechaInicioPeriodo: "2016-07-01",
-    fechaFinPeriodo: "2020-06-30",
-    numeroAfiliados: ""
+    razonSocial: "",
+    direccion: "",
+    numPersoneriaJuridica: "",
+    fechaCreacion: "",
+    zona: "",
+    fechaInicioPeriodo: "",
+    fechaFinPeriodo: "",
+    fechaAsamblea: "",
+    tipoJunta: "",
+    idMunicipio: "",
+    idInstitucion: "",
   });
 
-  const [juntaInfo] = useState({
-    nombre: "JUNTA DE ACCIÓN COMUNAL CENTRAL",
-    municipio: "AQUITANIA",
-    departamento: "Boyacá",
-    personeriaJuridica: "689",
-    fechaPersoneria: "16-09-1963",
-    expedidaPor: "Pendiente",
-    fechaAsamblea: "00-01-1900",
-    periodoEleccion: "01-07-2012 y el 30-06-2016"
-  });
+  const [numeroAfiliados, setNumeroAfiliados] = useState(0);
+  const [lugares, setLugares] = useState([]);
+  const [instituciones, setInstituciones] = useState([]);
+  const [tiposJunta, setTiposJunta] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const opcionesMunicipios = lugares.map(l => ({
+    value: l.IDLugar,
+    label: l.NombreLugar,
+  }));
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const [resLugares, resInst, resTipos] = await Promise.all([
+          fetch("http://localhost:3000/api/lugares"),
+          fetch("http://localhost:3000/api/instituciones"),
+          fetch("http://localhost:3000/api/tipojunta"),
+        ]);
+
+        const lugaresData = await resLugares.json();
+        const instData = await resInst.json();
+        const tiposData = await resTipos.json();
+
+        setLugares(lugaresData);
+        setInstituciones(instData);
+        setTiposJunta(tiposData);
+
+   
+        const resJunta = await fetch(`http://localhost:3000/api/juntas/${id}`);
+        const juntaData = await resJunta.json();
+   
+
+        setFormData({
+          razonSocial: juntaData.RazonSocial,
+          direccion: juntaData.Direccion,
+          numPersoneriaJuridica: juntaData.NumeroPersoneriaJuridica,
+          fechaCreacion: juntaData.FechaCreacion?.split("T")[0] || "",
+          zona: juntaData.Zona,
+          fechaInicioPeriodo: juntaData.FechaInicioPeriodo?.split("T")[0] || "",
+          fechaFinPeriodo: juntaData.FechaFinPeriodo?.split("T")[0] || "",
+          fechaAsamblea: juntaData.FechaAsamblea?.split("T")[0] || "",
+          tipoJunta: juntaData.IDTipoJunta,
+          idMunicipio: juntaData.IDMunicipio,
+          idInstitucion: juntaData.IDInstitucion,
+        });
+
+        setNumeroAfiliados(juntaData.NumeroAfiliados || 0);
+
+      } catch (error) {
+        console.error("Error cargando datos:", error);
+        alert("Error al cargar datos de la junta");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+    const { name, value, type } = e.target;
+
+    if (name === "numPersoneriaJuridica") {
+      if (!/^\d*$/.test(value)) return;
+    }
+
+    const finalValue = type === "text" ? value.toUpperCase() : value;
+
+  
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: finalValue,
     }));
+
+
+    if (name === "fechaInicioPeriodo") {
+
+
+      if (!value) {
+        setFormData(prev => ({
+          ...prev,
+          fechaInicioPeriodo: "",
+          fechaFinPeriodo: ""
+        }));
+        return;
+      }
+
+      const fechaInicio = new Date(value);
+
+      if (isNaN(fechaInicio.getTime())) {
+        console.warn("Fecha inválida:", value);
+        return;
+      }
+
+      const fechaFin = new Date(fechaInicio);
+      fechaFin.setFullYear(fechaFin.getFullYear() + 4);
+
+      setFormData(prev => ({
+        ...prev,
+        fechaInicioPeriodo: value,
+        fechaFinPeriodo: fechaFin.toISOString().split("T")[0],
+      }));
+
+      return;
+    }
   };
 
-  const handleInsertarRegistro = () => {
-    console.log("Insertar registro:", formData);
-    alert("Registro insertado correctamente");
+
+  const handleSubmit = async () => {
+    try {
+      const resp = await fetch(`http://localhost:3000/api/juntas/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        alert(`Error: ${data.message}`);
+        return;
+      }
+
+      alert("Junta actualizada correctamente");
+      navigate(`juntas/consultar`);
+
+    } catch (e) {
+      alert("Error de conexión con el servidor");
+    }
   };
 
-  const handleActualizarRegistro = () => {
-    console.log("Actualizar registro:", formData);
-    alert("Registro actualizado correctamente");
+
+  const municipioSeleccionado = lugares.find(l => l.IDLugar === formData.idMunicipio);
+  const institucionSeleccionada = instituciones.find(i => i.IDInstitucion === formData.idInstitucion);
+  const tipoSeleccionado = tiposJunta.find(t => t.IDTipoJuntas === formData.tipoJunta);
+
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return "N/A";
+    const [y, m, d] = fecha.split("-");
+    return `${d}-${m}-${y}`;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Cargando datos...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <FileText className="text-[#009E76]" size={28} />
-            <h1 className="text-3xl font-bold text-gray-800">Datos de la Junta</h1>
+            <Building2 className="text-[#009E76]" size={32} />
+            <h1 className="text-3xl font-bold text-gray-800">Editar Junta</h1>
           </div>
-          <p className="text-gray-500">Gestión de periodos y información general</p>
+          <p className="text-gray-500">Modifique la información de la junta</p>
         </div>
 
-        {/* Formulario de Periodo */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Calendar className="text-[#009E76]" size={24} />
-            <h2 className="text-xl font-semibold text-gray-800">Información del Periodo</h2>
-          </div>
+        <div className="space-y-6">
 
-          <div className="space-y-6">
-            {/* Periodo */}
-            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
-              <label className="text-right font-medium text-gray-700">
-                Periodo:
-              </label>
-              <select
-                name="periodo"
-                value={formData.periodo}
-                onChange={handleChange}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none max-w-xs"
-              >
-                <option value="2022-2026">2022-2026</option>
-                <option value="2018-2022">2018-2022</option>
-                <option value="2014-2018">2014-2018</option>
-                <option value="2010-2014">2010-2014</option>
-              </select>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+              <FileText className="text-[#009E76]" size={24} />
+              <h3 className="text-xl font-semibold text-gray-800">Información Actual</h3>
             </div>
 
-            {/* Fecha Asamblea */}
-            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
-              <label className="text-right font-medium text-gray-700">
-                Fecha Asamblea:
-              </label>
-              <input
-                type="date"
-                name="fechaAsamblea"
-                value={formData.fechaAsamblea}
-                onChange={handleChange}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none max-w-xs"
-              />
+
+            <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Users className="text-[#64AF59]" size={20} />
+                <span className="text-sm font-semibold text-gray-700">Número de Afiliados:</span>
+                <span className="text-lg font-bold text-[#009E76]">{numeroAfiliados}</span>
+              </div>
             </div>
 
-            {/* Fecha Inicio Periodo */}
-            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
-              <label className="text-right font-medium text-gray-700">
-                Fecha Inicio Periodo:
-              </label>
-              <input
-                type="date"
-                name="fechaInicioPeriodo"
-                value={formData.fechaInicioPeriodo}
-                onChange={handleChange}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none max-w-xs"
-              />
-            </div>
 
-            {/* Fecha Fin Periodo */}
-            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
-              <label className="text-right font-medium text-gray-700">
-                Fecha Fin Periodo:
-              </label>
-              <input
-                type="date"
-                name="fechaFinPeriodo"
-                value={formData.fechaFinPeriodo}
-                onChange={handleChange}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none max-w-xs"
-              />
-            </div>
-
-            {/* Botón Insertar */}
-            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
-              <div></div>
-              <button
-                onClick={handleInsertarRegistro}
-                className="flex items-center justify-center gap-2 bg-[#009E76] hover:bg-[#007d5e] text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-colors max-w-xs"
-              >
-                <Save size={18} />
-                Insertar registro
-              </button>
+            <div className="border-2 border-[#009E76] rounded-lg p-6 bg-gradient-to-br from-white to-gray-50">
+              <p className="text-gray-800 leading-relaxed text-justify">
+                La<strong className="font-bold text-[#009E76]"> {tipoSeleccionado?.NombreTipoJunta || "N/A"} </strong>
+                <strong className="font-bold">{formData.razonSocial || "N/A"}</strong> del municipio de{" "}
+                <strong className="font-bold">{municipioSeleccionado?.NombreLugar || "N/A"}</strong>, , del departamento de Boyacá, con Personería Jurídica No.{" "}
+                <strong className="font-bold">{formData.numPersoneriaJuridica || "N/A"}</strong> de fecha{" "}
+                {formatearFecha(formData.fechaCreacion)}, expedida por{" "}
+                {institucionSeleccionada?.NombreInstitucion || "N/A"}, realizó Asamblea General el día{" "}
+                {formatearFecha(formData.fechaAsamblea)} con el fin de elegir dignatarios para el período comprendido entre el{" "}
+                {formatearFecha(formData.fechaInicioPeriodo)} y el {formatearFecha(formData.fechaFinPeriodo)}.
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Formulario de Afiliados */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Users className="text-[#64AF59]" size={24} />
-            <h2 className="text-xl font-semibold text-gray-800">Número de Afiliados</h2>
-          </div>
-
-          <div className="space-y-6">
-            {/* Numero Afiliados */}
-            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
-              <label className="text-right font-medium text-gray-700">
-                Número Afiliados:
-              </label>
-              <input
-                type="text"
-                name="numeroAfiliados"
-                value={formData.numeroAfiliados}
-                onChange={handleChange}
-                placeholder="Ingrese el número de afiliados"
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#64AF59] focus:border-transparent outline-none max-w-md"
-              />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+              <Building2 className="text-[#009E76]" size={24} />
+              <h3 className="text-xl font-semibold text-gray-800">Datos de la Junta</h3>
             </div>
 
-            {/* Botón Actualizar */}
-            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
-              <div></div>
-              <button
-                onClick={handleActualizarRegistro}
-                className="flex items-center justify-center gap-2 bg-[#64AF59] hover:bg-[#52934a] text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-colors max-w-xs"
-              >
-                <Save size={18} />
-                Actualizar registro
-              </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Municipio <span className="text-[#E43440]">*</span>
+                </label>
+                <Select
+                  options={opcionesMunicipios}
+                  value={opcionesMunicipios.find(o => o.value === formData.idMunicipio)}
+                  onChange={(selected) =>
+                    setFormData(prev => ({ ...prev, idMunicipio: selected.value }))
+                  }
+                  placeholder="Selecciona un municipio..."
+                  isSearchable={true}
+                  className="text-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Institución <span className="text-[#E43440]">*</span>
+                </label>
+                <select
+                  name="idInstitucion"
+                  value={formData.idInstitucion}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+                >
+                  <option value="">Seleccione una institución</option>
+                  {instituciones.map((i) => (
+                    <option key={i.IDInstitucion} value={i.IDInstitucion}>
+                      {i.NombreInstitucion}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Dirección <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="direccion"
+                  value={formData.direccion}
+                  onChange={handleChange}
+                  placeholder="Ingrese la dirección"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Tipo de Junta <span className="text-[#E43440]">*</span>
+                </label>
+                <select
+                  name="tipoJunta"
+                  value={formData.tipoJunta}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+                >
+                  <option value="">Seleccione tipo</option>
+                  {tiposJunta.map((t) => (
+                    <option key={t.IDTipoJuntas} value={t.IDTipoJuntas}>
+                      {t.NombreTipoJunta}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Razón Social <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="razonSocial"
+                  value={formData.razonSocial}
+                  onChange={handleChange}
+                  placeholder="Ingrese la razón social"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  N° Personería Jurídica <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="numPersoneriaJuridica"
+                  value={formData.numPersoneriaJuridica}
+                  onChange={handleChange}
+                  placeholder="Ingrese el número"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Zona <span className="text-[#E43440]">*</span>
+                </label>
+                <select
+                  name="zona"
+                  value={formData.zona}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                >
+                  <option value="">Seleccione una zona</option>
+                  <option value="Urbana">Urbana</option>
+                  <option value="Rural">Rural</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Fecha de Creación <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="fechaCreacion"
+                  value={formData.fechaCreacion}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Información de la Junta */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <div className="border-2 border-[#009E76] rounded-lg p-6 bg-gradient-to-br from-white to-gray-50">
-            <p className="text-gray-800 leading-relaxed text-justify">
-              <strong className="font-bold text-[#009E76]">{juntaInfo.nombre}</strong> del municipio de{" "}
-              <strong className="font-bold">{juntaInfo.municipio}</strong>, Departamento de{" "}
-              <strong className="font-bold">{juntaInfo.departamento}</strong>, con Personería Jurídica No.
-              <strong className="font-bold">{juntaInfo.personeriaJuridica}</strong> de fecha{" "}
-              {juntaInfo.fechaPersoneria}, expedida por {juntaInfo.expedidaPor}. Realizó Asamblea General el día{" "}
-              {juntaInfo.fechaAsamblea} con el fin de elegir dignatarios para el período comprendido entre el{" "}
-              {juntaInfo.periodoEleccion}.
-            </p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
+              <Calendar className="text-[#64AF59]" size={24} />
+              <h3 className="text-xl font-semibold text-gray-800">Datos de la Asamblea</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Fecha de Asamblea
+                </label>
+                <input
+                  type="date"
+                  name="fechaAsamblea"
+                  value={formData.fechaAsamblea}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#64AF59] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Inicio del Período
+                </label>
+                <input
+                  type="date"
+                  name="fechaInicioPeriodo"
+                  value={formData.fechaInicioPeriodo}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#64AF59] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Fin del Período
+                </label>
+                <input
+                  type="date"
+                  name="fechaFinPeriodo"
+                  value={formData.fechaFinPeriodo}
+                  readOnly
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-100 cursor-not-allowed"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Sección de Autoresolutorio y certificado */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Autoresolutorio y certificado</h3>
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-[#009E76] to-[#64AF59]">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-white border-r border-white/20">
-                      Dato
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">
-                      Fecha Ingreso
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-t border-gray-300 bg-white hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-sm text-gray-600 border-r border-gray-300">-</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">-</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+
+          <div className="flex justify-center gap-4 pt-4">
+            <button
+              onClick={() => window.history.back()}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-8 py-3 rounded-lg shadow-sm transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="flex items-center gap-2 bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white font-semibold px-8 py-3 rounded-lg shadow-md transition-all"
+            >
+              <Save size={20} />
+              Actualizar Junta
+            </button>
           </div>
         </div>
       </div>
