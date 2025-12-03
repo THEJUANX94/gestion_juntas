@@ -75,11 +75,11 @@ export default function LoginUser() {
             Gobernación de Boyacá
             <br />
             <span className="text-3xl font-semibold text-green-100">
-              Certificación
+              Gestión de Juntas
             </span>
           </h1>
           <p className="text-xl text-center opacity-90 max-w-md leading-relaxed">
-            “Transparencia, servicio y eficiencia al servicio de los municipios boyacenses.”
+            “Fortaleciendo la participación ciudadana desde el territorio.”
           </p>
         </motion.div>
 
