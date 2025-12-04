@@ -19,7 +19,7 @@ export default function LoginUser() {
     if (isAuthenticated) {
       navigate("/juntas/crear", { replace: true });
     }
-    
+
     // 2. Cargar el script de reCAPTCHA v3 al montar el componente
     // Google recomienda cargar el script con el parámetro render y la clave del sitio.
     const loadRecaptchaScript = () => {
@@ -62,7 +62,7 @@ export default function LoginUser() {
     // 3. Ejecutar reCAPTCHA v3 para obtener el token
     if (recaptchaRef.current) {
       try {
-        // 'login' es la 'action' que le das a reCAPTCHA para distinguirla en el panel de admin
+        // La ejecución del token v3
         captchaToken = await recaptchaRef.current.execute(RECAPTCHA_SITE_KEY_V3, { action: 'login' });
       } catch (e) {
         console.error("Error al ejecutar reCAPTCHA v3:", e);
@@ -70,6 +70,7 @@ export default function LoginUser() {
         return;
       }
     } else {
+      // Este error no debería ocurrir si el script está cargado
       AlertMessage.info(
         "Verificación requerida",
         "El servicio reCAPTCHA aún no está cargado. Por favor, inténtalo de nuevo."
@@ -77,6 +78,11 @@ export default function LoginUser() {
       return;
     }
 
+    // VERIFICAR AQUÍ: ¿captchaToken tiene un valor?
+    if (!captchaToken || captchaToken.length < 10) {
+      AlertMessage.error("Error de token", "El token de reCAPTCHA es inválido o vacío.");
+      return;
+    }
     try {
       // 4. Enviar el token v3 al backend para su verificación
       const response = await fetch(import.meta.env.VITE_PATH + "/login", {
@@ -84,7 +90,7 @@ export default function LoginUser() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         // Enviar el token obtenido por reCAPTCHA v3
-        body: JSON.stringify({ login, contraseña, captcha: captchaToken }), 
+        body: JSON.stringify({ login, contraseña, captcha: captchaToken }),
       });
 
       if (!response.ok) {
@@ -98,7 +104,7 @@ export default function LoginUser() {
       contextLogin();
 
       AlertMessage.success("Inicio de sesión exitoso", "Bienvenido/a al sistema.");
-      
+
     } catch (err) {
       console.error("Error al iniciar sesión:", err);
       // El backend debe verificar el token y la PUNTUACIÓN. 
