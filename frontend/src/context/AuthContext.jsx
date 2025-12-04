@@ -53,7 +53,7 @@ export const AuthProviderContent = ({ children, navigate }) => {
           setUser(null);
         }
       } catch (error) {
-        console.error("Fallo la verificación de sesión:", error);
+        console.error("Fallo la verificación de sesión:", error.message);
         setIsAuthenticated(false);
         setUser(null);
       } finally {
