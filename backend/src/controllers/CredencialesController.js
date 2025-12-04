@@ -7,7 +7,7 @@ import { Credenciales } from "../model/CredencialesModel.js";
 
 // --- Umbral de Puntuación para reCAPTCHA v3 ---
 // Si la puntuación es inferior a 0.5, se considera sospechoso.
-const RECAPTCHA_THRESHOLD = 0.5; 
+const RECAPTCHA_THRESHOLD = 0.2; 
 
 export const loginUsuario = async (req, res) => {
     try {

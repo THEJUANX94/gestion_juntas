@@ -38,8 +38,7 @@ const allowedOrigins = [
   'http://172.20.1.32',
   'https://172.20.1.32',
   'http://localhost:5173',
-  'https://certificacion.boyaca.gov.co',
-  'https://certificacion.boyaca.gov.co:3000'
+  'https://gestionjuntas.boyaca.gov.co'
 ];
 
 const corsOptions = {
