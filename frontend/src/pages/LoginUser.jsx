@@ -159,7 +159,7 @@ export default function LoginUser() {
               {/* Captcha - SIN CAMBIOS */}
               <div className="flex justify-center">
                 <ReCAPTCHA
-                  sitekey="6LcceNwrAAAAAIjw8rb6K56RaqYj5onuHT-_XQRl"
+                  sitekey="6LdXPCEsAAAAAEWq0oYPc4J1kj-hstyJnsdCbaUq"
                   onChange={(token) => setCaptchaToken(token)}
                 />
               </div>
