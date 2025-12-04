@@ -14,7 +14,6 @@ export default function ListarComisiones() {
   useEffect(() => {
     const fetchComisiones = async () => {
       try {
-        // VITE_PATH contiene "http://localhost:3000/api"
         const res = await fetch(import.meta.env.VITE_PATH + "/comisiones", { credentials: 'include', method: "GET" });
         const data = await res.json();
         const transformados = data.map((c) => ({
