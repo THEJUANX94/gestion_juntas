@@ -39,9 +39,9 @@ export default function EditarJunta() {
         setLoading(true);
 
         const [resLugares, resInst, resTipos] = await Promise.all([
-          fetch("http://localhost:3000/api/lugares"),
-          fetch("http://localhost:3000/api/instituciones"),
-          fetch("http://localhost:3000/api/tipojunta"),
+          fetch(import.meta.env.VITE_PATH + "/lugares"),
+          fetch(import.meta.env.VITE_PATH + "/instituciones"),
+          fetch(import.meta.env.VITE_PATH + "/tipojunta"),
         ]);
 
         const lugaresData = await resLugares.json();
@@ -53,7 +53,7 @@ export default function EditarJunta() {
         setTiposJunta(tiposData);
 
    
-        const resJunta = await fetch(`http://localhost:3000/api/juntas/${id}`);
+        const resJunta = await fetch(import.meta.env.VITE_PATH + `/juntas/${id}`);
         const juntaData = await resJunta.json();
    
 
