@@ -27,8 +27,8 @@ export default function ConsultarJunta() {
         const loadData = async () => {
             try {
                 const [resMunicipios, resTipos] = await Promise.all([
-                    fetch("http://localhost:3000/api/lugares"),
-                    fetch("http://localhost:3000/api/tipojunta"),
+                    fetch(import.meta.env.VITE_PATH + "/lugares"),
+                    fetch(import.meta.env.VITE_PATH + "/tipojunta"),
                 ]);
 
                 const munData = await resMunicipios.json();
