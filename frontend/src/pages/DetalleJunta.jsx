@@ -199,7 +199,7 @@ export default function DetalleJunta() {
     if (!confirm) return;
 
     try {
-      const resp = await fetch(`http://localhost:3000/api/mandatario/${documento}`, {
+      const resp = await fetch(import.meta.env.VITE_PATH + `/mandatario/${documento}`, {
         method: "DELETE",
       });
 

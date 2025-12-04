@@ -33,9 +33,9 @@ export default function CrearJunta() {
     const fetchData = async () => {
       try {
         const [resLugares, resInst, resTipos] = await Promise.all([
-          fetch("http://localhost:3000/api/lugares"),
-          fetch("http://localhost:3000/api/instituciones"),
-          fetch("http://localhost:3000/api/tipojunta"),
+          fetch(import.meta.env.VITE_PATH + "/lugares"),
+          fetch(import.meta.env.VITE_PATH + "/instituciones"),
+          fetch(import.meta.env.VITE_PATH + "/tipojunta"),
         ]);
 
         const lugaresData = await resLugares.json();
@@ -107,7 +107,7 @@ export default function CrearJunta() {
   const handleSubmit = async () => {
 
     try {
-      const resp = await fetch("http://localhost:3000/api/juntas", {
+      const resp = await fetch(import.meta.env.VITE_PATH + "/juntas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

@@ -32,7 +32,7 @@ export default function EditarMandatarioExistente() {
                 const token = auth?.token;
 
                 // 1. Cargar usuario
-                const resUsuario = await fetch(`http://localhost:3000/api/usuarios/${idUsuario}`, {
+                const resUsuario = await fetch(import.meta.env.VITE_PATH + `/usuarios/${idUsuario}`, {
                     method: "GET",
                     credentials: "include",
                     headers: {
@@ -47,7 +47,7 @@ export default function EditarMandatarioExistente() {
                 }
 
                 // 2. Cargar municipios
-                const resMunicipios = await fetch("http://localhost:3000/api/lugares", {
+                const resMunicipios = await fetch(import.meta.env.VITE_PATH + "/lugares", {
                     credentials: "include",
                     headers: { "Authorization": `Bearer ${token}` }
                 });
@@ -59,12 +59,12 @@ export default function EditarMandatarioExistente() {
                 setMunicipios(soloMunicipios);
 
                 // 3. Cargar cargos
-                const resCargos = await fetch("http://localhost:3000/api/cargos");
+                const resCargos = await fetch(import.meta.env.VITE_PATH + "/cargos");
                 const dataCargos = await resCargos.json();
                 setCargos(dataCargos);
 
                 // 4. Cargar comisiones
-                const resCom = await fetch("http://localhost:3000/api/comisiones");
+                const resCom = await fetch(import.meta.env.VITE_PATH + "/comisiones");
                 const dataCom = await resCom.json();
                 setComisiones(dataCom);
 
@@ -115,7 +115,7 @@ const handleChange = (e) => {
     const handleSubmit = async () => {
         try {
             const res = await fetch(
-                `http://localhost:3000/api/mandatario/agregar-existente/${idJunta}`,
+                import.meta.env.VITE_PATH + `/mandatario/agregar-existente/${idJunta}`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

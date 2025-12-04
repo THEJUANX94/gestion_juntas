@@ -38,10 +38,10 @@ export default function EditarMandatario() {
     const loadData = async () => {
       try {
         // Cargar selects
-        const resTipoDoc = await fetch("http://localhost:3000/api/tipodocumento");
-        const resCargos = await fetch("http://localhost:3000/api/cargos");
-        const resComisiones = await fetch("http://localhost:3000/api/comisiones");
-        const resLugares = await fetch("http://localhost:3000/api/lugares");
+        const resTipoDoc = await fetch(import.meta.env.VITE_PATH + "/tipodocumento");
+        const resCargos = await fetch(import.meta.env.VITE_PATH + "/cargos");
+        const resComisiones = await fetch(import.meta.env.VITE_PATH + "/comisiones");
+        const resLugares = await fetch(import.meta.env.VITE_PATH + "/lugares");
 
         setTiposDocumento(await resTipoDoc.json());
         setCargos(await resCargos.json());
@@ -49,7 +49,7 @@ export default function EditarMandatario() {
         setLugares(await resLugares.json());
 
         // Cargar datos del mandatario
-        const resMand = await fetch(`http://localhost:3000/api/mandatario/${id}/${documento}`);
+        const resMand = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`);
         const mand = await resMand.json();
 
         setFormData({
@@ -147,7 +147,7 @@ export default function EditarMandatario() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/api/mandatario/actualizar/${id}/${documento}`, {
+      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/actualizar/${id}/${documento}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)

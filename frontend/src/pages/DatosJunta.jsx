@@ -136,7 +136,7 @@ export default function EditarJunta() {
 
   const handleSubmit = async () => {
     try {
-      const resp = await fetch(`http://localhost:3000/api/juntas/${id}`, {
+      const resp = await fetch(import.meta.env.VITE_PATH + `/juntas/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

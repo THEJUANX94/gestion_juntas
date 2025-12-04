@@ -62,7 +62,7 @@ export default function ConsultarJunta() {
 
         try {
             const resp = await fetch(
-                `http://localhost:3000/api/juntas?tipoJunta=${filtros.tipoJunta}&idMunicipio=${filtros.municipio}`
+                import.meta.env.VITE_PATH + `/juntas?tipoJunta=${filtros.tipoJunta}&idMunicipio=${filtros.municipio}`
             );
 
 
@@ -109,7 +109,7 @@ export default function ConsultarJunta() {
 
 
         try {
-            const resp = await fetch(`http://localhost:3000/api/juntas/${idJunta}`, {
+            const resp = await fetch(import.meta.env.VITE_PATH +  `/juntas/${idJunta}`, {
                 method: "DELETE",
             });
 

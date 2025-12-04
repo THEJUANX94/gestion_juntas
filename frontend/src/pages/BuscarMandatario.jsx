@@ -22,7 +22,7 @@ export default function BuscarMandatario() {
     setBuscado(true);
 
     try {
-      const res = await fetch(`http://localhost:3000/api/mandatario/buscar?query=${query}`);
+      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/buscar?query=${query}`);
       const data = await res.json();
       setResultados(data);
     } catch (error) {
@@ -46,7 +46,7 @@ const handleAgregarAJunta = async (user) => {
   const idUsuario = user.IDUsuario || user.NumeroIdentificacion;
 
   try {
-    const res = await fetch(`http://localhost:3000/api/mandatario/validar/${idJunta}/${idUsuario}`);
+    const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/validar/${idJunta}/${idUsuario}`);
     const data = await res.json();
 
     if (data.existe) {

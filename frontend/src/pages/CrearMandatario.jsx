@@ -38,10 +38,10 @@ export default function AgregarMandatario() {
 
   useEffect(() => {
     const cargarDatos = async () => {
-      const resTipoDoc = await fetch("http://localhost:3000/api/tipodocumento");
-      const resCargos = await fetch("http://localhost:3000/api/cargos");
-      const resComisiones = await fetch("http://localhost:3000/api/comisiones");
-      const resLugares = await fetch("http://localhost:3000/api/lugares");
+      const resTipoDoc = await fetch(import.meta.env.VITE_PATH + "/tipodocumento");
+      const resCargos = await fetch(import.meta.env.VITE_PATH + "/cargos");
+      const resComisiones = await fetch(import.meta.env.VITE_PATH + "/comisiones");
+      const resLugares = await fetch(import.meta.env.VITE_PATH + "/lugares");
 
       setTiposDocumento(await resTipoDoc.json());
       setCargos(await resCargos.json());
@@ -123,7 +123,7 @@ export default function AgregarMandatario() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/api/mandatario/crear/${id}`, {
+      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/crear/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
