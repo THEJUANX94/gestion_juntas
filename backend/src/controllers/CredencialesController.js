@@ -31,6 +31,8 @@ export const loginUsuario = async (req, res) => {
         );
 
         const captchaData = await captchaResponse.json();
+
+        console.log("Respuesta Completa de reCAPTCHA:", captchaData);
         
         // 2. VERIFICACIÓN DE RECAPTCHA V3 (Score y Success)
         // Se verifica que sea exitoso Y que la puntuación esté por encima del umbral.
