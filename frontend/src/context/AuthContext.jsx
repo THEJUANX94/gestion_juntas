@@ -43,6 +43,17 @@ export const AuthProviderContent = ({ children, navigate }) => {
           return;
         }
 
+        // Verificar que la respuesta sea JSON antes de parsear
+        const contentType = res.headers.get("content-type");
+        if (!contentType?.includes("application/json")) {
+          console.warn("Respuesta no es JSON. Content-Type:", contentType);
+          const text = await res.text();
+          console.warn("Contenido:", text.substring(0, 200));
+          setIsAuthenticated(false);
+          setUser(null);
+          return;
+        }
+
         const data = await res.json();
 
         if (data.valid) {
@@ -53,7 +64,7 @@ export const AuthProviderContent = ({ children, navigate }) => {
           setUser(null);
         }
       } catch (error) {
-        console.error("Fallo la verificación de sesión:", error.message);
+        console.error("Fallo la verificación de sesión:", error.message || error);
         setIsAuthenticated(false);
         setUser(null);
       } finally {
