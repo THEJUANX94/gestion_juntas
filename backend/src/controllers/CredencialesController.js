@@ -19,7 +19,6 @@ export const loginUsuario = async (req, res) => {
 
             return res.status(400).json({ error: "Datos incompletos." });
         }
-
         const captchaResponse = await fetch(
             `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
             { method: "POST" }
@@ -30,13 +29,12 @@ export const loginUsuario = async (req, res) => {
             logOperation(
                 "LOGIN_FALLIDO",
                 login,
-                { motivo: `Captcha inválido`, details: captchaData, ip: req.ip || 'N/A' },
+                { motivo: `Captcha inválido`, score: captchaData.score, ip: req.ip || 'N/A' },
                 "error"
             );
 
-            return res.status(400).json({ error: "Captcha inválido", details: captchaData });
+            return res.status(400).json({ error: "Captcha inválido" });
         }
-
         const credencial = await Credenciales.findOne({
             where: {
                 Login: login,
@@ -78,7 +76,7 @@ export const loginUsuario = async (req, res) => {
             );
             return res.status(401).json({ error: "Error de autenticación. Contacte soporte." });
         }
-        const previousLogin = user.ultimo_inicio_sesion;
+        const previousLogin = user.ultimo_inicio_sesion; // Guardamos el valor anterior para el log
         const currentLoginTime = new Date();
         await credencial.update({
             ultimo_inicio_sesion: new Date()
@@ -96,7 +94,7 @@ export const loginUsuario = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 60 * 60 * 1000 // Expira en 8 horas
+            maxAge: 8 * 60 * 60 * 1000 // Expira en 8 horas
 
         });
         logOperation(
@@ -115,7 +113,7 @@ export const loginUsuario = async (req, res) => {
                 id: user.numeroIdentificacion,
                 nombre: `${user.PrimerNombre} ${user.PrimerApellido}`,
                 correo: user.Correo,
-                ultimo_inicio_sesion: credencial.ultimo_inicio_sesion
+                ultimo_inicio_sesion: user.ultimo_inicio_sesion
             },
         });
 
