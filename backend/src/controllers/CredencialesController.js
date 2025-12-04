@@ -25,7 +25,7 @@ export const loginUsuario = async (req, res) => {
             { method: "POST" }
         );
 
-        captchaData = await captchaResponse.json();
+        const captchaData = await captchaResponse.json();
         if (!captchaData.success) {
             logOperation(
                 "LOGIN_FALLIDO",
