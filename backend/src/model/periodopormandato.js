@@ -25,6 +25,6 @@ export const PeriodoPorMandato = sequelize.define("PeriodoPorMandato", {
     field: "idjunta"
   }
 }, {
-  tableName: "periodopormandato",
+  tableName: "periodo_por_mandato",
   timestamps: false
 });

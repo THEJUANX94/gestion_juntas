@@ -70,7 +70,7 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
   },
 
 }, {
-  tableName: "mandatarioJuntas",
+  tableName: "mandatario_juntas",
   timestamps: false,
   createdAt: 'createdAt'
 });
