@@ -30,6 +30,8 @@ export default function UpdateComision() {
     if (!nombre.trim()) return AlertMessage.error("Error", "El nombre es requerido");
     setLoading(true);
     try {
+      
+        console.log("sssss" + idcomision)
       const res = await fetch(import.meta.env.VITE_PATH + `/comisiones/${idcomision}`, {
         method: "PUT",
         credentials: 'include',
