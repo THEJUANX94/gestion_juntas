@@ -47,16 +47,16 @@ export const crearComision = async (req, res) => {
 
 export const actualizarComision = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { idcomision } = req.params;
     const { Nombre } = req.body;
-    if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+    if (!idcomision) return res.status(400).json({ message: "ID no proporcionado" });
 
-    const comision = await Comisiones.findByPk(id);
+    const comision = await Comisiones.findByPk(idcomision);
     if (!comision) return res.status(404).json({ message: "Comisión no encontrada" });
 
     const actualizado = await comision.update({ Nombre });
 
-    logOperation("COMISION_ACTUALIZADA", req.user || {}, { IDComision: id, Nombre: actualizado.Nombre }, "info");
+    logOperation("COMISION_ACTUALIZADA", req.user || {}, { IDComision: idcomision, Nombre: actualizado.Nombre }, "info");
 
     return res.json(actualizado);
   } catch (error) {
@@ -68,15 +68,15 @@ export const actualizarComision = async (req, res) => {
 
 export const eliminarComision = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+    const { idcomision } = req.params;
+    if (!idcomision) return res.status(400).json({ message: "ID no proporcionado" });
 
-    const comision = await Comisiones.findByPk(id);
+    const comision = await Comisiones.findByPk(idcomision);
     if (!comision) return res.status(404).json({ message: "Comisión no encontrada" });
 
     await comision.destroy();
 
-    logOperation("COMISION_ELIMINADA", req.user || {}, { IDComision: id }, "info");
+    logOperation("COMISION_ELIMINADA", req.user || {}, { IDComision: idcomision }, "info");
 
     return res.json({ message: "Comisión eliminada correctamente" });
   } catch (error) {
