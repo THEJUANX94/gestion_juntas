@@ -192,7 +192,7 @@ export default function MainLayout() {
             <div>
               {!collapsed && (
                 <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
-                  Gestión de Cosas
+                  Consultas Generales
                 </h2>
               )}
               <ul className="space-y-1">
