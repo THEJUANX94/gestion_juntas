@@ -38,13 +38,13 @@ export const Asociaciones = () => {
     MandatarioJunta.belongsTo(Lugar, {
         as: "LugarExpedido",
         foreignKey: "expedido",
-        targetKey: "idlugar"
+        targetKey: "IDLugar"
     });
 
     MandatarioJunta.belongsTo(Lugar, {
         as: "LugarResidencia",
         foreignKey: "residencia",
-        targetKey: "idlugar"
+        targetKey: "IDLugar"
     });
 
 
@@ -61,8 +61,8 @@ export const Asociaciones = () => {
     Junta.belongsTo(TipoJunta, { foreignKey: "tipojunta" });
     Junta.belongsTo(Institucion, { foreignKey: "idinstitucion" });
     Junta.belongsTo(Reconocida, {
-        foreignKey: "idreconocida",
-        targetKey: "idreconocida"
+        foreignKey: "IDReconocida",
+        targetKey: "IDReconocida"
     });
     Junta.hasMany(MandatarioJunta, { foreignKey: "idjunta" });
 
@@ -71,14 +71,14 @@ export const Asociaciones = () => {
     // ========================================
     Periodo.hasMany(PeriodoPorMandato, {
         foreignKey: "idperiodo",  
-        sourceKey: "idperiodo", 
+        sourceKey: "IDPeriodo", 
         as: "Mandatos"
             
     });
 
     PeriodoPorMandato.belongsTo(Periodo, {
         foreignKey: "idperiodo",  
-        targetKey: "idperiodo",
+        targetKey: "IDPeriodo",
         as: "Periodo"     
     });
 
@@ -138,8 +138,8 @@ export const Asociaciones = () => {
     // RELACIONES PARA RECONOCIDA
     // ========================================
     Reconocida.hasMany(Junta, {
-        foreignKey: "idreconocida",
-        sourceKey: "idreconocida"
+        foreignKey: "IDReconocida",
+        sourceKey: "IDReconocida"
     });
 
     // ========================================
