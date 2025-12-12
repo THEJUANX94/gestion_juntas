@@ -13,7 +13,7 @@ export default function CrearCargo() {
 		if (!nombre.trim()) return AlertMessage.error("Error", "El nombre es requerido");
 		setLoading(true);
 		try {
-			const res = await fetch(import.meta.env.VITE_PATH + "/cargos/crearcargos", {
+			const res = await fetch(import.meta.env.VITE_PATH + "/cargos/crearcargo", {
 				method: "POST",
 				credentials: 'include',
 				headers: { "Content-Type": "application/json" },
