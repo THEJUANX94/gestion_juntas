@@ -6,7 +6,7 @@ const router = Router();
 
 router.get("/", obtenerCargos);
 router.get("/:idcargo", verificarAuth, obtenerCargoPorId);
-router.delete("/idcargo", verificarAuth, eliminarCargo);
+router.delete("/:idcargo", verificarAuth, eliminarCargo);
 router.post("/crearcargo", verificarAuth, crearCargo);
 
 export default router;
