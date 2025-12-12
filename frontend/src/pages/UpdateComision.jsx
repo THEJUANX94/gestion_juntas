@@ -5,14 +5,14 @@ import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function UpdateComision() {
   const navigate = useNavigate();
-  const { IDComision } = useParams();
+  const { idcomision } = useParams();
   const [nombre, setNombre] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchComision = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_PATH + `/comisiones/${IDComision}`);
+        const res = await fetch(import.meta.env.VITE_PATH + `/comisiones/${idcomision}`);
         if (!res.ok) throw new Error('No se pudo cargar la comisión');
         const data = await res.json();
         setNombre(data.Nombre || '');
@@ -21,15 +21,15 @@ export default function UpdateComision() {
         AlertMessage.error('Error', 'No se pudo cargar la comisión');
       }
     };
-    if (IDComision) fetchComision();
-  }, [IDComision]);
+    if (idcomision) fetchComision();
+  }, [idcomision]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!nombre.trim()) return AlertMessage.error("Error", "El nombre es requerido");
     setLoading(true);
     try {
-      const res = await fetch(import.meta.env.VITE_PATH + `/comisiones/${IDComision}`, {
+      const res = await fetch(import.meta.env.VITE_PATH + `/comisiones/${idcomision}`, {
         method: "PUT",
         credentials: 'include',
         headers: { "Content-Type": "application/json" },
