@@ -45,7 +45,7 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
 
   Expedido: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true,
     field: "expedido",
     references: {
       model: "lugares",
