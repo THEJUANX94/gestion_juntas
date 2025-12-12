@@ -12,6 +12,7 @@ export default function UpdateComision() {
   useEffect(() => {
     const fetchComision = async () => {
       try {
+        console.log("sssss" + idcomision)
         const res = await fetch(import.meta.env.VITE_PATH + `/comisiones/${idcomision}`);
         if (!res.ok) throw new Error('No se pudo cargar la comisión');
         const data = await res.json();
