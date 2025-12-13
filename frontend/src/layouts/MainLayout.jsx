@@ -185,6 +185,17 @@ export default function MainLayout() {
                     {!collapsed && "Consultar Juntas"}
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/juntas/listar"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/juntas/listar"
+                    )}`}
+                  >
+                    <List className="h-5 w-5" />
+                    {!collapsed && "Listar Juntas"}
+                  </Link>
+                </li>
               </ul>
             </div>
 

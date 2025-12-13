@@ -198,6 +198,44 @@ export const obtenerJuntas = async (req, res) => {
   }
 };
 
+// ======================================================
+//  OBTENER TODAS LAS JUNTAS (SIN FILTROS)
+// ======================================================
+export const obtenerTodasLasJuntas = async (req, res) => {
+  try {
+    const juntas = await Junta.findAll({
+      include: [
+        { 
+          model: Lugar, 
+          attributes: ["IDLugar", "NombreLugar"] 
+        },
+        { 
+          model: TipoJunta, 
+          attributes: ["IDTipoJuntas", "NombreTipoJunta"] 
+        },
+        { 
+          model: Institucion, 
+          attributes: ["IDInstitucion", "NombreInstitucion"] 
+        },
+        { 
+          model: Reconocida, 
+          attributes: ["IDReconocida", "Nombre"] 
+        }
+      ],
+      order: [["RazonSocial", "ASC"]]
+    });
+
+    return res.json(juntas);
+
+  } catch (error) {
+    console.error("Error obteniendo todas las juntas:", error);
+    return res.status(500).json({
+      message: "Error interno del servidor",
+      error: error.message
+    });
+  }
+};
+
 export const getMiembrosJunta = async (req, res) => {
   const { id } = req.params;
 
