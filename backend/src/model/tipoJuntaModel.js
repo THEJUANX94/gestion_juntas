@@ -1,19 +1,23 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../config/database.js";
+import { sequelize } from "../database/database.js";
 
-export const TipoJunta = sequelize.define("TipoJunta", {
-  IDTipoJuntas: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-    field: "idtipojuntas"
+export const TipoJunta = sequelize.define(
+  "TipoJunta",
+  {
+    idtipojuntas: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      allowNull: false,
+      field: "idtipojuntas"
+    },
+    nombretipojunta: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      field: "nombretipojunta"
+    }
   },
-  NombreTipoJunta: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    field: "nombretipojunta"
+  {
+    tableName: "tipojuntas",
+    timestamps: false
   }
-}, {
-  tableName: "tipojuntas",
-  timestamps: false,
-});
+);
