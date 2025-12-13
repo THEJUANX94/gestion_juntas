@@ -610,13 +610,7 @@ export const exportarJuntasExcel = async (req, res) => {
       order: [["RazonSocial", "ASC"]],
     });
 
-    console.log(
-    juntas.map(j => ({
-      IDJunta: j.IDJunta,
-      FK_tipojunta: j.tipojunta,
-      TipoJunta: j.tipoJunta
-    }))
-  );
+
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Juntas");
