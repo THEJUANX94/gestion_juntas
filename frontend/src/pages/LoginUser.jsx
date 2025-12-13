@@ -1,40 +1,95 @@
-import { useState, useEffect } from "react";
-import ReCAPTCHA from "react-google-recaptcha";
+import { useState, useEffect, useRef } from "react"; // 👈 Importar 'useRef'
 import { motion } from "framer-motion";
 import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom"; // Importar 'Link'
+import { useNavigate, Link } from "react-router-dom";
+
+const RECAPTCHA_SITE_KEY_V3 = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY;
 
 export default function LoginUser() {
   const navigate = useNavigate();
   const { login: contextLogin, isAuthenticated } = useAuth();
-  const [captchaToken, setCaptchaToken] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // 1. Usar useRef para almacenar el objeto reCAPTCHA
+  const recaptchaRef = useRef(null);
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Redirige al dashboard si ya está logueado
       navigate("/juntas/crear", { replace: true });
     }
+
+    // 2. Cargar el script de reCAPTCHA v3 al montar el componente
+    // Google recomienda cargar el script con el parámetro render y la clave del sitio.
+    const loadRecaptchaScript = () => {
+      const scriptId = 're-captcha-script';
+      if (document.getElementById(scriptId)) return;
+
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY_V3}`;
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+
+      // Esperar a que el script cargue para asignarlo al ref
+      script.onload = () => {
+        if (window.grecaptcha && window.grecaptcha.ready) {
+          window.grecaptcha.ready(() => {
+            recaptchaRef.current = window.grecaptcha;
+            console.log("reCAPTCHA v3 listo para ejecutar.");
+          });
+        }
+      };
+    };
+
+    loadRecaptchaScript();
+
+    // Limpieza si es necesario, aunque reCAPTCHA v3 es persistente
+    // return () => { 
+    //   const script = document.getElementById('re-captcha-script');
+    //   if (script) document.body.removeChild(script);
+    // };
+
   }, [isAuthenticated, navigate]);
 
   const handleLogin = async (form) => {
     const { login, contraseña } = form;
 
-    if (!captchaToken) {
+    let captchaToken = "";
+
+    // 3. Ejecutar reCAPTCHA v3 para obtener el token
+    if (recaptchaRef.current) {
+      try {
+        // La ejecución del token v3
+        captchaToken = await recaptchaRef.current.execute(RECAPTCHA_SITE_KEY_V3, { action: 'login' });
+      } catch (e) {
+        console.error("Error al ejecutar reCAPTCHA v3:", e);
+        AlertMessage.error("Error de verificación", "No se pudo obtener el token de reCAPTCHA.");
+        return;
+      }
+    } else {
+      // Este error no debería ocurrir si el script está cargado
       AlertMessage.info(
         "Verificación requerida",
-        "Por favor completa el reCAPTCHA antes de continuar."
+        "El servicio reCAPTCHA aún no está cargado. Por favor, inténtalo de nuevo."
       );
       return;
     }
 
+    // VERIFICAR AQUÍ: ¿captchaToken tiene un valor?
+    if (!captchaToken || captchaToken.length < 10) {
+      AlertMessage.error("Error de token", "El token de reCAPTCHA es inválido o vacío.");
+      return;
+    }
     try {
+      // 4. Enviar el token v3 al backend para su verificación
       const response = await fetch(import.meta.env.VITE_PATH + "/login", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
+        // Enviar el token obtenido por reCAPTCHA v3
         body: JSON.stringify({ login, contraseña, captcha: captchaToken }),
       });
 
@@ -49,9 +104,12 @@ export default function LoginUser() {
       contextLogin();
 
       AlertMessage.success("Inicio de sesión exitoso", "Bienvenido/a al sistema.");
+
     } catch (err) {
       console.error("Error al iniciar sesión:", err);
-      AlertMessage.error("Error de autenticación", "Usuario, contraseña o captcha incorrectos.");
+      // El backend debe verificar el token y la PUNTUACIÓN. 
+      // Si la puntuación es baja, debe rechazar el login.
+      AlertMessage.error("Error de autenticación", "Usuario, contraseña o verificación incorrectos.");
     }
   };
 
@@ -154,14 +212,6 @@ export default function LoginUser() {
                 >
                   ¿Olvidaste tu contraseña?
                 </Link>
-              </div>
-
-              {/* Captcha - SIN CAMBIOS */}
-              <div className="flex justify-center">
-                <ReCAPTCHA
-                  sitekey="6LcceNwrAAAAAIjw8rb6K56RaqYj5onuHT-_XQRl"
-                  onChange={(token) => setCaptchaToken(token)}
-                />
               </div>
 
               {/* Botón - SIN CAMBIOS */}

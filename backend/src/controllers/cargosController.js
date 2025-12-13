@@ -68,15 +68,15 @@ export const actualizarCargo = async (req, res) => {
 
 export const eliminarCargo = async (req, res) => {
 	try {
-		const { id } = req.params;
-		if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+		const { idcargo } = req.params;
+		if (!idcargo) return res.status(400).json({ message: "ID no proporcionado" });
 
-		const cargo = await Cargo.findByPk(id);
+		const cargo = await Cargo.findByPk(idcargo);
 		if (!cargo) return res.status(404).json({ message: "Cargo no encontrado" });
 
 		await cargo.destroy();
 
-		logOperation("CARGO_ELIMINADO", req.user || {}, { IDCargo: id }, "info");
+		logOperation("CARGO_ELIMINADO", req.user || {}, { IDCargo: idcargo }, "info");
 
 		return res.json({ message: "Cargo eliminado correctamente" });
 	} catch (error) {

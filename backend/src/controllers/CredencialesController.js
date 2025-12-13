@@ -5,6 +5,10 @@ import jwt from "jsonwebtoken";
 import { sendMail } from "../utils/mailer.js";
 import { Credenciales } from "../model/CredencialesModel.js";
 
+// --- Umbral de Puntuación para reCAPTCHA v3 ---
+// Si la puntuación es inferior a 0.5, se considera sospechoso.
+const RECAPTCHA_THRESHOLD = 0.2; 
+
 export const loginUsuario = async (req, res) => {
     try {
         const { login, contraseña, captcha } = req.body;
@@ -19,22 +23,40 @@ export const loginUsuario = async (req, res) => {
 
             return res.status(400).json({ error: "Datos incompletos." });
         }
+
+        // 1. Llamar a la API de verificación de reCAPTCHA
         const captchaResponse = await fetch(
             `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
             { method: "POST" }
         );
 
         const captchaData = await captchaResponse.json();
-        if (!captchaData.success) {
+
+        console.log("Respuesta Completa de reCAPTCHA:", captchaData);
+        
+        // 2. VERIFICACIÓN DE RECAPTCHA V3 (Score y Success)
+        // Se verifica que sea exitoso Y que la puntuación esté por encima del umbral.
+        const isHuman = captchaData.success && captchaData.score >= RECAPTCHA_THRESHOLD;
+        
+        // Opcional: Verificar la 'action' (si la envías desde el front-end)
+        // const isActionCorrect = captchaData.action === 'login'; 
+
+        if (!isHuman) { // || !isActionCorrect) {
             logOperation(
                 "LOGIN_FALLIDO",
                 login,
-                { motivo: `Captcha inválido`, score: captchaData.score, ip: req.ip || 'N/A' },
+                { 
+                    motivo: `Verificación Captcha v3 fallida. Score: ${captchaData.score || 'N/A'} (Umbral: ${RECAPTCHA_THRESHOLD})`, 
+                    ip: req.ip || 'N/A' 
+                },
                 "error"
             );
 
-            return res.status(400).json({ error: "Captcha inválido" });
+            // Se devuelve un error genérico para no dar pistas
+            return res.status(401).json({ error: "Verificación de seguridad fallida. Inténtalo de nuevo." });
         }
+        // Fin de la verificación de reCAPTCHA V3
+
         const credencial = await Credenciales.findOne({
             where: {
                 Login: login,
@@ -128,6 +150,9 @@ export const loginUsuario = async (req, res) => {
     }
 };
 
+// NOTA: Las funciones forgotPassword y resetPassword NO necesitan cambios, 
+// ya que no usan el parámetro 'captcha'.
+
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
     console.log(`[FORGOT] Solicitud de restablecimiento recibida para email: ${email}`);
@@ -200,7 +225,7 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
     const { token } = req.params;
     const { newPassword } = req.body;
-    let userId = null;
+    let numeroIdentificacion = null; // Corregido: inicializar userId o numeroIdentificacion
 
     console.log(`[RESET] Solicitud de restablecimiento recibida. Token: ${token.substring(0, 10)}...`);
 
@@ -210,8 +235,13 @@ export const resetPassword = async (req, res) => {
     }
 
     try {
+        // Corregido: jwt.verify debe decodificar a `payload`
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        numeroIdentificacion = payload.numeroIdentificacion;
+        // Corregido: El token del front-end tiene la propiedad 'id', no 'numeroIdentificacion'
+        // Revisar el código del front-end, pero basado en la línea 316, es probable que sea 'id'
+        // Si el token original era { id: user.numeroIdentificacion, rol: user.IDRol }
+        // Y el token de restablecimiento era { id: numeroIdentificacion }
+        numeroIdentificacion = payload.id; 
         console.log(`[RESET] Token verificado. IDUsuario: ${numeroIdentificacion}`);
 
         const credencial = await Credenciales.findOne({

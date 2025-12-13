@@ -18,7 +18,7 @@ export default function DetalleJunta() {
   useEffect(() => {
     const cargarMiembros = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_PATH + "/mandatario/${id}/miembros");
+        const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/miembros`);
         const data = await res.json();
         console.log("Miembros cargados:", data);
         const transformados = data.map(m => {
@@ -91,7 +91,7 @@ export default function DetalleJunta() {
     { icon: FileText, label: "Consulta", color: "bg-[#009E76] hover:bg-[#007d5e]", action: 'consulta' },
     { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'autoresolutorio' },
     { icon: Award, label: "Certificado JAC", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJAC' },
-    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", ruta: '/juntas/crear', action: 'certificadoJVC' },
+    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJVC' },
     { icon: Database, label: "Organismo Comunal", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/${id}` },
   ];
 
