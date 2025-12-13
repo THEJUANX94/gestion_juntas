@@ -7,6 +7,7 @@ import { PeriodoPorMandato } from "../model/periodopormandato.js";
 import { Periodo } from "../model/periodoModel.js";
 import { MandatarioJunta } from "../model/mandatarioJuntaModel.js";
 import { Op } from "sequelize";
+import ExcelJS from "exceljs";
 
 export const crearJunta = async (req, res) => {
   try {
@@ -594,6 +595,71 @@ export const eliminarJunta = async (req, res) => {
       message: "Error interno del servidor",
       error: error.message
     });
+  }
+};
+
+export const exportarJuntasExcel = async (req, res) => {
+  try {
+    const juntas = await Junta.findAll({
+      include: [
+        { model: Lugar },
+        { model: TipoJunta },
+        { model: Institucion },
+        { model: Reconocida }
+      ],
+      order: [["RazonSocial", "ASC"]],
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Juntas");
+
+    sheet.columns = [
+      { header: "Razón Social", key: "razon", width: 30 },
+      { header: "Dirección", key: "direccion", width: 30 },
+      { header: "Personería Jurídica", key: "personeria", width: 25 },
+      { header: "Municipio", key: "municipio", width: 20 },
+      { header: "Tipo Junta", key: "tipo", width: 20 },
+      { header: "Institución", key: "institucion", width: 25 },
+      { header: "Zona", key: "zona", width: 15 },
+      { header: "Fecha Creación", key: "creacion", width: 15 },
+      { header: "Inicio Periodo", key: "inicio", width: 15 },
+      { header: "Fin Periodo", key: "fin", width: 15 },
+      { header: "Fecha Asamblea", key: "asamblea", width: 15 },
+      { header: "Reconocida", key: "reconocida", width: 15 },
+    ];
+
+    juntas.forEach((j) => {
+      sheet.addRow({
+        razon: j.RazonSocial,
+        direccion: j.Direccion,
+        personeria: j.NumPersoneriaJuridica,
+        municipio: j.Lugar?.NombreLugar || "",
+        tipo: j.TipoJunta?.NombreTipoJunta || "",
+        institucion: j.Institucion?.NombreInstitucion || "",
+        zona: j.Zona,
+        creacion: j.FechaCreacion,
+        inicio: j.FechaInicioPeriodo,
+        fin: j.FechaFinPeriodo,
+        asamblea: j.FechaAsamblea,
+        reconocida: j.Reconocida?.Nombre || "",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=Listado_Juntas.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error generando Excel" });
   }
 };
 
