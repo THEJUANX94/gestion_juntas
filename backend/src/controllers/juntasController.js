@@ -225,7 +225,12 @@ export const obtenerTodasLasJuntas = async (req, res) => {
       ],
       order: [["RazonSocial", "ASC"]]
     });
-    console.log(juntas.toJSON())
+    const juntas1 = await Junta.findAll({
+      include: [
+        { model: TipoJunta }
+      ]
+    });
+    console.log(juntas1[0].toJSON());
     return res.json(juntas);
 
   } catch (error) {
