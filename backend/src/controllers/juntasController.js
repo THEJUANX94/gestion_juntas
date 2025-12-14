@@ -226,6 +226,14 @@ export const obtenerTodasLasJuntas = async (req, res) => {
       order: [["RazonSocial", "ASC"]]
     });
 
+    console.log(
+      juntas.map(j => ({
+        IDJunta: j.IDJunta,
+        FK_tipojunta: j.tipojunta,
+        TipoJunta: j.tipoJunta
+      }))
+    );
+
     return res.json(juntas);
 
   } catch (error) {
