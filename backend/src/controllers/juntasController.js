@@ -330,7 +330,7 @@ export const obtenerJuntaPorId = async (req, res) => {
       
       // Datos relacionados
       Municipio: junta.Lugar,
-      TipoJunta: junta.TipoJuntum,
+      TipoJunta: junta.TipoJunta,
       Institucion: junta.Institucion,
       Reconocida: junta.Reconocida
     };
