@@ -58,11 +58,7 @@ export const Asociaciones = () => {
     // RELACIONES PARA JUNTA
     // ========================================
     Junta.belongsTo(Lugar, { foreignKey: "idmunicipio" });
-    Junta.belongsTo(TipoJunta, {
-        foreignKey: "TipoJunta",
-        targetKey: "IDTipoJuntas",
-        as: "tipoJunta"
-    });
+    Junta.belongsTo(TipoJunta, { foreignKey: "tipojunta" });
     Junta.belongsTo(Institucion, { foreignKey: "idinstitucion" });
     Junta.belongsTo(Reconocida, {
         foreignKey: "IDReconocida",

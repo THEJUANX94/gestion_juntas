@@ -210,10 +210,9 @@ export const obtenerTodasLasJuntas = async (req, res) => {
           model: Lugar, 
           attributes: ["IDLugar", "NombreLugar"] 
         },
-        {
-          model: TipoJunta,
-          as: "tipoJunta",
-          attributes: ["IDTipoJuntas", "NombreTipoJunta"]
+        { 
+          model: TipoJunta, 
+          attributes: ["IDTipoJuntas", "NombreTipoJunta"] 
         },
         { 
           model: Institucion, 
@@ -226,14 +225,6 @@ export const obtenerTodasLasJuntas = async (req, res) => {
       ],
       order: [["RazonSocial", "ASC"]]
     });
-
-    console.log(
-      juntas.map(j => ({
-        IDJunta: j.IDJunta,
-        FK_tipojunta: j.tipojunta,
-        TipoJunta: j.tipoJunta
-      }))
-    );
 
     return res.json(juntas);
 
@@ -294,10 +285,9 @@ export const obtenerJuntaPorId = async (req, res) => {
           model: Lugar, 
           attributes: ["IDLugar", "NombreLugar"] 
         },
-        {
-          model: TipoJunta,
-          as: "tipoJunta",
-          attributes: ["IDTipoJuntas", "NombreTipoJunta"]
+        { 
+          model: TipoJunta, 
+          attributes: ["IDTipoJuntas", "NombreTipoJunta"] 
         },
         { 
           model: Institucion, 
