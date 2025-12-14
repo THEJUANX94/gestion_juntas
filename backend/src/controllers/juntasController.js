@@ -225,7 +225,7 @@ export const obtenerTodasLasJuntas = async (req, res) => {
       ],
       order: [["RazonSocial", "ASC"]]
     });
-
+    console.log(juntas.toJSON())
     return res.json(juntas);
 
   } catch (error) {
