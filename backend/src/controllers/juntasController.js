@@ -225,12 +225,7 @@ export const obtenerTodasLasJuntas = async (req, res) => {
       ],
       order: [["RazonSocial", "ASC"]]
     });
-    const juntas1 = await Junta.findAll({
-      include: [
-        { model: TipoJunta }
-      ]
-    });
-    console.log(juntas1[0].toJSON());
+
     return res.json(juntas);
 
   } catch (error) {
@@ -335,7 +330,7 @@ export const obtenerJuntaPorId = async (req, res) => {
       
       // Datos relacionados
       Municipio: junta.Lugar,
-      TipoJunta: junta.TipoJunta,
+      TipoJunta: junta.TipoJuntum,
       Institucion: junta.Institucion,
       Reconocida: junta.Reconocida
     };
@@ -615,8 +610,6 @@ export const exportarJuntasExcel = async (req, res) => {
       order: [["RazonSocial", "ASC"]],
     });
 
-
-
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Juntas");
 
@@ -641,7 +634,7 @@ export const exportarJuntasExcel = async (req, res) => {
         direccion: j.Direccion,
         personeria: j.NumPersoneriaJuridica,
         municipio: j.Lugar?.NombreLugar || "",
-        tipo: j.TipoJunta?.NombreTipoJunta || "",
+        tipo: j.TipoJuntum?.NombreTipoJunta || "",
         institucion: j.Institucion?.NombreInstitucion || "",
         zona: j.Zona,
         creacion: j.FechaCreacion,

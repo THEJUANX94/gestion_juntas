@@ -43,7 +43,7 @@ export default function ListarJuntas() {
                     id: j.IDJunta,
                     razon: j.RazonSocial,
                     municipio: j.Lugar?.NombreLugar || "",
-                    tipo: j.TipoJunta?.NombreTipoJunta || "",
+                    tipo: j.TipoJuntum?.NombreTipoJunta || "",
                     institucion: j.Institucion?.NombreInstitucion || "",
                     zona: j.Zona,
                     periodo: `${new Date(j.FechaInicioPeriodo).toLocaleDateString()} - ${new Date(
