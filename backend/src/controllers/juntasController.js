@@ -210,9 +210,10 @@ export const obtenerTodasLasJuntas = async (req, res) => {
           model: Lugar, 
           attributes: ["IDLugar", "NombreLugar"] 
         },
-        { 
-          model: TipoJunta, 
-          attributes: ["IDTipoJuntas", "NombreTipoJunta"] 
+        {
+          model: TipoJunta,
+          as: "tipoJunta",
+          attributes: ["IDTipoJuntas", "NombreTipoJunta"]
         },
         { 
           model: Institucion, 
@@ -293,9 +294,10 @@ export const obtenerJuntaPorId = async (req, res) => {
           model: Lugar, 
           attributes: ["IDLugar", "NombreLugar"] 
         },
-        { 
-          model: TipoJunta, 
-          attributes: ["IDTipoJuntas", "NombreTipoJunta"] 
+        {
+          model: TipoJunta,
+          as: "tipoJunta",
+          attributes: ["IDTipoJuntas", "NombreTipoJunta"]
         },
         { 
           model: Institucion, 
