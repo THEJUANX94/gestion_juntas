@@ -45,7 +45,7 @@ export default function ListarJuntas() {
                     municipio: j.Lugar?.NombreLugar || "",
                     tipo: j.TipoJuntum?.NombreTipoJunta || "",
                     institucion: j.Institucion?.NombreInstitucion || "",
-                    zona: j.Zona,
+                    zona: j.Zona || "—",
                     periodo: `${new Date(j.FechaInicioPeriodo).toLocaleDateString()} - ${new Date(
                         j.FechaFinPeriodo
                     ).toLocaleDateString()}`,
@@ -75,13 +75,6 @@ export default function ListarJuntas() {
         );
     });
 
-    const descargarExcel = () => {
-        window.open(
-            import.meta.env.VITE_PATH + "/juntas/export/excel",
-            "_blank"
-        );
-    };
-
     /* =========================
        FILTROS POR COLUMNA
     ========================== */
@@ -93,6 +86,24 @@ export default function ListarJuntas() {
                 .includes(filtros[key].toLowerCase());
         })
     );
+
+    /* =========================
+       ESTADÍSTICAS
+    ========================== */
+    const totalJuntas = filtered.length;
+
+    const porZona = filtered.reduce((acc, j) => {
+        acc[j.zona] = (acc[j.zona] || 0) + 1;
+        return acc;
+    }, {});
+
+    const porTipo = filtered.reduce((acc, j) => {
+        acc[j.tipo] = (acc[j.tipo] || 0) + 1;
+        return acc;
+    }, {});
+
+    const tipoMasComun =
+        Object.entries(porTipo).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
 
     /* =========================
        PAGINACIÓN
@@ -116,13 +127,66 @@ export default function ListarJuntas() {
     const handleFiltro = (col, value) =>
         setFiltros((prev) => ({ ...prev, [col]: value }));
 
+    const limpiarFiltros = () =>
+        setFiltros({
+            razon: "",
+            municipio: "",
+            tipo: "",
+            institucion: "",
+            zona: "",
+        });
+
+    const descargarExcel = () => {
+        window.open(
+            import.meta.env.VITE_PATH + "/juntas/export/excel",
+            "_blank"
+        );
+    };
+
     return (
         <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl">Listar Juntas</h1>
+                <h1 className="text-2xl font-semibold">Listar Juntas</h1>
+                <button
+                    onClick={limpiarFiltros}
+                    className="text-sm text-green-700 underline"
+                >
+                    Limpiar filtros
+                </button>
             </div>
 
-            {/* Buscador global */}
+            {/* =========================
+                ESTADÍSTICAS
+            ========================== */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white border rounded-xl p-4 shadow-sm">
+                    <p className="text-sm text-gray-500">Total Juntas</p>
+                    <p className="text-2xl font-bold text-green-700">
+                        {totalJuntas}
+                    </p>
+                </div>
+
+                {Object.entries(porZona).map(([zona, cantidad]) => (
+                    <div
+                        key={zona}
+                        className="bg-white border rounded-xl p-4 shadow-sm"
+                    >
+                        <p className="text-sm text-gray-500">Zona {zona}</p>
+                        <p className="text-xl font-semibold">{cantidad}</p>
+                    </div>
+                ))}
+
+                <div className="bg-white border rounded-xl p-4 shadow-sm">
+                    <p className="text-sm text-gray-500">Tipo más frecuente</p>
+                    <p className="text-md font-semibold text-gray-800">
+                        {tipoMasComun}
+                    </p>
+                </div>
+            </div>
+
+            {/* =========================
+                BUSCADOR GLOBAL
+            ========================== */}
             <div className="flex justify-end mb-4">
                 <div className="relative">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
@@ -136,10 +200,12 @@ export default function ListarJuntas() {
                 </div>
             </div>
 
-            {/* Tabla */}
-            <div className="flex-1 overflow-x-auto">
-                <table className="min-w-full border rounded-md shadow-sm text-sm">
-                    <thead className="bg-gray-100 text-left font-semibold">
+            {/* =========================
+                TABLA
+            ========================== */}
+            <div className="flex-1 overflow-x-auto rounded-xl border shadow-sm bg-white">
+                <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50 sticky top-0 z-10">
                         <tr>
                             {[
                                 ["Razón Social", "razon"],
@@ -148,7 +214,7 @@ export default function ListarJuntas() {
                                 ["Institución", "institucion"],
                                 ["Zona", "zona"],
                             ].map(([label, key]) => (
-                                <th key={key} className="px-4 py-2">
+                                <th key={key} className="px-4 py-2 text-left">
                                     <div className="flex items-center justify-between">
                                         {label}
                                         <button onClick={() => toggleFilter(key)}>
@@ -168,24 +234,48 @@ export default function ListarJuntas() {
                                     )}
                                 </th>
                             ))}
-                            <th className="px-4 py-2">Periodo</th>
+                            <th className="px-4 py-2 text-left">Periodo</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         {paginated.length > 0 ? (
                             paginated.map((j) => (
-                                <tr key={j.id} className="border-b">
-                                    <td className="px-4 py-3 flex items-center gap-2">
+                                <tr
+                                    key={j.id}
+                                    className="border-b hover:bg-green-50 transition-colors"
+                                >
+                                    <td className="px-4 py-3 flex items-center gap-3 font-medium text-gray-800">
                                         <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200">
                                             <Users className="h-5 w-5 text-gray-500" />
                                         </div>
                                         {j.razon}
                                     </td>
+
                                     <td className="px-4 py-3">{j.municipio}</td>
-                                    <td className="px-4 py-3">{j.tipo}</td>
-                                    <td className="px-4 py-3">{j.institucion}</td>
-                                    <td className="px-4 py-3">{j.zona}</td>
+
+                                    <td className="px-4 py-3">
+                                        <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs">
+                                            {j.tipo}
+                                        </span>
+                                    </td>
+
+                                    <td className="px-4 py-3">
+                                        {j.institucion}
+                                    </td>
+
+                                    <td className="px-4 py-3">
+                                        <span
+                                            className={`px-2 py-1 rounded-full text-xs font-semibold
+                                            ${j.zona === "Rural"
+                                                    ? "bg-blue-100 text-blue-700"
+                                                    : "bg-green-100 text-green-700"
+                                                }`}
+                                        >
+                                            {j.zona}
+                                        </span>
+                                    </td>
+
                                     <td className="px-4 py-3">{j.periodo}</td>
                                 </tr>
                             ))
@@ -202,14 +292,17 @@ export default function ListarJuntas() {
                     </tbody>
                 </table>
 
-                {/* Paginación */}
-                <div className="flex items-center justify-between mt-4">
+                {/* =========================
+                    PAGINACIÓN
+                ========================== */}
+                <div className="flex items-center justify-between mt-4 px-2">
                     <p className="text-sm text-gray-600">
                         Mostrando{" "}
                         {Math.min((page - 1) * perPage + 1, filtered.length)} -{" "}
                         {Math.min(page * perPage, filtered.length)} de{" "}
                         {filtered.length}
                     </p>
+
                     <div className="flex items-center gap-2">
                         <button
                             className="px-3 py-1 border rounded"
@@ -218,18 +311,21 @@ export default function ListarJuntas() {
                         >
                             Anterior
                         </button>
+
                         {Array.from({ length: totalPages }).map((_, idx) => (
                             <button
                                 key={idx}
-                                className={`px-3 py-1 rounded ${page === idx + 1
+                                className={`px-3 py-1 rounded-md transition
+                                    ${page === idx + 1
                                         ? "bg-green-600 text-white"
-                                        : "border"
+                                        : "border hover:bg-gray-100"
                                     }`}
                                 onClick={() => setPage(idx + 1)}
                             >
                                 {idx + 1}
                             </button>
                         ))}
+
                         <button
                             className="px-3 py-1 border rounded"
                             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -239,10 +335,11 @@ export default function ListarJuntas() {
                         </button>
                     </div>
                 </div>
-                <div>
+
+                <div className="mt-4">
                     <button
                         onClick={descargarExcel}
-                        className="px-4 py-2 bg-green-600 text-white rounded"
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
                     >
                         📊 Exportar Excel
                     </button>
