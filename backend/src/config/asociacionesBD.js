@@ -61,7 +61,7 @@ export const Asociaciones = () => {
     Junta.belongsTo(TipoJunta, {
         foreignKey: "TipoJunta",
         targetKey: "IDTipoJuntas",
-        as: "TipoJunta"
+        as: "tipoJunta"
     });
     Junta.belongsTo(Institucion, { foreignKey: "idinstitucion" });
     Junta.belongsTo(Reconocida, {
