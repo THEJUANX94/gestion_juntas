@@ -14,10 +14,10 @@ export const obtenerComisiones = async (req, res) => {
 
 export const obtenerComisionPorId = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+    const { idcomision } = req.params;
+    if (!idcomision) return res.status(400).json({ message: "ID no proporcionado" });
 
-    const comision = await Comisiones.findByPk(id);
+    const comision = await Comisiones.findByPk(idcomision);
     if (!comision) return res.status(404).json({ message: "Comisión no encontrada" });
 
     return res.json(comision);

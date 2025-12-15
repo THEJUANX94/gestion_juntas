@@ -34,6 +34,7 @@ import EditarMandatario from "./pages/EditarMandatario";
 import ListarJuntas from "./pages/ListarJuntas";
 import EditarCargo from "./pages/EditarCargo";
 import EditarInstitucion from "./pages/EditarInstitucion";
+import EditarComisiones from "./pages/EditarComision";
 import ValidacionQR from "./pages/ValidacionQR";
 
 
