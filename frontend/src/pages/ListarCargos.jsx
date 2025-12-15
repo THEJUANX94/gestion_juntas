@@ -102,7 +102,7 @@ export default function ListarCargos() {
 						<tr>
 							<th className="px-4 py-2">
 								<div className="flex items-center justify-between">
-									Nombre Cargo
+									Nombre Cargo 2
 									<button onClick={() => toggleFilter('nombre')}><Filter className="h-4 w-4 text-gray-500" /></button>
 								</div>
 								{showFilter.nombre && (
