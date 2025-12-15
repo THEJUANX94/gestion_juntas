@@ -79,7 +79,7 @@ export default function ListarJuntas() {
        PAGINACIÓN
     ========================== */
     const [page, setPage] = useState(1);
-    const perPage = 10;
+    const perPage = 10; // filas por página
     const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
 
     useEffect(() => {
@@ -89,20 +89,23 @@ export default function ListarJuntas() {
     const paginated = filtered.slice((page - 1) * perPage, page * perPage);
 
     const getPages = () => {
-        const delta = 2;
+        // Máximo 7 botones visibles
+        const maxButtons = 7;
         const pages = [];
-        const left = Math.max(2, page - delta);
-        const right = Math.min(totalPages - 1, page + delta);
 
-        pages.push(1);
+        if (totalPages <= maxButtons) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+            return pages;
+        }
 
-        if (left > 2) pages.push("...");
+        const start = Math.max(1, page - 2);
+        const end = Math.min(totalPages, page + 2);
 
-        for (let i = left; i <= right; i++) pages.push(i);
+        if (start > 1) pages.push(1, "...");
 
-        if (right < totalPages - 1) pages.push("...");
+        for (let i = start; i <= end; i++) pages.push(i);
 
-        if (totalPages > 1) pages.push(totalPages);
+        if (end < totalPages) pages.push("...", totalPages);
 
         return pages;
     };
@@ -188,7 +191,7 @@ export default function ListarJuntas() {
                 </div>
 
                 {/* PAGINACIÓN */}
-                <div className="flex items-center justify-between px-4 py-3 border-t">
+                <div className="flex items-center justify-between px-4 py-3 border-t sticky bottom-0 bg-white">
                     <p className="text-sm text-gray-600">
                         Mostrando {(page - 1) * perPage + 1} - {Math.min(page * perPage, filtered.length)} de {filtered.length}
                     </p>
