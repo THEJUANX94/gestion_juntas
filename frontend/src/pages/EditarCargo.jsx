@@ -34,19 +34,56 @@ export default function EditarCargo() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-      <h1 className="text-xl mb-4">Editar Cargo</h1>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
+      <div className="max-w-md mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              Editar Cargo
+            </h1>
+            <p className="text-gray-500">
+              Actualiza la información del cargo
+            </p>
+          </div>
 
-      <input
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-        className="border p-2 w-full mb-4"
-        placeholder="Nombre del cargo"
-      />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label 
+                htmlFor="nombre" 
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Nombre del cargo
+              </label>
+              <input
+                id="nombre"
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200 outline-none"
+                placeholder="Ingrese el nombre del cargo"
+                required
+              />
+            </div>
 
-      <button className="bg-green-600 text-white px-4 py-2 rounded">
-        Guardar cambios
-      </button>
-    </form>
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition duration-200 shadow-md hover:shadow-lg"
+              >
+                Guardar cambios
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => navigate("/cargos/listar")}
+                className="flex-1 bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transform hover:scale-105 transition duration-200"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
