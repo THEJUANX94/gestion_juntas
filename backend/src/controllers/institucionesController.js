@@ -68,15 +68,15 @@ export const actualizarInstitucion = async (req, res) => {
 
 export const eliminarInstitucion = async (req, res) => {
 	try {
-		const { id } = req.params;
-		if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+		const { idinstitucion } = req.params;
+		if (!idinstitucion) return res.status(400).json({ message: "ID no proporcionado" });
 
-		const institucion = await Institucion.findByPk(id);
+		const institucion = await Institucion.findByPk(idinstitucion);
 		if (!institucion) return res.status(404).json({ message: "Institución no encontrada" });
 
 		await institucion.destroy();
 
-		logOperation("INSTITUCION_ELIMINADA", req.user || {}, { IDInstitucion: id }, "info");
+		logOperation("INSTITUCION_ELIMINADA", req.user || {}, { IDInstitucion: idinstitucion }, "info");
 
 		return res.json({ message: "Institución eliminada correctamente" });
 	} catch (error) {
