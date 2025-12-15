@@ -56,7 +56,7 @@ export const actualizarCargo = async (req, res) => {
 
 		const actualizado = await cargo.update({ NombreCargo });
 
-		logOperation("CARGO_ACTUALIZADO", req.user || {}, { IDCargo: id, NombreCargo: actualizado.NombreCargo }, "info");
+		logOperation("CARGO_ACTUALIZADO", req.user || {}, { IDCargo: idcargo, NombreCargo: actualizado.NombreCargo }, "info");
 
 		return res.json(actualizado);
 	} catch (error) {
