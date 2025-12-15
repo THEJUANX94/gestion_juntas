@@ -22,7 +22,6 @@ import DatosJunta from "./pages/DatosJunta";
 import ListarCargos from "./pages/ListarCargos";
 import ListarComisiones from "./pages/ListarComisiones";
 import CrearComision from "./pages/CrearComision";
-import UpdateComision from "./pages/UpdateComision";
 import CrearCargo from "./pages/CrearCargo";
 import CrearInstitucion from "./pages/CrearInstitucion";
 import ListarInstituciones from "./pages/ListarInstituciones";
@@ -65,7 +64,7 @@ export default function App() {
               <Route path="/cargos/update/:id" element={<EditarCargo/>}/>
               <Route path="comisiones/listar" element={<ListarComisiones/>} />
               <Route path="comisiones/create" element={<CrearComision/>} />
-              <Route path="comisiones/update/:id" element={<UpdateComision/>} />
+              <Route path="comisiones/update/:id" element={<EditarComision/>} />
               <Route path="cargos/create" element={<CrearCargo/>} />
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />
               <Route path="instituciones/create" element={<CrearInstitucion/>} />
