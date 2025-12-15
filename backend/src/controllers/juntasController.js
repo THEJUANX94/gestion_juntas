@@ -611,7 +611,9 @@ export const exportarJuntasExcel = async (req, res) => {
     });
 
     const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Juntas");
+    const sheet = workbook.addWorksheet("Juntas", {
+      views: [{ state: "frozen", ySplit: 1 }] // Congela encabezado
+    });
 
     sheet.columns = [
       { header: "Razón Social", key: "razon", width: 30 },
@@ -624,10 +626,28 @@ export const exportarJuntasExcel = async (req, res) => {
       { header: "Fecha Creación", key: "creacion", width: 15 },
       { header: "Inicio Periodo", key: "inicio", width: 15 },
       { header: "Fin Periodo", key: "fin", width: 15 },
-      { header: "Fecha Asamblea", key: "asamblea", width: 15 },
+      { header: "Fecha Asamblea", key: "asamblea", width: 18 },
       { header: "Reconocida", key: "reconocida", width: 15 },
     ];
 
+    /* 🎨 Estilo encabezados */
+    sheet.getRow(1).eachCell(cell => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "4472C4" } // Azul Excel
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
+
+    /* 📄 Agregar datos */
     juntas.forEach((j) => {
       sheet.addRow({
         razon: j.RazonSocial,
@@ -644,6 +664,43 @@ export const exportarJuntasExcel = async (req, res) => {
         reconocida: j.Reconocida?.Nombre || "",
       });
     });
+
+    /* 📐 Estilo filas */
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        row.eachCell(cell => {
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+          cell.alignment = { vertical: "middle", horizontal: "left" };
+        });
+
+        // Filas alternadas (cebra)
+        if (rowNumber % 2 === 0) {
+          row.eachCell(cell => {
+            cell.fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: "F2F2F2" }
+            };
+          });
+        }
+      }
+    });
+
+    /* 📅 Formato fechas */
+    ["H", "I", "J", "K"].forEach(col => {
+      sheet.getColumn(col).numFmt = "dd/mm/yyyy";
+    });
+
+    /* 🔍 Filtros */
+    sheet.autoFilter = {
+      from: "A1",
+      to: "L1",
+    };
 
     res.setHeader(
       "Content-Type",
@@ -662,5 +719,6 @@ export const exportarJuntasExcel = async (req, res) => {
     res.status(500).json({ message: "Error generando Excel" });
   }
 };
+
 
 
