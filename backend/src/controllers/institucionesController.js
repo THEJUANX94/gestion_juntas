@@ -14,10 +14,10 @@ export const obtenerInstituciones = async (req, res) => {
 
 export const obtenerInstitucionPorId = async (req, res) => {
 	try {
-		const { id } = req.params;
-		if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+		const { idinstitucion } = req.params;
+		if (!idinstitucion) return res.status(400).json({ message: "ID no proporcionado" });
 
-		const institucion = await Institucion.findByPk(id);
+		const institucion = await Institucion.findByPk(idinstitucion);
 		if (!institucion) return res.status(404).json({ message: "Institución no encontrada" });
 
 		return res.json(institucion);
@@ -47,16 +47,16 @@ export const crearInstitucion = async (req, res) => {
 
 export const actualizarInstitucion = async (req, res) => {
 	try {
-		const { id } = req.params;
+		const { idinstitucion } = req.params;
 		const { NombreInstitucion } = req.body;
-		if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+		if (!idinstitucion) return res.status(400).json({ message: "ID no proporcionado" });
 
-		const institucion = await Institucion.findByPk(id);
+		const institucion = await Institucion.findByPk(idinstitucion);
 		if (!institucion) return res.status(404).json({ message: "Institución no encontrada" });
 
 		const actualizado = await institucion.update({ NombreInstitucion });
 
-		logOperation("INSTITUCION_ACTUALIZADA", req.user || {}, { IDInstitucion: id, NombreInstitucion: actualizado.NombreInstitucion }, "info");
+		logOperation("INSTITUCION_ACTUALIZADA", req.user || {}, { IDInstitucion: idinstitucion, NombreInstitucion: actualizado.NombreInstitucion }, "info");
 
 		return res.json(actualizado);
 	} catch (error) {

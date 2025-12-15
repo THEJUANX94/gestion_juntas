@@ -33,6 +33,7 @@ import EditarMandatarioExistente from "./pages/EditarMandatarioExistente";
 import EditarMandatario from "./pages/EditarMandatario";
 import ListarJuntas from "./pages/ListarJuntas";
 import EditarCargo from "./pages/EditarCargo";
+import EditarInstitucion from "./pages/EditarInstitucion";
 import ValidacionQR from "./pages/ValidacionQR";
 
 
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="cargos/create" element={<CrearCargo/>} />
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />
               <Route path="instituciones/create" element={<CrearInstitucion/>} />
+              <Route path="instituciones/update/:id" element={<EditarInstitucion/>} />
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />
               <Route path="lugares/listar" element={<ListarLugares/>} />
               <Route path="usuarios/listar" element={<ListarUser />} />
