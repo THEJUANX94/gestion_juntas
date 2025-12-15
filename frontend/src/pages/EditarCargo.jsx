@@ -27,7 +27,7 @@ export default function EditarCargo() {
 
     if (res.ok) {
       AlertMessage.success("Actualizado", "Cargo actualizado correctamente");
-      navigate("/cargos");
+      navigate("/cargos/listar");
     } else {
       AlertMessage.error("Error", "No se pudo actualizar el cargo");
     }

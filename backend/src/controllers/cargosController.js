@@ -14,10 +14,10 @@ export const obtenerCargos = async (req, res) => {
 
 export const obtenerCargoPorId = async (req, res) => {
 	try {
-		const { id } = req.params;
-		if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+		const { idcargo } = req.params;
+		if (!idcargo) return res.status(400).json({ message: "ID no proporcionado" });
 
-		const cargo = await Cargo.findByPk(id);
+		const cargo = await Cargo.findByPk(idcargo);
 		if (!cargo) return res.status(404).json({ message: "Cargo no encontrado" });
 
 		return res.json(cargo);
@@ -47,11 +47,11 @@ export const crearCargo = async (req, res) => {
 
 export const actualizarCargo = async (req, res) => {
 	try {
-		const { id } = req.params;
+		const { idcargo } = req.params;
 		const { NombreCargo } = req.body;
-		if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+		if (!idcargo) return res.status(400).json({ message: "ID no proporcionado" });
 
-		const cargo = await Cargo.findByPk(id);
+		const cargo = await Cargo.findByPk(idcargo);
 		if (!cargo) return res.status(404).json({ message: "Cargo no encontrado" });
 
 		const actualizado = await cargo.update({ NombreCargo });
