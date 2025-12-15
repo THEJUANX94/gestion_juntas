@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import Footer from "../components/ui/Footer";
 
 export default function EditarCargo() {
   const { id } = useParams();
@@ -84,6 +85,7 @@ export default function EditarCargo() {
           </form>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
