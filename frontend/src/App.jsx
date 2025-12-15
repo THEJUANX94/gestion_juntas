@@ -32,6 +32,7 @@ import ListarLugares from "./pages/ListarLugares";
 import EditarMandatarioExistente from "./pages/EditarMandatarioExistente";
 import EditarMandatario from "./pages/EditarMandatario";
 import ListarJuntas from "./pages/ListarJuntas";
+import EditarCargo from "./pages/EditarCargo";
 import ValidacionQR from "./pages/ValidacionQR";
 
 
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
               <Route path="/juntas/:idJunta/mandatario/editar-datos/:idUsuario" element={<EditarMandatarioExistente />}/>
               <Route path="cargos/listar" element={<ListarCargos/>}/>
+              <Route path="cargos/editar/:id" element={<EditarCargo/>}/>
               <Route path="comisiones/listar" element={<ListarComisiones/>} />
               <Route path="comisiones/create" element={<CrearComision/>} />
               <Route path="comisiones/update/:id" element={<UpdateComision/>} />
