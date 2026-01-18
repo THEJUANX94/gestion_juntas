@@ -38,9 +38,7 @@ export default function AgregarMandatario() {
   });
 
   const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
-  const municipiosFiltrados = lugares.filter(l =>
-    l.TipoLugar === 'Municipio' && l.IDPadre === formData.departamento
-  );
+  const municipiosFiltrados = lugares.filter(l =>l.TipoLugar === 'Municipio' && l.IDOtroLugar === formData.departamento);
 
   useEffect(() => {
     const cargarDatos = async () => {
