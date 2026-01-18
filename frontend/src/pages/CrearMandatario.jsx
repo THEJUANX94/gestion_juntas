@@ -18,6 +18,7 @@ export default function AgregarMandatario() {
     // Datos Personales
     documento: "",
     tipoDocumento: "",
+    departamento: "",
     expedido: "",
     primernombre: "",
     segundonombre: "",
@@ -35,6 +36,11 @@ export default function AgregarMandatario() {
     cargo: "",
     comision: ""
   });
+
+  const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
+  const municipiosFiltrados = lugares.filter(l =>
+    l.TipoLugar === 'Municipio' && l.IDPadre === formData.departamento
+  );
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -174,12 +180,36 @@ export default function AgregarMandatario() {
                   onChange={handleChange}
                   options={tiposDocumento.map(t => ({ value: t.IDTipoDocumento, label: t.NombreTipo }))}
                 />
+                {/* 1. Selector de Departamentos */}
                 <Select
-                  label="Expedido en"
+                  label="Departamento"
+                  name="departamento"
+                  value={formData.departamento}
+                  onChange={(e) => {
+                    // Al cambiar de departamento, reseteamos el municipio (expedido)
+                    setFormData({
+                      ...formData,
+                      departamento: e.target.value,
+                      expedido: ""
+                    });
+                  }}
+                  options={departamentos.map(d => ({
+                    value: d.IDLugar,
+                    label: d.NombreLugar
+                  }))}
+                />
+
+                {/* 2. Selector de Municipios (Expedido en) */}
+                <Select
+                  label="Expedido en (Municipio)"
                   name="expedido"
                   value={formData.expedido}
-                  onChange={handleChange}
-                  options={lugares.map(t => ({ value: t.IDLugar, label: t.NombreLugar }))}
+                  onChange={handleChange} // Tu función estándar
+                  disabled={!formData.departamento} // Deshabilitar si no hay departamento
+                  options={municipiosFiltrados.map(m => ({
+                    value: m.IDLugar,
+                    label: m.NombreLugar
+                  }))}
                 />
 
                 <Input label="Primer nombre" name="primernombre" value={formData.primernombre} onChange={handleChange} />
