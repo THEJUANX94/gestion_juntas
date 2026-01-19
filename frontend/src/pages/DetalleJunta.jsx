@@ -266,7 +266,7 @@ export default function DetalleJunta() {
 
             const handleClick = () => {
               if (accion.ruta) return navigate(accion.ruta);
-    
+
               const tipo = accion.action || 'autoresolutorio';
               return generatePdfForJunta(juntaIdFromRoute, tipo);
             };
@@ -486,7 +486,7 @@ export default function DetalleJunta() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Género:</span>
-                            <span className="text-sm font-medium text-gray-900">{m.genero === 'M' ? 'Masculino' : 'Femenino'}</span>
+                            <span className="text-sm font-medium text-gray-900">{m.genero || "No definido"}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-sm text-gray-600">Edad:</span>
