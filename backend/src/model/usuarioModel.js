@@ -41,7 +41,7 @@ export const Usuario = sequelize.define("Usuario", {
   Correo: {
     field: "correo",
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
     unique: true,
     validate: { isEmail: true },
   },
