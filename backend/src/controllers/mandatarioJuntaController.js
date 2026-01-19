@@ -662,7 +662,7 @@ export const actualizarMandatario = async (req, res) => {
         });
       }
     } else {
-      // Si no existe periodo, crearlo
+      
       await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo);
     }
 

@@ -160,7 +160,7 @@ export default function EditarMandatario() {
         return;
       }
 
-      alert("Mandatario actualizado correctamente");
+      AlertMessage.info("Mandatario actualizado correctamente");
       navigate(`/juntas/detalle-junta/${id}`);
 
     } catch (error) {
