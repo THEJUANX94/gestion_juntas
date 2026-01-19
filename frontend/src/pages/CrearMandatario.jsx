@@ -127,10 +127,12 @@ export default function AgregarMandatario() {
     }
 
     try {
+      const payload = { ...formData, email: formData.email || null };
+
       const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/crear/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
