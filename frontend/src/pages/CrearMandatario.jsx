@@ -38,7 +38,7 @@ export default function AgregarMandatario() {
   });
 
   const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
-  const municipiosFiltrados = lugares.filter(l =>l.TipoLugar === 'Municipio' && l.IDOtroLugar === formData.departamento);
+  const municipiosFiltrados = lugares.filter(l => l.TipoLugar === 'Municipio' && l.IDOtroLugar === formData.departamento);
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -113,7 +113,7 @@ export default function AgregarMandatario() {
       return;
     }
 
-    if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
+    if (formData.email && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
       AlertMessage.success("El correo debe tener un dominio válido, como usuario@correo.com");
       return;
     }
