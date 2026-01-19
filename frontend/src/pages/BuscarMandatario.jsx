@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, UserPlus, Users, Mail, Phone, CreditCard } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
+import { AlertMessage } from "../components/ui/AlertMessage";
 
 
 export default function BuscarMandatario() {
@@ -50,7 +51,7 @@ const handleAgregarAJunta = async (user) => {
     const data = await res.json();
 
     if (data.existe) {
-      alert("Este mandatario ya pertenece a esta junta.");
+      AlertMessage.info("Este mandatario ya pertenece a esta junta.");
       return;
     }
 
@@ -59,7 +60,7 @@ const handleAgregarAJunta = async (user) => {
 
   } catch (error) {
     console.error(error);
-    alert("Error validando mandatario");
+    AlertMessage.error("Error validando mandatario");
   }
 };
 

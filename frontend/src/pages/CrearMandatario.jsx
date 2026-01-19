@@ -103,25 +103,25 @@ export default function AgregarMandatario() {
   const handleSubmit = async () => {
 
     if (!/^\d{6,10}$/.test(formData.documento)) {
-      alert("El documento debe tener entre 6 y 10 números");
+      AlertMessage.info("El documento debe tener entre 6 y 10 números");
       return;
     }
 
 
     if (!/^\d{10}$/.test(formData.telefono)) {
-      alert("El teléfono debe tener exactamente 10 dígitos");
+      AlertMessage.info("El teléfono debe tener exactamente 10 dígitos");
       return;
     }
 
     if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
-      alert("El correo debe tener un dominio válido, como usuario@correo.com");
+      AlertMessage.info("El correo debe tener un dominio válido, como usuario@correo.com");
       return;
     }
 
     const camposNombre = ["primernombre", "primerapellido"];
     for (let campo of camposNombre) {
       if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(formData[campo])) {
-        alert(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
+        AlertMessage.info(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
         return;
       }
     }
@@ -136,17 +136,17 @@ export default function AgregarMandatario() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert("Error: " + data.message);
+        AlertMessage.error("Error: " + data.message);
         return;
       }
 
-      alert("Mandatario creado correctamente");
+      AlertMessage.info("Mandatario creado correctamente");
       navigate(`/juntas/detalle-junta/${id}`);
       console.log("Respuesta:", data);
 
     } catch (error) {
       console.error(error);
-      alert("Error de conexión al servidor");
+      AlertMessage.error("Error de conexión al servidor");
     }
   };
 
