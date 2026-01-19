@@ -103,7 +103,7 @@ export default function AgregarMandatario() {
   const handleSubmit = async () => {
 
     if (!/^\d{6,10}$/.test(formData.documento)) {
-      AlertMessage.info("El documento debe tener entre 6 y 10 números");
+      AlertMessage.success("El documento debe tener entre 6 y 10 números");
       return;
     }
 

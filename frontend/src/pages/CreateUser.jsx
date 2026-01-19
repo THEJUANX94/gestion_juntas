@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import UserForm from "./UserForm";
+import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function CreateUser() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function CreateUser() {
         throw new Error((data && data.message) || text || response.statusText || "Error al crear usuario");
       }
 
-      alert("Usuario creado con éxito");
+      AlertMessage.info("Usuario creado con éxito");
       setTimeout(() => navigate("/usuarios/listar"), 1500);
       return data;
     } catch (err) {
