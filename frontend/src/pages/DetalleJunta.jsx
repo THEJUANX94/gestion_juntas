@@ -98,7 +98,7 @@ export default function DetalleJunta() {
 
   const generatePdfForDocumento = async (documento, tipo = 'autoresolutorio') => {
     if (!documento) {
-      alert('No hay documento disponible para generar el certificado.');
+      AlertMessage.info('No hay documento disponible para generar el certificado.');
       return;
     }
 
@@ -123,7 +123,7 @@ export default function DetalleJunta() {
       if (!res.ok) {
         const text = await res.text();
         console.error('Error generando PDF:', res.status, text);
-        alert('Error al generar el PDF: ' + res.status);
+        AlertMessage.error('Error al generar el PDF: ' + res.status);
         return;
       }
 
@@ -139,13 +139,13 @@ export default function DetalleJunta() {
       window.URL.revokeObjectURL(url);
     } catch (e) {
       console.error('Excepción al generar PDF:', e);
-      alert('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
+      AlertMessage.error('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
     }
   };
 
   const generatePdfForJunta = async (IDJunta, tipo = 'autoresolutorio') => {
     if (!IDJunta) {
-      alert('No hay ID de junta disponible para generar el certificado.');
+      AlertMessage.success('No hay ID de junta disponible para generar el certificado.');
       return;
     }
 
@@ -170,7 +170,7 @@ export default function DetalleJunta() {
       if (!res.ok) {
         const text = await res.text();
         console.error('Error generando PDF para junta:', res.status, text);
-        alert('Error al generar el PDF: ' + res.status);
+        AlertMessage.error('Error al generar el PDF: ' + res.status);
         return;
       }
 
@@ -186,7 +186,7 @@ export default function DetalleJunta() {
       window.URL.revokeObjectURL(url);
     } catch (e) {
       console.error('Excepción al generar PDF para junta:', e);
-      alert('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
+      AlertMessage.error('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
     }
   };
 

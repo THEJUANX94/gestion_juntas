@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { User, MapPin, Briefcase, Building2, Calendar } from "lucide-react";
+import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function EditarMandatarioExistente() {
     const { idJunta, idUsuario } = useParams();
@@ -129,15 +130,15 @@ const handleChange = (e) => {
             const data = await res.json();
 
             if (!res.ok) {
-                alert(data.message || "Error al guardar");
+                AlertMessage.error(data.message || "Error al guardar");
                 return;
             }
 
-            alert("Mandatario agregado exitosamente a la junta");
+            AlertMessage.info("Mandatario agregado exitosamente a la junta");
             navigate(`/juntas/detalle-junta/${idJunta}`);
         } catch (error) {
             console.error(error);
-            alert("Error al conectar con el servidor");
+            AlertMessage.error("Error al conectar con el servidor");
         }
     };
 

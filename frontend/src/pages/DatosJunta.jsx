@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Building2, Calendar, Users, Save, FileText } from "lucide-react";
 import Select from "react-select";
+import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function EditarJunta() {
 
@@ -75,7 +76,7 @@ export default function EditarJunta() {
 
       } catch (error) {
         console.error("Error cargando datos:", error);
-        alert("Error al cargar datos de la junta");
+        AlertMessage.error("Error al cargar datos de la junta");
       } finally {
         setLoading(false);
       }
@@ -145,15 +146,15 @@ export default function EditarJunta() {
       const data = await resp.json();
 
       if (!resp.ok) {
-        alert(`Error: ${data.message}`);
+        AlertMessage.error(`Error: ${data.message}`);
         return;
       }
 
-      alert("Junta actualizada correctamente");
+      AlertMessage.info("Junta actualizada correctamente");
       navigate(`juntas/consultar`);
 
     } catch (e) {
-      alert("Error de conexión con el servidor");
+      AlertMessage.error("Error de conexión con el servidor");
     }
   };
 

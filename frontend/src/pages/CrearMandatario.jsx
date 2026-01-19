@@ -109,19 +109,19 @@ export default function AgregarMandatario() {
 
 
     if (!/^\d{10}$/.test(formData.telefono)) {
-      AlertMessage.info("El teléfono debe tener exactamente 10 dígitos");
+      AlertMessage.success("El teléfono debe tener exactamente 10 dígitos");
       return;
     }
 
     if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
-      AlertMessage.info("El correo debe tener un dominio válido, como usuario@correo.com");
+      AlertMessage.success("El correo debe tener un dominio válido, como usuario@correo.com");
       return;
     }
 
     const camposNombre = ["primernombre", "primerapellido"];
     for (let campo of camposNombre) {
       if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(formData[campo])) {
-        AlertMessage.info(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
+        AlertMessage.success(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
         return;
       }
     }

@@ -76,7 +76,7 @@ export default function EditarMandatario() {
         setModo(mand.cargo ? "cargo" : "comision");
 
       } catch (err) {
-        alert("Error cargando datos del mandatario");
+        AlertMessage.error("Error cargando datos del mandatario");
         console.error(err);
       }
     };
@@ -124,24 +124,24 @@ export default function EditarMandatario() {
   const handleSubmit = async () => {
     // Validaciones (mismas que en crear)
     if (!/^\d{6,10}$/.test(formData.documento)) {
-      alert("El documento debe tener entre 6 y 10 números");
+      AlertMessage.success("El documento debe tener entre 6 y 10 números");
       return;
     }
 
     if (!/^\d{10}$/.test(formData.telefono)) {
-      alert("El teléfono debe tener exactamente 10 dígitos");
+      AlertMessage.success("El teléfono debe tener exactamente 10 dígitos");
       return;
     }
 
     if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
-      alert("El correo debe tener un dominio válido, como usuario@correo.com");
+      AlertMessage.success("El correo debe tener un dominio válido, como usuario@correo.com");
       return;
     }
 
     const camposNombre = ["primernombre", "primerapellido"];
     for (let campo of camposNombre) {
       if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(formData[campo])) {
-        alert(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
+        AlertMessage.success(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
         return;
       }
     }
@@ -156,7 +156,7 @@ export default function EditarMandatario() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert("Error: " + data.message);
+        AlertMessage.error("Error: " + data.message);
         return;
       }
 
@@ -165,7 +165,7 @@ export default function EditarMandatario() {
 
     } catch (error) {
       console.error(error);
-      alert("Error de conexión al servidor");
+      AlertMessage.error("Error de conexión al servidor");
     }
   };
 
