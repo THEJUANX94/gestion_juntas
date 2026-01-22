@@ -21,6 +21,7 @@ export const crearUsuario = async (req, res) => {
     console.log('Received file (firma):', firmaFile);
 
     const {
+      NombreTipoDocumento,
       NumeroIdentificacion,
       PrimerApellido,
       SegundoApellido,
@@ -64,6 +65,14 @@ export const crearUsuario = async (req, res) => {
         message: `Faltan campos requeridos: ${missingFields.join(', ')}`,
         fields: missingFields
       });
+    }
+
+    const tipoDocumento = await TipoDocumento.findOne({
+      where: { NombreTipo: NombreTipoDocumento }
+    });
+
+    if (!tipoDocumento) {
+      return res.status(400).json({ message: `Tipo de documento no válido` });
     }
 
     console.log('Looking for role:', NombreRol);

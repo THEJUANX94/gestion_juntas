@@ -12,6 +12,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
+    NombreTipoDocumento: "",
     NumeroIdentificacion: "",
     PrimerApellido: "",
     SegundoApellido: "",
@@ -39,6 +40,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
     if (initialData) {
       setForm(prev => ({
         ...prev,
+        NombreTipoDocumento: initialData.NombreTipoDocumento || "",
         NumeroIdentificacion: initialData.NumeroIdentificacion || "",
         PrimerApellido: initialData.PrimerApellido || "",
         SegundoApellido: initialData.SegundoApellido || "",
@@ -80,6 +82,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
   const handleCancel = () => {
   if (mode === "create") {
     setForm({
+      NombreTipoDocumento: "",
       NumeroIdentificacion: "",
       PrimerApellido: "",
       SegundoApellido: "",
@@ -351,6 +354,19 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
+            <FormSelect
+                label="Tipo Documento"
+                value={form.NombreTipoDocumento}
+                onChange={(v) => handleChange("NombreTipoDocumento", v)}
+                disabled={formDisabled}
+                options={[
+                { value: "CC", label: "Cedula de Ciudadanía" },
+                { value: "TI", label: "Tarjeta de Identidad" },
+                { value: "CE", label: "Cedula de Extranjería" },
+                { value: "PAS", label: "Pasaporte" },
+              ]}
+              />
+              
               <FormField
                 label="Número Identificación"
                 value={form.NumeroIdentificacion}
