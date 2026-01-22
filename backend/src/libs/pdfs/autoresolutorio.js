@@ -54,7 +54,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const linesIntro = doc.splitTextToSize(introText, anchoUtil);
-  
+
   let heightIntro = (linesIntro.length * 5) + 5;
   let result = checkPageBreak(doc, yPos, heightIntro);
   yPos = result.yPos;
@@ -94,7 +94,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   // --- Cierre de considerandos ---
   const textoIntroResuelve = "Con fundamento en las anteriores consideraciones, la Dirección de Participación y Acción Comunal, en uso de sus facultades legales,";
   const linesIntroResuelve = doc.splitTextToSize(textoIntroResuelve, anchoUtil);
-  
+
   let heightIntroResuelve = (linesIntroResuelve.length * 5) + 5;
   result = checkPageBreak(doc, yPos, heightIntroResuelve);
   yPos = result.yPos;
@@ -135,6 +135,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   yPos += (splitArt1.length * 5) + 5;
 
   // Tabla de dignatarios
+  // ... código anterior ...
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   centerText(doc, tipodocumento, yPos, 9, 'bold');
@@ -144,33 +145,94 @@ const generarAutoresolutorio = async (datosCertificado) => {
   doc.setFont('helvetica', 'normal');
 
   if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
-    // Ancho del recuadro y márgenes
+
+    // --- PASO 1: AGRUPAR LOS DATOS ---
+    const rolesPrincipales = {}; // Objeto para agrupar (ej: { "Presidente": [...], "Tesorero": [...] })
+    const listaSuplentes = [];   // Array para todos los suplentes
+
+    datosCertificado.dignatarios.forEach(d => {
+      const cargo = d.cargo || 'SIN CARGO';
+      // Convertimos a minúsculas para verificar si contiene la palabra "suplente"
+      if (cargo.toLowerCase().includes('suplente')) {
+        listaSuplentes.push(d);
+      } else {
+        // Si el rol no existe en el objeto, creamos el array
+        if (!rolesPrincipales[cargo]) {
+          rolesPrincipales[cargo] = [];
+        }
+        rolesPrincipales[cargo].push(d);
+      }
+    });
+
+    // --- PASO 2: FUNCIÓN PARA DIBUJAR UNA SECCIÓN (Título + Tabla) ---
     const anchoRecuadro = anchoUtil - 10;
     const margenRecuadro = margenIzq + 5;
-    
-    datosCertificado.dignatarios.forEach(d => {
-      // Preparar texto del mandatario
-      const textoMandatario = `${d.cargo || ''}: ${d.nombre || ''} (CC: ${d.cedula || ''})`;
-      const lineasMandatario = doc.splitTextToSize(textoMandatario, anchoRecuadro - 4);
-      
-      // Altura del recuadro: 2 puntos por línea más padding
-      const altoRecuadro = (lineasMandatario.length * 4) + 6;
-      
-      // Verificar salto de página
-      result = checkPageBreak(doc, yPos, altoRecuadro + 2);
+
+    // Función auxiliar para pintar un grupo
+    const dibujarGrupo = (tituloGrupo, listaPersonas) => {
+      if (listaPersonas.length === 0) return;
+
+      // 1. Verificar espacio para el TÍTULO del grupo
+      result = checkPageBreak(doc, yPos, 15);
       yPos = result.yPos;
-      
-      // Dibujar recuadro
-      doc.setDrawColor(0, 100, 0); // Verde oscuro
-      doc.rect(margenRecuadro, yPos, anchoRecuadro, altoRecuadro);
-      
-      // Imprimir texto dentro del recuadro
+
+      // 2. Dibujar el TÍTULO GRANDE (ej: PRESIDENTE)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(0, 100, 0); // Color verde oscuro para el título (opcional)
+      doc.text(tituloGrupo.toUpperCase(), margenRecuadro, yPos);
+      yPos += 5; // Espacio debajo del título
+
+      // 3. Dibujar las personas de ese grupo
       doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
-      doc.text(lineasMandatario, margenRecuadro + 2, yPos + 3, { maxWidth: anchoRecuadro - 4 });
-      
-      yPos += altoRecuadro + 3; // Espacio entre recuadros
+
+      listaPersonas.forEach(d => {
+        // Preparamos el texto. Nota: En suplentes mostramos su cargo específico, en principales solo nombre y CC si prefieres
+        // Ajusta este string según prefieras:
+        const textoDignatario = `${d.nombre || ''} (CC: ${d.cedula || ''}) - ${d.cargo || ''}`;
+
+        const lineas = doc.splitTextToSize(textoDignatario, anchoRecuadro - 4);
+        const altoFila = (lineas.length * 4) + 4; // Altura dinámica
+
+        // Verificar salto de página para el recuadro
+        result = checkPageBreak(doc, yPos, altoFila + 2);
+        // Si hubo salto de página, volvemos a pintar el título del grupo para que no se pierda el contexto
+        if (result.yPos !== yPos) {
+          yPos = result.yPos;
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${tituloGrupo.toUpperCase()} (Cont.)`, margenRecuadro, yPos - 5);
+          doc.setFont('helvetica', 'normal');
+        } else {
+          yPos = result.yPos;
+        }
+
+        // Dibujar borde del recuadro (fila)
+        doc.setDrawColor(0, 100, 0);
+        doc.rect(margenRecuadro, yPos, anchoRecuadro, altoFila);
+
+        // Escribir texto
+        doc.text(lineas, margenRecuadro + 2, yPos + 4);
+
+        yPos += altoFila; // Mover cursor al final de la fila sin espacio extra para que parezca una tabla unida
+      });
+
+      yPos += 8; // Espacio extra antes del siguiente grupo de roles
+    };
+
+    // --- PASO 3: EJECUTAR EL DIBUJO ---
+
+    // A. Dibujar Roles Principales (Iteramos las llaves del objeto)
+    Object.keys(rolesPrincipales).forEach(cargo => {
+      dibujarGrupo(cargo, rolesPrincipales[cargo]);
     });
+
+    // B. Dibujar Sección de Suplentes al final
+    if (listaSuplentes.length > 0) {
+      dibujarGrupo('SUPLENTES', listaSuplentes);
+    }
+
   } else {
     doc.text('[ESPACIO PARA LISTADO DE DIGNATARIOS]', margenIzq + 10, yPos);
     yPos += 10;
