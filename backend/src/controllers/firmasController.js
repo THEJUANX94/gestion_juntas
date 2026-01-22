@@ -93,55 +93,53 @@ export const eliminarFirma = async (req, res) => {
 };
 
 export const getUltimaFirmaData = async () => {
-    try {
-        const firmaActiva = await Firma.findOne({
-            // Buscamos la que tenga el estado activo en true
-            where: { Activo: true }, 
-            include: [
-                {
-                    model: Usuario,
-                    attributes: [
-                        "PrimerNombre",
-                        "SegundoNombre",
-                        "PrimerApellido",
-                        "SegundoApellido",
-                        "Sexo"
-                    ],
-                },
-            ],
-        });
+  try {
+    const firmaActiva = await Firma.findOne({
+      // Cambia 'Activo' por 'activa' (como está definido en tu modelo)
+      where: { activa: true },
+      include: [
+        {
+          model: Usuario,
+          attributes: [
+            "PrimerNombre",
+            "SegundoNombre",
+            "PrimerApellido",
+            "SegundoApellido",
+            "Sexo"
+          ],
+        },
+      ],
+    });
 
-        if (!firmaActiva) {
-            return null; // Devuelve null si no hay ninguna firma activa
-        }
-
-        const usuario = firmaActiva.Usuario;
-
-        // Formateo del nombre completo
-        const nombreCompleto = [
-            usuario.PrimerNombre,
-            usuario.SegundoNombre,
-            usuario.PrimerApellido,
-            usuario.SegundoApellido,
-        ]
-            .filter((n) => n)
-            .join(" ")
-            .toUpperCase();
-
-        // Lógica de género para el título
-        const titulo = (usuario.Sexo && usuario.Sexo.toUpperCase() === 'MASCULINO') 
-            ? "SECRETARIO" 
-            : "SECRETARIA";
-
-        const cargoDinamico = `${titulo} DE GOBIERNO Y ACCIÓN COMUNAL`;
-
-        return {
-            nombreFirmante: nombreCompleto,
-            cargo: cargoDinamico,
-            ubicacion: firmaActiva.Ubicacion,
-        };
-    } catch (error) {
-        console.error("Error en el servicio getUltimaFirmaData:", error.message);
-        throw new Error("Fallo al consultar los datos de la firma activa.");
+    if (!firmaActiva) {
+      return null;
     }
+
+    const usuario = firmaActiva.Usuario;
+
+    const nombreCompleto = [
+      usuario.PrimerNombre,
+      usuario.SegundoNombre,
+      usuario.PrimerApellido,
+      usuario.SegundoApellido,
+    ]
+      .filter((n) => n)
+      .join(" ")
+      .toUpperCase();
+
+    const titulo = (usuario.Sexo && usuario.Sexo.toUpperCase() === 'MASCULINO')
+      ? "SECRETARIO"
+      : "SECRETARIA";
+
+    const cargoDinamico = `${titulo} DE GOBIERNO Y ACCIÓN COMUNAL`;
+
+    return {
+      nombreFirmante: nombreCompleto,
+      cargo: cargoDinamico,
+      ubicacion: firmaActiva.Ubicacion,
+    };
+  } catch (error) {
+    console.error("Error en el servicio getUltimaFirmaData:", error.message);
+    throw new Error("Fallo al consultar los datos de la firma activa.");
+  }
 };
