@@ -241,55 +241,58 @@ export const obtenerMandatarios = async (req, res) => {
           model: Rol, 
           as: "RolInfo", 
           attributes: ["NombreRol"],
-          where: { 
-            NombreRol: "Mandatario" 
-          } 
+          where: { NombreRol: "Mandatario" } 
         },
         { 
           model: Firma, 
-          attributes: ["Ubicacion", "FechaCreacion"] 
+          // Importante: Incluye la columna que define si está activa (ej: 'Activa')
+          attributes: ["Activa", "Ubicacion", "FechaCreacion"] 
         },
       ],
     });
 
-    res.json(usuarios);
+    // Aplanamos la respuesta para el frontend
+    const respuesta = usuarios.map((u) => {
+      // Convertimos la instancia de Sequelize a un objeto plano de JS
+      const userJSON = u.toJSON(); 
+      
+      return {
+        IDUsuario: userJSON.IDUsuario,
+        NombreCompleto: userJSON.NombreCompleto,
+        Identificacion: userJSON.Identificacion,
+        // Accedemos a la relación Firma. Si no existe, es false.
+        FirmaActiva: userJSON.Firma ? userJSON.Firma.Activa : false,
+      };
+    });
+
+    res.json(respuesta); // Esto siempre devolverá un Array [ ... ]
   } catch (err) {
     console.error("Error al obtener usuarios:", err);
-    logOperation(
-      "ERROR_OBTENER_USUARIOS",
-      req.user || {},
-      { error: err.message },
-      "error"
-    );
     res.status(500).json({ error: "Error al obtener usuarios" });
   }
 };
 
 export const actualizarEstadoFirma = async (req, res) => {
-  const { idUsuario } = req.params; // Viene de la URL /usuarios/:idUsuario/firma/estado
-  const { Activo } = req.body;     // Viene del JSON enviado
+  const { idUsuario } = req.params;
+  const { Activo } = req.body; // El frontend envía { "Activo": true/false }
 
   try {
-    // Buscamos la firma asociada al ID del usuario
     const firma = await Firma.findOne({ where: { IDUsuario: idUsuario } });
 
     if (!firma) {
       return res.status(404).json({ error: "El mandatario no tiene una firma registrada." });
     }
 
-    // Actualizamos el estado
-    firma.Activa = Activo;
+    // Actualizamos la columna 'Activa'
+    firma.Activa = Activo; 
     await firma.save();
 
-    // Opcional: Registrar en logs
-    logOperation("CAMBIO_ESTADO_FIRMA", req.user || { id: "sistema" }, { 
-      idUsuario, 
-      nuevoEstado: Activo 
-    }, "info");
-
-    res.json({ message: "Estado de firma actualizado correctamente", Activa: firma.Activa });
+    res.json({ 
+      message: "Estado de firma actualizado", 
+      FirmaActiva: firma.Activa // Devolvemos el nombre que el frontend espera
+    });
   } catch (err) {
-    console.error("Error al actualizar estado de firma:", err);
+    console.error("Error al actualizar firma:", err);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
