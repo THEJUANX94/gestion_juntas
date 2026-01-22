@@ -11,7 +11,8 @@ import {
   Building2,
   Handshake,
   ScanEye,
-  MapPin
+  MapPin,
+  Signature
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -249,6 +250,17 @@ export default function MainLayout() {
                   >
                     <MapPin className="h-5 w-5" />
                     {!collapsed && "Listar Lugares"}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/usuarios/mandatarios"
+                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                      "/usuarios/mandatarios"
+                    )}`}
+                  >
+                    <Signature className="h-5 w-5" />
+                    {!collapsed && "Listar Mandatarios"}
                   </Link>
                 </li>
               </ul>

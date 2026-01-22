@@ -35,7 +35,7 @@ import EditarCargo from "./pages/EditarCargo";
 import EditarInstitucion from "./pages/EditarInstitucion";
 import EditarComision from "./pages/EditarComision";
 import ValidacionQR from "./pages/ValidacionQR";
-
+import ListarMandatarios from "./pages/ListarMandatarios";
 
 export default function App() {
   return (
@@ -72,6 +72,7 @@ export default function App() {
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />
               <Route path="lugares/listar" element={<ListarLugares/>} />
               <Route path="usuarios/listar" element={<ListarUser />} />
+              <Route path="usuarios/mandatarios" element={<ListarUser />} />
               <Route path="usuarios/crear" element={<CreateUser />} />
               <Route path="usuarios/update/:id" element={<UpdateUser />} />
               <Route path="configuracion" element={<Configuracion />} />
