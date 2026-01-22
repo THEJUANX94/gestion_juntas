@@ -72,7 +72,7 @@ export default function App() {
               <Route path="instituciones/listar" element={<ListarInstituciones/>} />
               <Route path="lugares/listar" element={<ListarLugares/>} />
               <Route path="usuarios/listar" element={<ListarUser />} />
-              <Route path="usuarios/mandatarios" element={<ListarUser />} />
+              <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
               <Route path="usuarios/crear" element={<CreateUser />} />
               <Route path="usuarios/update/:id" element={<UpdateUser />} />
               <Route path="configuracion" element={<Configuracion />} />
