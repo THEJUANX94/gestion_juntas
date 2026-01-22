@@ -18,7 +18,7 @@ const firmasDir = path.resolve(__dirname, "../../firmas");
 export const crearUsuario = async (req, res) => {
   try {
     console.log('Received request body:', req.body);
-    const firmaFile = req.file; 
+    const firmaFile = req.file;
     console.log('Received file (firma):', firmaFile);
 
     const {
@@ -34,9 +34,9 @@ export const crearUsuario = async (req, res) => {
       NombreRol,
       Correo,
       Celular,
-      Usuario: Login,       
-      Contrasena,           
-      Contraseña            
+      Usuario: Login,
+      Contrasena,
+      Contraseña
     } = req.body;
 
     console.log('Extracted NombreRol:', NombreRol);
@@ -55,9 +55,9 @@ export const crearUsuario = async (req, res) => {
 
     const ROL_MANDATARIO = "Mandatario";
     const isMandatario = NombreRol === ROL_MANDATARIO;
-    
+
     if (isMandatario && !firmaFile) {
-        missingFields.push('Firma');
+      missingFields.push('Firma');
     }
 
     if (missingFields.length > 0) {
@@ -77,7 +77,7 @@ export const crearUsuario = async (req, res) => {
     }
 
     console.log('Looking for role:', NombreRol);
-    
+
     const rol = await Rol.findOne({
       where: { NombreRol: NombreRol }
     });
@@ -99,7 +99,7 @@ export const crearUsuario = async (req, res) => {
 
     if (existingUser) {
       return res.status(400).json({
-        message: existingUser.Correo === Correo 
+        message: existingUser.Correo === Correo
           ? "El correo ya está registrado"
           : "El número de identificación ya está registrado"
       });
@@ -121,9 +121,9 @@ export const crearUsuario = async (req, res) => {
     });
 
     if (isMandatario && firmaFile) {
-    try {
+      try {
         if (!fs.existsSync(firmasDir)) {
-            fs.mkdirSync(firmasDir, { recursive: true });
+          fs.mkdirSync(firmasDir, { recursive: true });
         }
 
         const extension = path.extname(firmaFile.originalname) || ".png";
@@ -137,24 +137,24 @@ export const crearUsuario = async (req, res) => {
         const ubicacionFirma = path.relative(process.cwd(), destino);
 
         await Firma.create({
-            NumeroIdentificacion: newUser.NumeroIdentificacion,
-            Ubicacion: ubicacionFirma
+          NumeroIdentificacion: newUser.NumeroIdentificacion,
+          Ubicacion: ubicacionFirma
         });
 
         console.log(`Firma guardada en: ${ubicacionFirma}`);
-    } catch (errFirma) {
+      } catch (errFirma) {
         console.error("Error detallado al procesar firma:", errFirma);
         return res.status(500).json({
-            message: "Usuario creado, pero hubo un error con el archivo de la firma",
-            error: errFirma.message
+          message: "Usuario creado, pero hubo un error con el archivo de la firma",
+          error: errFirma.message
         });
+      }
     }
-}
 
     if (NombreRol === "Administrador") {
       try {
         const loginFinal = Login || Correo || NumeroIdentificacion;
-        const passwordPlano = Contrasena || Contraseña; 
+        const passwordPlano = Contrasena || Contraseña;
 
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(passwordPlano, saltRounds);
@@ -176,7 +176,7 @@ export const crearUsuario = async (req, res) => {
     }
 
     const userWithRole = await Usuario.findByPk(newUser.NumeroIdentificacion, {
-      include: [{ 
+      include: [{
         model: Rol,
         as: 'RolInfo',
         attributes: ['IDRol', 'NombreRol']
@@ -237,59 +237,69 @@ export const obtenerMandatarios = async (req, res) => {
   try {
     const usuarios = await Usuario.findAll({
       include: [
-        { 
-          model: Rol, 
-          as: "RolInfo", 
+        {
+          model: Rol,
+          as: "RolInfo",
           attributes: ["NombreRol"],
-          where: { NombreRol: "Mandatario" } 
+          where: { NombreRol: "Mandatario" }
         },
-        { 
-          model: Firma, 
-          // Importante: Incluye la columna que define si está activa (ej: 'Activa')
-          attributes: ["Activa", "Ubicacion", "FechaCreacion"] 
+        {
+          model: Firma,
+          // Cambiamos "Activa" por "activa" (en minúsculas según el log)
+          attributes: ["activa", "ubicacion", "fechacreacion"]
         },
       ],
     });
 
-    // Aplanamos la respuesta para el frontend
     const respuesta = usuarios.map((u) => {
-      // Convertimos la instancia de Sequelize a un objeto plano de JS
-      const userJSON = u.toJSON(); 
-      
+      const userJSON = u.toJSON();
+
+      // Construimos el nombre completo si el frontend lo necesita
+      const nombreCompleto = [
+        userJSON.PrimerNombre,
+        userJSON.SegundoNombre,
+        userJSON.PrimerApellido,
+        userJSON.SegundoApellido
+      ].filter(Boolean).join(" ");
+
       return {
-        IDUsuario: userJSON.IDUsuario,
-        NombreCompleto: userJSON.NombreCompleto,
-        Identificacion: userJSON.Identificacion,
-        // Accedemos a la relación Firma. Si no existe, es false.
-        FirmaActiva: userJSON.Firma ? userJSON.Firma.Activa : false,
+        IDUsuario: userJSON.NumeroIdentificacion, // Usamos la identificación como ID
+        NombreCompleto: nombreCompleto,
+        Identificacion: userJSON.NumeroIdentificacion,
+        // Accedemos a la relación con el nombre de columna en minúscula
+        FirmaActiva: userJSON.Firma ? userJSON.Firma.activa : false,
       };
     });
 
-    res.json(respuesta); // Esto siempre devolverá un Array [ ... ]
+    res.json(respuesta);
   } catch (err) {
-    console.error("Error al obtener usuarios:", err);
-    res.status(500).json({ error: "Error al obtener usuarios" });
+    console.error("Error detallado:", err);
+    res.status(500).json({ error: "Error al obtener mandatarios" });
   }
 };
 
 export const actualizarEstadoFirma = async (req, res) => {
+  // El idUsuario que viene del frontend debe ser el NumeroIdentificacion
   const { idUsuario } = req.params;
-  const { Activo } = req.body; // El frontend envía { "Activo": true/false }
+  const { Activo } = req.body;
 
   try {
-    const firma = await Firma.findOne({ where: { IDUsuario: idUsuario } });
+    // Buscamos la firma por el campo de relación correcto
+    const firma = await Firma.findOne({
+      where: { numeroidentificacion: idUsuario }
+    });
 
     if (!firma) {
-      return res.status(404).json({ error: "El mandatario no tiene una firma registrada." });
+      return res.status(404).json({ error: "No se encontró firma para este mandatario." });
     }
 
-    // Actualizamos la columna 'Activa'
-    firma.Activa = Activo; 
+    // Actualizamos usando el nombre de columna en minúscula
+    firma.activa = Activo;
     await firma.save();
 
-    res.json({ 
-      message: "Estado de firma actualizado", 
-      FirmaActiva: firma.Activa // Devolvemos el nombre que el frontend espera
+    res.json({
+      message: "Estado de firma actualizado",
+      FirmaActiva: firma.activa
     });
   } catch (err) {
     console.error("Error al actualizar firma:", err);
@@ -353,7 +363,7 @@ export const obtenerUsuarioPorId = async (req, res) => {
 export const actualizarUsuario = async (req, res) => {
   const userAdmin = req.user || {};
   const { NumeroIdentificacion } = req.params;
-  const { Login, Contraseña, ...datosUsuario } = req.body; 
+  const { Login, Contraseña, ...datosUsuario } = req.body;
 
   let credencialesActualizadas = null;
 
@@ -391,7 +401,7 @@ export const actualizarUsuario = async (req, res) => {
       if (Contraseña) {
         const saltRounds = 10;
         datosCredenciales.Contraseña = await bcrypt.hash(Contraseña, saltRounds);
-        datosCredenciales.Contraseña = Contraseña; 
+        datosCredenciales.Contraseña = Contraseña;
       }
 
       const credenciales = await Credenciales.findOne({ where: { numeroIdentificacion: NumeroIdentificacion } });
@@ -399,16 +409,16 @@ export const actualizarUsuario = async (req, res) => {
       if (credenciales) {
         const credencialesActualizadasData = await credenciales.update(datosCredenciales);
         credencialesActualizadas = {
-            NumeroIdentificacion, 
-            Login: credencialesActualizadasData.Login, 
-            Contraseña: Contraseña ? 'ACTUALIZADA' : 'NO_CAMBIO' 
+          NumeroIdentificacion,
+          Login: credencialesActualizadasData.Login,
+          Contraseña: Contraseña ? 'ACTUALIZADA' : 'NO_CAMBIO'
         };
       } else {
         logOperation(
-            "ACTUALIZAR_CREDENCIALES_FALLIDO",
-            userAdmin,
-            { motivo: "Credenciales no encontradas para el NumeroIdentificacion", NumeroIdentificacion },
-            "warning"
+          "ACTUALIZAR_CREDENCIALES_FALLIDO",
+          userAdmin,
+          { motivo: "Credenciales no encontradas para el NumeroIdentificacion", NumeroIdentificacion },
+          "warning"
         );
       }
     }
@@ -419,10 +429,10 @@ export const actualizarUsuario = async (req, res) => {
       logOperation(
         "USUARIO_Y_CREDENCIALES_ACTUALIZADOS",
         userAdmin,
-        { 
-            usuarioAfectado: NumeroIdentificacion, 
-            cambiosUsuario: tieneCambiosUsuario ? actualizado : 'SIN_CAMBIOS', 
-            cambiosCredenciales: credencialesActualizadas || 'NO_APLICAN' 
+        {
+          usuarioAfectado: NumeroIdentificacion,
+          cambiosUsuario: tieneCambiosUsuario ? actualizado : 'SIN_CAMBIOS',
+          cambiosCredenciales: credencialesActualizadas || 'NO_APLICAN'
         },
         "info"
       );
@@ -435,16 +445,16 @@ export const actualizarUsuario = async (req, res) => {
       );
     }
 
-    res.json(actualizado); 
+    res.json(actualizado);
 
   } catch (err) {
     console.error("Error al actualizar usuario:", err);
     logOperation(
       "ERROR_ACTUALIZAR_USUARIO_CRITICO",
       userAdmin,
-      { 
-        error: err.message, 
-        NumeroIdentificacion, 
+      {
+        error: err.message,
+        NumeroIdentificacion,
         body: req.body,
         cambiosCredenciales: credencialesActualizadas // Para saber si falló después de actualizar credenciales
       },
