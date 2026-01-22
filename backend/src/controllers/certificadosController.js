@@ -8,6 +8,7 @@ import { Lugar } from "../model/lugarModel.js";
 import { Cargo } from "../model/cargoModel.js";
 import { TipoJunta } from "../model/tipoJuntaModel.js";
 import { Op } from "sequelize";
+import { Comisiones } from "../model/comisionModel.js";
 
 export const crearCertificado = async (req, res) => {
   let Cedula = null;
@@ -37,26 +38,40 @@ export const crearCertificado = async (req, res) => {
       console.warn('No se pudo obtener el municipio:', e.message);
     }
 
-    // Obtener dignatarios de la junta
+   // Obtener dignatarios de la junta
     const mandatariosJunta = await MandatarioJunta.findAll({ where: { IDJunta: IDJunta } });
     const dignatarios = [];
+
     for (const m of mandatariosJunta) {
       try {
         const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
-        const c = await Cargo.findByPk(m.IDCargo);
+        
+        // Buscamos el Cargo (si tiene)
+        const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
+        
+        // Buscamos la Comisión (si tiene)
+        let nombreComision = null;
+        if (m.IDComision) {
+            // Asumiendo que el modelo se llama Comision
+            const com = await Comisiones.findByPk(m.IDComision); 
+            if (com) nombreComision = com.Nombre; 
+        }
+
         const nombre = u ? `${u.PrimerNombre || ''} ${u.SegundoNombre || ''} ${u.PrimerApellido || ''} ${u.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim() : null;
+        
+        // Empujamos el objeto con AMBOS datos (cargo y comision)
         dignatarios.push({
           cargo: c ? c.NombreCargo : null,
+          comision: nombreComision || null,
           nombre: nombre || null,
           cedula: m.NumeroIdentificacion
         });
+
       } catch (e) {
-        // ignorar un dignatario si hay problema con datos individuales
         console.warn('Error al obtener dignatario:', e.message);
       }
     }
 
-    // --- Resolver el nombre del tipo de junta para guardarlo en TipoCertificado ---
     let tipoNombre = null;
     try {
       if (junta.TipoJunta) {

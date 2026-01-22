@@ -54,7 +54,7 @@ export const loadResources = async () => {
 // --- GENERAR QR ---
 export const makeQR = async (datosCertificado) => {
   try {
-    const validationUrl = `http://localhost:5173/validacionqr/${datosCertificado.IDCertificado || ''}`;
+    const validationUrl = `https://gestionjuntas.boyaca.gov.co/validacionqr/${datosCertificado.IDCertificado || ''}`;
     return await generateQR(validationUrl);
   } catch (e) {
     console.warn('No se pudo generar QR:', e.message);

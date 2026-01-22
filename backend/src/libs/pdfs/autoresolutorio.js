@@ -158,7 +158,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
       // 1. Prioridad: Suplentes (van al final)
       if (cargoLower.includes('suplente')) {
         grupoSuplentes.push(d);
-        return; // Pasamos al siguiente
+        return;
       }
 
       // 2. Prioridad: Presidente (va al inicio)
