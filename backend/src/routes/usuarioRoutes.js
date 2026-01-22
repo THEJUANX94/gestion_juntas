@@ -41,6 +41,6 @@ router.get("/verificar-correo/:correo", verificarCorreo);
 router.put("/:IDUsuario", verificarAuth, actualizarUsuario);
 router.delete("/:IDUsuario", verificarAuth, eliminarUsuario);
 router.get("/mandatarios", verificarAuth, obtenerMandatarios);
-router.patch("/usuarios/:idUsuario/firma/estado", verificarAuth, actualizarEstadoFirma);
+router.patch("/:idUsuario/firma/estado", verificarAuth, actualizarEstadoFirma);
 
 export default router;
