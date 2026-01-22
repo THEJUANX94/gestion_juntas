@@ -15,7 +15,7 @@ import { verificarAuth } from "../utils/authMiddleware.js";
 
 const router = Router();
 
-const firmasDir = path.resolve("../../firmas");
+const firmasDir = path.resolve("firmas");
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
