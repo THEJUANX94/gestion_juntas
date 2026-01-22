@@ -40,7 +40,7 @@ router.get("/verificar/:NumeroIdentificacion", verificarIdentificacion);
 router.get("/verificar-correo/:correo", verificarCorreo);
 router.put("/:IDUsuario", verificarAuth, actualizarUsuario);
 router.delete("/:IDUsuario", verificarAuth, eliminarUsuario);
-router.get("/mandatario", verificarAuth, obtenerMandatarios);
+router.get("/mandatarios", verificarAuth, obtenerMandatarios);
 router.patch("/usuarios/:idUsuario/firma/estado", verificarAuth, actualizarEstadoFirma);
 
 export default router;
