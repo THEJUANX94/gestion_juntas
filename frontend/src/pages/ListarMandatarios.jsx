@@ -90,13 +90,14 @@ export default function ListarMandatarios() {
 
     try {
       // Endpoint ajustado para la firma del usuario
+      // ... dentro de handleToggleFirma
       const res = await fetch(
-        import.meta.env.VITE_PATH + `/usuarios/${usuario.IDUsuario}/firma/estado`,
+        import.meta.env.VITE_PATH + `/usuarios/${usuario.identificacion}/firma/estado`, // Usa identificación si eso espera el backend
         {
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ FirmaActiva: nuevoEstadoFirma }),
+          body: JSON.stringify({ Activo: nuevoEstadoFirma }), // Cambiado a 'Activo' para coincidir con el backend
         }
       );
 
@@ -233,11 +234,11 @@ export default function ListarMandatarios() {
 
         {/* Paginación similar a la anterior */}
         <div className="flex items-center justify-between mt-4">
-           <p className="text-sm text-gray-600">Total: {filtered.length} mandatarios</p>
-           <div className="flex gap-1">
-             <button disabled={page === 1} onClick={() => setPage(page - 1)} className="px-3 py-1 border rounded">Anterior</button>
-             <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="px-3 py-1 border rounded">Siguiente</button>
-           </div>
+          <p className="text-sm text-gray-600">Total: {filtered.length} mandatarios</p>
+          <div className="flex gap-1">
+            <button disabled={page === 1} onClick={() => setPage(page - 1)} className="px-3 py-1 border rounded">Anterior</button>
+            <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="px-3 py-1 border rounded">Siguiente</button>
+          </div>
         </div>
       </div>
       <Footer />

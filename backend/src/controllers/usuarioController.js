@@ -279,12 +279,17 @@ export const obtenerMandatarios = async (req, res) => {
 };
 
 export const actualizarEstadoFirma = async (req, res) => {
-  // El idUsuario que viene del frontend debe ser el NumeroIdentificacion
   const { idUsuario } = req.params;
-  const { Activo } = req.body;
+  const nuevoEstado = req.body.Activo !== undefined
+    ? req.body.Activo
+    : req.body.FirmaActiva;
 
   try {
-    // Buscamos la firma por el campo de relación correcto
+    // Validación de seguridad
+    if (nuevoEstado === undefined || nuevoEstado === null) {
+      return res.status(400).json({ error: "No se recibió el estado de la firma (Activo/FirmaActiva)" });
+    }
+
     const firma = await Firma.findOne({
       where: { numeroidentificacion: idUsuario }
     });
@@ -293,8 +298,8 @@ export const actualizarEstadoFirma = async (req, res) => {
       return res.status(404).json({ error: "No se encontró firma para este mandatario." });
     }
 
-    // Actualizamos usando el nombre de columna en minúscula
-    firma.activa = Activo;
+    // Asignación explícita
+    firma.activa = nuevoEstado;
     await firma.save();
 
     res.json({
