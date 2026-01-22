@@ -6,6 +6,7 @@ import { Op } from "sequelize";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import { Credenciales } from "../model/credencialesModel.js";
+import { TipoDocumento } from '../models/TipoDocumento.js';
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
