@@ -105,6 +105,7 @@ export default function ListarLugares() {
       // const actualizado = await res.json();
       // setLugares((prev) =>
       //   prev.map((l) =>
+      //   prev.map((l) =>
       //     l.IDLugar === item.IDLugar
       //       ? { ...l, activo: actualizado.Activo }
       //       : l

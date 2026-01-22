@@ -94,8 +94,9 @@ export const eliminarFirma = async (req, res) => {
 
 export const getUltimaFirmaData = async () => {
     try {
-        const ultimaFirma = await Firma.findOne({
-            order: [["FechaCreacion", "DESC"]],
+        const firmaActiva = await Firma.findOne({
+            // Buscamos la que tenga el estado activo en true
+            where: { Activo: true }, 
             include: [
                 {
                     model: Usuario,
@@ -110,12 +111,13 @@ export const getUltimaFirmaData = async () => {
             ],
         });
 
-        if (!ultimaFirma) {
-            return null; // Devuelve null si no hay firma
+        if (!firmaActiva) {
+            return null; // Devuelve null si no hay ninguna firma activa
         }
 
-        const usuario = ultimaFirma.Usuario;
+        const usuario = firmaActiva.Usuario;
 
+        // Formateo del nombre completo
         const nombreCompleto = [
             usuario.PrimerNombre,
             usuario.SegundoNombre,
@@ -125,18 +127,21 @@ export const getUltimaFirmaData = async () => {
             .filter((n) => n)
             .join(" ")
             .toUpperCase();
+
+        // Lógica de género para el título
         const titulo = (usuario.Sexo && usuario.Sexo.toUpperCase() === 'MASCULINO') 
             ? "SECRETARIO" 
             : "SECRETARIA";
 
         const cargoDinamico = `${titulo} DE GOBIERNO Y ACCIÓN COMUNAL`;
+
         return {
             nombreFirmante: nombreCompleto,
             cargo: cargoDinamico,
-            ubicacion: ultimaFirma.Ubicacion,
+            ubicacion: firmaActiva.Ubicacion,
         };
     } catch (error) {
         console.error("Error en el servicio getUltimaFirmaData:", error.message);
-        throw new Error("Fallo al consultar los datos de la última firma.");
+        throw new Error("Fallo al consultar los datos de la firma activa.");
     }
 };

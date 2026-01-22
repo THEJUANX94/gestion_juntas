@@ -9,7 +9,9 @@ import {
   verificarIdentificacion,
   verificarCorreo,
   actualizarUsuario,
-  eliminarUsuario
+  eliminarUsuario,
+  obtenerMandatarios,
+  actualizarEstadoFirma
 } from "../controllers/usuarioController.js";
 import { verificarAuth } from "../utils/authMiddleware.js";
 
@@ -38,6 +40,7 @@ router.get("/verificar/:NumeroIdentificacion", verificarIdentificacion);
 router.get("/verificar-correo/:correo", verificarCorreo);
 router.put("/:IDUsuario", verificarAuth, actualizarUsuario);
 router.delete("/:IDUsuario", verificarAuth, eliminarUsuario);
-
+router.get("/mandatario", verificarAuth, obtenerMandatarios);
+router.patch("/usuarios/:idUsuario/firma/estado", verificarAuth, actualizarEstadoFirma);
 
 export default router;

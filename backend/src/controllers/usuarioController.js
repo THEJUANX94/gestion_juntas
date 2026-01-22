@@ -233,6 +233,67 @@ export const obtenerUsuarios = async (req, res) => {
   }
 };
 
+export const obtenerMandatarios = async (req, res) => {
+  try {
+    const usuarios = await Usuario.findAll({
+      include: [
+        { 
+          model: Rol, 
+          as: "RolInfo", 
+          attributes: ["NombreRol"],
+          where: { 
+            NombreRol: "Mandatario" 
+          } 
+        },
+        { 
+          model: Firma, 
+          attributes: ["Ubicacion", "FechaCreacion"] 
+        },
+      ],
+    });
+
+    res.json(usuarios);
+  } catch (err) {
+    console.error("Error al obtener usuarios:", err);
+    logOperation(
+      "ERROR_OBTENER_USUARIOS",
+      req.user || {},
+      { error: err.message },
+      "error"
+    );
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+};
+
+export const actualizarEstadoFirma = async (req, res) => {
+  const { idUsuario } = req.params; // Viene de la URL /usuarios/:idUsuario/firma/estado
+  const { Activo } = req.body;     // Viene del JSON enviado
+
+  try {
+    // Buscamos la firma asociada al ID del usuario
+    const firma = await Firma.findOne({ where: { IDUsuario: idUsuario } });
+
+    if (!firma) {
+      return res.status(404).json({ error: "El mandatario no tiene una firma registrada." });
+    }
+
+    // Actualizamos el estado
+    firma.Activa = Activo;
+    await firma.save();
+
+    // Opcional: Registrar en logs
+    logOperation("CAMBIO_ESTADO_FIRMA", req.user || { id: "sistema" }, { 
+      idUsuario, 
+      nuevoEstado: Activo 
+    }, "info");
+
+    res.json({ message: "Estado de firma actualizado correctamente", Activa: firma.Activa });
+  } catch (err) {
+    console.error("Error al actualizar estado de firma:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+};
+
 export const verificarIdentificacion = async (req, res) => {
   try {
     const { NumeroIdentificacion } = req.params;
