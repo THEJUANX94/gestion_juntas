@@ -26,26 +26,33 @@ export const createDoc = (options = {}) => {
 export const loadResources = async () => {
   let base64Logo = '';
   let base64Firma = '';
-  let nombreFirmante = "OLGA LUCIA SOTO GONZALEZ";
-  let cargoFirmante = "DIRECTORA DE PARTICIPACION Y ACCION COMUNAL";
+  // Valores por defecto en caso de que no haya nadie activo
+  let nombreFirmante = "SIN FIRMANTE ASIGNADO";
+  let cargoFirmante = "CARGO PENDIENTE";
 
+  // 1. Cargar Logo (se mantiene igual)
   try {
-    console.log("Cargando logo...");
     base64Logo = await imageToBase64(logoPath);
   } catch (e) {
     console.warn('No se pudo cargar logo:', e.message);
   }
 
+  // 2. Obtener Firma y Datos del Usuario desde la DB
   try {
-    console.log("Obteniendo datos de firma...");
     const firmanteData = await getUltimaFirmaData();
-    if (firmanteData && firmanteData.ubicacion) {
-      base64Firma = await imageToBase64(firmanteData.ubicacion);
-      nombreFirmante = firmanteData.nombreFirmante || nombreFirmante;
-      cargoFirmante = firmanteData.cargo || cargoFirmante;
+    
+    if (firmanteData) {
+      nombreFirmante = firmanteData.nombreFirmante;
+      cargoFirmante = firmanteData.cargo;
+  
+      if (firmanteData.ubicacion) {
+        base64Firma = await imageToBase64(firmanteData.ubicacion);
+      }
+    } else {
+      console.warn('No se encontró ninguna firma activa en la base de datos.');
     }
   } catch (e) {
-    console.warn('No se pudo cargar firma:', e.message);
+    console.error('Error crítico al cargar recursos de firma:', e.message);
   }
 
   return { base64Logo, base64Firma, nombreFirmante, cargoFirmante };
