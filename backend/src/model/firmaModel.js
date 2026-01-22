@@ -8,7 +8,7 @@ export const Firma = sequelize.define("Firma", {
     primaryKey: true,
     field: "idfirma"
   },
-  numeroIdentificacion: {
+  NumeroIdentificacion: {
     type: DataTypes.UUID,
     allowNull: false,
     references: {
