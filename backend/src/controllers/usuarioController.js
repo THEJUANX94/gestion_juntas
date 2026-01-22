@@ -12,7 +12,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const firmasDir = path.resolve(__dirname, "../firmas");
+const firmasDir = path.resolve(__dirname, "../../firmas");
 
 export const crearUsuario = async (req, res) => {
   try {
