@@ -12,12 +12,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const firmasDir = path.resolve(__dirname, "../../firmas");
-
-if (!fs.existsSync(firmasDir)) {
-  fs.mkdirSync(firmasDir, { recursive: true });
-  console.log(`Carpeta creada: ${firmasDir}`);
-}
+const firmasDir = path.resolve(__dirname, "../firmas");
 
 export const crearUsuario = async (req, res) => {
   try {
@@ -115,29 +110,35 @@ export const crearUsuario = async (req, res) => {
     });
 
     if (isMandatario && firmaFile) {
-        try {
-            const extension = path.extname(firmaFile.originalname) || ".png";
-            const nuevoNombre = `${uuidv4()}${extension}`;
-            const destino = path.join(firmasDir, nuevoNombre);
-
-            fs.renameSync(firmaFile.path, destino);
-
-            const ubicacionFirma = path.relative(process.cwd(), destino);
-
-            await Firma.create({
-                NumeroIdentificacion: newUser.NumeroIdentificacion,
-                Ubicacion: ubicacionFirma
-            });
-
-            console.log(`Firma guardada localmente en: ${ubicacionFirma}`);
-        } catch (errFirma) {
-            console.error("Error al guardar firma local:", errFirma);
-            return res.status(500).json({
-              message: "Usuario creado, pero error al guardar la firma local",
-              error: errFirma.message
-            });
+    try {
+        if (!fs.existsSync(firmasDir)) {
+            fs.mkdirSync(firmasDir, { recursive: true });
         }
+
+        const extension = path.extname(firmaFile.originalname) || ".png";
+        const nuevoNombre = `${uuidv4()}${extension}`;
+        const destino = path.join(firmasDir, nuevoNombre);
+
+        fs.copyFileSync(firmaFile.path, destino);
+        fs.unlinkSync(firmaFile.path); // Borra el archivo temporal original
+
+        // 3. Calcular ubicación relativa para la DB
+        const ubicacionFirma = path.relative(process.cwd(), destino);
+
+        await Firma.create({
+            NumeroIdentificacion: newUser.NumeroIdentificacion,
+            Ubicacion: ubicacionFirma
+        });
+
+        console.log(`Firma guardada en: ${ubicacionFirma}`);
+    } catch (errFirma) {
+        console.error("Error detallado al procesar firma:", errFirma);
+        return res.status(500).json({
+            message: "Usuario creado, pero hubo un error con el archivo de la firma",
+            error: errFirma.message
+        });
     }
+}
 
     if (NombreRol === "Administrador") {
       try {
