@@ -111,7 +111,6 @@ const generarAutoresolutorio = async (datosCertificado) => {
   // --- ARTÍCULOS ---
 
   // ARTÍCULO PRIMERO
-  // ARTÍCULO PRIMERO
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   const art1Label = "ARTÍCULO PRIMERO:";
@@ -135,7 +134,6 @@ const generarAutoresolutorio = async (datosCertificado) => {
   yPos += (splitArt1.length * 5) + 5;
 
   // Tabla de dignatarios
-  // ... código anterior ...
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   centerText(doc, tipodocumento, yPos, 9, 'bold');
@@ -146,59 +144,81 @@ const generarAutoresolutorio = async (datosCertificado) => {
 
   if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
 
-    // --- PASO 1: AGRUPAR LOS DATOS ---
-    const rolesPrincipales = {}; // Objeto para agrupar (ej: { "Presidente": [...], "Tesorero": [...] })
-    const listaSuplentes = [];   // Array para todos los suplentes
+    // --- PASO 1: CLASIFICACIÓN EXACTA ---
+    const grupoPresidente = [];
+    const rolesGenerales = {}; // Objeto para Tesorero, Fiscal, etc.
+    const grupoComisiones = [];
+    const grupoSuplentes = [];
 
     datosCertificado.dignatarios.forEach(d => {
-      const cargo = d.cargo || 'SIN CARGO';
-      // Convertimos a minúsculas para verificar si contiene la palabra "suplente"
-      if (cargo.toLowerCase().includes('suplente')) {
-        listaSuplentes.push(d);
-      } else {
-        // Si el rol no existe en el objeto, creamos el array
-        if (!rolesPrincipales[cargo]) {
-          rolesPrincipales[cargo] = [];
+      const cargo = (d.cargo || '').trim();
+      const cargoLower = cargo.toLowerCase();
+      const comision = (d.comision || '').trim();
+
+      // 1. Prioridad: Suplentes (van al final)
+      if (cargoLower.includes('suplente')) {
+        grupoSuplentes.push(d);
+        return; // Pasamos al siguiente
+      }
+
+      // 2. Prioridad: Presidente (va al inicio)
+      if (cargoLower === 'presidente' || cargoLower === 'presidenta') {
+        grupoPresidente.push(d);
+        return;
+      }
+
+      // 3. Prioridad: Cargo estándar (si existe texto en cargo)
+      if (cargo.length > 0) {
+        if (!rolesGenerales[cargo]) {
+          rolesGenerales[cargo] = [];
         }
-        rolesPrincipales[cargo].push(d);
+        rolesGenerales[cargo].push(d);
+        return;
+      }
+
+      // 4. Prioridad: Por Comisión (si no tiene cargo pero tiene comisión)
+      if (comision.length > 0) {
+        grupoComisiones.push(d);
+        return;
       }
     });
 
-    // --- PASO 2: FUNCIÓN PARA DIBUJAR UNA SECCIÓN (Título + Tabla) ---
+    // --- PASO 2: FUNCIÓN DE DIBUJADO (Ligeramente ajustada para mostrar Comisión) ---
     const anchoRecuadro = anchoUtil - 10;
     const margenRecuadro = margenIzq + 5;
 
-    // Función auxiliar para pintar un grupo
-    const dibujarGrupo = (tituloGrupo, listaPersonas) => {
-      if (listaPersonas.length === 0) return;
+    // param: tituloGrupo -> Texto grande arriba
+    // param: listaPersonas -> Array de objetos
+    // param: usarCampoComision -> Booleano para saber qué campo mostrar
+    const dibujarGrupo = (tituloGrupo, listaPersonas, usarCampoComision = false) => {
+      if (!listaPersonas || listaPersonas.length === 0) return;
 
-      // 1. Verificar espacio para el TÍTULO del grupo
+      // Verificar espacio para el TÍTULO
       result = checkPageBreak(doc, yPos, 15);
       yPos = result.yPos;
 
-      // 2. Dibujar el TÍTULO GRANDE (ej: PRESIDENTE)
+      // Dibujar TÍTULO
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      doc.setTextColor(0, 100, 0); // Color verde oscuro para el título (opcional)
+      doc.setTextColor(0, 100, 0);
       doc.text(tituloGrupo.toUpperCase(), margenRecuadro, yPos);
-      yPos += 5; // Espacio debajo del título
+      yPos += 5;
 
-      // 3. Dibujar las personas de ese grupo
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(0, 0, 0);
 
       listaPersonas.forEach(d => {
-        // Preparamos el texto. Nota: En suplentes mostramos su cargo específico, en principales solo nombre y CC si prefieres
-        // Ajusta este string según prefieras:
-        const textoDignatario = `${d.nombre || ''} (CC: ${d.cedula || ''}) - ${d.cargo || ''}`;
+        // Lógica para el texto: Si es grupo de comisiones, mostramos la comisión, si no, el cargo
+        const rolAMostrar = usarCampoComision ? (d.comision || '') : (d.cargo || '');
+
+        const textoDignatario = `${d.nombre || ''} (CC: ${d.cedula || ''}) - ${rolAMostrar}`;
 
         const lineas = doc.splitTextToSize(textoDignatario, anchoRecuadro - 4);
-        const altoFila = (lineas.length * 4) + 4; // Altura dinámica
+        const altoFila = (lineas.length * 4) + 4;
 
-        // Verificar salto de página para el recuadro
+        // Verificar salto de página dentro de la tabla
         result = checkPageBreak(doc, yPos, altoFila + 2);
-        // Si hubo salto de página, volvemos a pintar el título del grupo para que no se pierda el contexto
         if (result.yPos !== yPos) {
           yPos = result.yPos;
           doc.setFont('helvetica', 'bold');
@@ -208,30 +228,34 @@ const generarAutoresolutorio = async (datosCertificado) => {
           yPos = result.yPos;
         }
 
-        // Dibujar borde del recuadro (fila)
         doc.setDrawColor(0, 100, 0);
         doc.rect(margenRecuadro, yPos, anchoRecuadro, altoFila);
-
-        // Escribir texto
         doc.text(lineas, margenRecuadro + 2, yPos + 4);
 
-        yPos += altoFila; // Mover cursor al final de la fila sin espacio extra para que parezca una tabla unida
+        yPos += altoFila;
       });
 
-      yPos += 8; // Espacio extra antes del siguiente grupo de roles
+      yPos += 8; // Separación entre tablas
     };
 
-    // --- PASO 3: EJECUTAR EL DIBUJO ---
+    // --- PASO 3: ORDEN DE EJECUCIÓN ---
 
-    // A. Dibujar Roles Principales (Iteramos las llaves del objeto)
-    Object.keys(rolesPrincipales).forEach(cargo => {
-      dibujarGrupo(cargo, rolesPrincipales[cargo]);
+    // 1. PRESIDENTE (Siempre primero)
+    // Usamos "PRESIDENTE" como título genérico, o tomamos el cargo del primero si quieres ser específico ("PRESIDENTA")
+    const tituloPresi = grupoPresidente.length > 0 ? grupoPresidente[0].cargo : 'PRESIDENTE';
+    dibujarGrupo(tituloPresi, grupoPresidente);
+
+    // 2. OTROS CARGOS (Orden alfabético o según aparezcan)
+    Object.keys(rolesGenerales).forEach(cargo => {
+      dibujarGrupo(cargo, rolesGenerales[cargo]);
     });
 
-    // B. Dibujar Sección de Suplentes al final
-    if (listaSuplentes.length > 0) {
-      dibujarGrupo('SUPLENTES', listaSuplentes);
-    }
+    // 3. POR COMISIÓN (Si existen comisionados sin cargo)
+    // Pasamos 'true' en el tercer argumento para que muestre el campo 'comision' en vez de 'cargo'
+    dibujarGrupo('POR COMISIÓN', grupoComisiones, true);
+
+    // 4. SUPLENTES (Siempre al final)
+    dibujarGrupo('SUPLENTES', grupoSuplentes);
 
   } else {
     doc.text('[ESPACIO PARA LISTADO DE DIGNATARIOS]', margenIzq + 10, yPos);
