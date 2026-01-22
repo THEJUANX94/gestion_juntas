@@ -106,7 +106,7 @@ export const crearUsuario = async (req, res) => {
     }
 
     const newUser = await Usuario.create({
-      NombreTipoDocumento,
+      IDTipoDocumento: tipoDocumento.IDTipoDocumento,
       NumeroIdentificacion,
       PrimerApellido,
       SegundoApellido,
