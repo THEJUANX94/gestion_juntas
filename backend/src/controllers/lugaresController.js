@@ -12,6 +12,37 @@ export const obtenerLugares = async (req, res) => {
   }
 };
 
+export const obtenerMunicipiosPorDepartamento = async (req, res) => {
+  try {
+    const { departamento } = req.params; // o req.query
+    
+    const depto = await Lugar.findOne({
+      where: {
+        NombreLugar: departamento,
+        TipoLugar: 'Departamento'
+      }
+    });
+
+    if (!depto) {
+      return res.status(404).json({ message: "Departamento no encontrado" });
+    }
+
+    const municipios = await Lugar.findAll({
+      where: {
+        TipoLugar: 'Municipio',
+        IDOtroLugar: depto.IDLugar
+      },
+      order: [['NombreLugar', 'ASC']]
+    });
+
+    return res.json(municipios);
+  } catch (error) {
+    console.error("Error al obtener municipios:", error);
+    logOperation("ERROR_OBTENER_MUNICIPIOS", req.user || {}, { error: error.message }, "error");
+    return res.status(500).json({ message: "Error al obtener municipios", error: error.message });
+  }
+};
+
 export const obtenerLugarPorId = async (req, res) => {
   try {
     const { id } = req.params;

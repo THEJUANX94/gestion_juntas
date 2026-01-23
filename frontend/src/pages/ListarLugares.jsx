@@ -12,7 +12,7 @@ export default function ListarLugares() {
   useEffect(() => {
     const fetchLugares = async () => {
       try {
-        const res = await fetch(import.meta.env.VITE_PATH + "/lugares", {
+        const res = await fetch(import.meta.env.VITE_PATH + "/lugares/Boyacá", {
           method: "GET",
           credentials: "include",
         });
