@@ -10,33 +10,49 @@ export default function ListarLugares() {
   const [filtros, setFiltros] = useState({ nombre: "", tipo: "", estado: "" });
 
   useEffect(() => {
-    const fetchLugares = async () => {
-      try {
-        const res = await fetch(import.meta.env.VITE_PATH + "/lugares/Boyacá", {
+  const fetchLugares = async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_PATH}/lugares/municipios?departamento=Boyacá`,
+        {
           method: "GET",
           credentials: "include",
-        });
-        const data = await res.json();
-
-        const transformados = data.map((l) => ({
-          IDLugar: l.IDLugar,
-          nombre: l.NombreLugar,
-          tipo: l.TipoLugar,
-          activo: l.Activo,
-        }));
-        setLugares(
-            transformados.sort((a, b) =>
-                a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
-            )
-            );
-      } catch (error) {
-        console.error("Error al cargar lugares:", error);
-        AlertMessage.error("Error", "No se pudieron cargar los lugares.");
+        }
+      );
+      
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: ${res.statusText}`);
       }
-    };
-
-    fetchLugares();
-  }, []);
+      
+      const data = await res.json();
+      
+      // Verifica que data sea un array
+      if (!Array.isArray(data)) {
+        console.error("La respuesta no es un array:", data);
+        AlertMessage.error("Error", "Formato de respuesta inválido.");
+        return;
+      }
+      
+      const transformados = data.map((l) => ({
+        IDLugar: l.IDLugar,
+        nombre: l.NombreLugar,
+        tipo: l.TipoLugar,
+        activo: l.Activo,
+      }));
+      
+      setLugares(
+        transformados.sort((a, b) =>
+          a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
+        )
+      );
+    } catch (error) {
+      console.error("Error al cargar lugares:", error);
+      AlertMessage.error("Error", "No se pudieron cargar los lugares.");
+      setLugares([]);
+    }
+  };
+  fetchLugares();
+}, []);
 
   const generalFiltered = lugares.filter((l) => {
     const texto = search.toLowerCase();

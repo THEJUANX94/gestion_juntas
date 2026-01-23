@@ -14,8 +14,15 @@ export const obtenerLugares = async (req, res) => {
 
 export const obtenerMunicipiosPorDepartamento = async (req, res) => {
   try {
-    const { departamento } = req.params; // o req.query
+    const { departamento } = req.query;
     
+    if (!departamento) {
+      return res.status(400).json({ 
+        message: "Debe especificar el departamento",
+        municipios: []
+      });
+    }
+
     const depto = await Lugar.findOne({
       where: {
         NombreLugar: departamento,
@@ -24,7 +31,10 @@ export const obtenerMunicipiosPorDepartamento = async (req, res) => {
     });
 
     if (!depto) {
-      return res.status(404).json({ message: "Departamento no encontrado" });
+      return res.status(404).json({ 
+        message: "Departamento no encontrado",
+        municipios: []
+      });
     }
 
     const municipios = await Lugar.findAll({
@@ -39,7 +49,11 @@ export const obtenerMunicipiosPorDepartamento = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener municipios:", error);
     logOperation("ERROR_OBTENER_MUNICIPIOS", req.user || {}, { error: error.message }, "error");
-    return res.status(500).json({ message: "Error al obtener municipios", error: error.message });
+    return res.status(500).json({ 
+      message: "Error al obtener municipios", 
+      error: error.message,
+      municipios: []
+    });
   }
 };
 
