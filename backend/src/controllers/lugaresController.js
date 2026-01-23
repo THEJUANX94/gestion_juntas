@@ -16,10 +16,14 @@ export const obtenerMunicipiosPorDepartamento = async (req, res) => {
   try {
     const { departamento } = req.query;
     
+    console.log("=== DEBUG ===");
+    console.log("Query params:", req.query);
+    console.log("Departamento:", departamento);
+    
     if (!departamento) {
+      console.log("Error: No se proporcionó departamento");
       return res.status(400).json({ 
-        message: "Debe especificar el departamento",
-        municipios: []
+        message: "Debe especificar el departamento"
       });
     }
 
@@ -30,10 +34,11 @@ export const obtenerMunicipiosPorDepartamento = async (req, res) => {
       }
     });
 
+    console.log("Departamento encontrado:", depto ? depto.IDLugar : "NO ENCONTRADO");
+
     if (!depto) {
       return res.status(404).json({ 
-        message: "Departamento no encontrado",
-        municipios: []
+        message: `Departamento '${departamento}' no encontrado`
       });
     }
 
@@ -45,14 +50,17 @@ export const obtenerMunicipiosPorDepartamento = async (req, res) => {
       order: [['NombreLugar', 'ASC']]
     });
 
-    return res.json(municipios);
+    console.log(`Municipios encontrados: ${municipios.length}`);
+    console.log("=== FIN DEBUG ===");
+    
+    return res.json(municipios); // Retorna el array directamente
+    
   } catch (error) {
-    console.error("Error al obtener municipios:", error);
+    console.error("ERROR en obtenerMunicipiosPorDepartamento:", error);
     logOperation("ERROR_OBTENER_MUNICIPIOS", req.user || {}, { error: error.message }, "error");
     return res.status(500).json({ 
       message: "Error al obtener municipios", 
-      error: error.message,
-      municipios: []
+      error: error.message
     });
   }
 };
