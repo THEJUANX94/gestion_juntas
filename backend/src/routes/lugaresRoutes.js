@@ -12,10 +12,10 @@ import {
 const router = Router();
 
 router.get("/", verificarAuth, obtenerLugares);
+router.get("/municipios", verificarAuth, obtenerMunicipiosPorDepartamento)
 router.get("/:idlugar", verificarAuth, obtenerLugarPorId);
 router.delete("/:idlugar", verificarAuth, eliminarLugar);
 router.post("/crearlugar", verificarAuth, crearLugar);
 router.patch("/:idlugar/estado", verificarAuth, cambiarEstadoLugar);
-router.get("/municipios", verificarAuth, obtenerMunicipiosPorDepartamento)
 
 export default router;
