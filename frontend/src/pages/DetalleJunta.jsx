@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail, MapPin, Search, Filter, X, Trash2, CalendarPlus } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import { crearNuevoPeriodoJunta } from './services/juntaService';
 
 export default function DetalleJunta() {
 
