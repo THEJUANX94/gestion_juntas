@@ -385,18 +385,9 @@ export const cambiarPeriodoJunta = async (req, res) => {
       return res.status(404).json({ message: "La junta original no existe." });
     }
 
-    // 3. VALIDAR DUPLICIDAD DE NOMBRE
-    const razonSocialFinal = nuevaRazonSocial || juntaOriginal.RazonSocial;
-    const existeRazonLugar = await Junta.findOne({
-      where: {
-        RazonSocial: razonSocialFinal,
-        IDMunicipio: juntaOriginal.IDMunicipio,
-      }
-    });
-
-    // 4. CREAR LA NUEVA JUNTA (COPIAR DATOS)
+    // 3. CREAR LA NUEVA JUNTA (COPIAR DATOS)
     const nuevaJunta = await Junta.create({
-      RazonSocial: razonSocialFinal,
+      RazonSocial: juntaOriginal.RazonSocial,
       Direccion: juntaOriginal.Direccion,
       NumPersoneriaJuridica: juntaOriginal.NumPersoneriaJuridica,
       FechaCreacion: juntaOriginal.fechaCreacion,
@@ -410,7 +401,7 @@ export const cambiarPeriodoJunta = async (req, res) => {
       IDReconocida: juntaOriginal.IDReconocida
     }, { transaction: t });
 
-    // 5. COPIAR DIGNATARIOS
+    // 4. COPIAR DIGNATARIOS
     let mensajeDignatarios = "No se copiaron dignatarios.";
 
     if (copiarDignatarios === true || copiarDignatarios === 'true') {
