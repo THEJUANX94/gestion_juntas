@@ -390,7 +390,7 @@ export const cambiarPeriodoJunta = async (req, res) => {
       RazonSocial: juntaOriginal.RazonSocial,
       Direccion: juntaOriginal.Direccion,
       NumPersoneriaJuridica: juntaOriginal.NumPersoneriaJuridica,
-      FechaCreacion: juntaOriginal.fechaCreacion,
+      FechaCreacion: juntaOriginal.FechaCreacion,
       FechaInicioPeriodo: fechaInicioPeriodo, 
       FechaFinPeriodo: fechaFinPeriodo,       
       FechaAsamblea: fechaAsamblea,           
