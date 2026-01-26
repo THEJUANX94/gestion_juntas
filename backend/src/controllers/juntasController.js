@@ -7,6 +7,7 @@ import { PeriodoPorMandato } from "../model/periodopormandato.js";
 import { Periodo } from "../model/periodoModel.js";
 import { MandatarioJunta } from "../model/mandatarioJuntaModel.js";
 import { Op } from "sequelize";
+import { sequelize } from "../config/database.js";
 import ExcelJS from "exceljs";
 
 export const crearJunta = async (req, res) => {
