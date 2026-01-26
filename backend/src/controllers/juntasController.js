@@ -347,6 +347,114 @@ export const obtenerJuntaPorId = async (req, res) => {
 };
 
 // ======================================================
+//  CAMBIAR PERIODO DE LA JUNTA
+// ======================================================
+export const cambiarPeriodoJunta = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { id } = req.params;
+    const {
+      fechaInicioPeriodo,
+      fechaFinPeriodo,
+      fechaAsamblea,
+      copiarDignatarios, // Boolean: true para copiar miembros
+    } = req.body;
+
+    // 1. VALIDAR DATOS DE ENTRADA (FECHAS)
+    if (!fechaInicioPeriodo || !fechaFinPeriodo || !fechaAsamblea) {
+      await t.rollback();
+      return res.status(400).json({
+        message: "Debe proporcionar las fechas para el nuevo periodo (Inicio, Fin y Asamblea)."
+      });
+    }
+
+    if (new Date(fechaInicioPeriodo) >= new Date(fechaFinPeriodo)) {
+      await t.rollback();
+      return res.status(400).json({
+        message: "La fecha de inicio del nuevo período debe ser menor que la fecha de fin."
+      });
+    }
+
+    // 2. BUSCAR LA JUNTA ORIGINAL
+    const juntaOriginal = await Junta.findByPk(id);
+
+    if (!juntaOriginal) {
+      await t.rollback();
+      return res.status(404).json({ message: "La junta original no existe." });
+    }
+
+    // 3. VALIDAR DUPLICIDAD DE NOMBRE
+    const razonSocialFinal = nuevaRazonSocial || juntaOriginal.RazonSocial;
+    const existeRazonLugar = await Junta.findOne({
+      where: {
+        RazonSocial: razonSocialFinal,
+        IDMunicipio: juntaOriginal.IDMunicipio,
+      }
+    });
+
+    // 4. CREAR LA NUEVA JUNTA (COPIAR DATOS)
+    const nuevaJunta = await Junta.create({
+      RazonSocial: razonSocialFinal,
+      Direccion: juntaOriginal.Direccion,
+      NumPersoneriaJuridica: juntaOriginal.NumPersoneriaJuridica,
+      FechaCreacion: juntaOriginal.fechaCreacion,
+      FechaInicioPeriodo: fechaInicioPeriodo, 
+      FechaFinPeriodo: fechaFinPeriodo,       
+      FechaAsamblea: fechaAsamblea,           
+      Zona: juntaOriginal.Zona,
+      TipoJunta: juntaOriginal.TipoJunta,
+      IDMunicipio: juntaOriginal.IDMunicipio,
+      IDInstitucion: juntaOriginal.IDInstitucion,
+      IDReconocida: juntaOriginal.IDReconocida
+    }, { transaction: t });
+
+    // 5. COPIAR DIGNATARIOS
+    let mensajeDignatarios = "No se copiaron dignatarios.";
+
+    if (copiarDignatarios === true || copiarDignatarios === 'true') {
+      // Buscar mandatarios de la junta anterior
+      const mandatariosAnteriores = await MandatarioJunta.findAll({
+        where: { IDJunta: id }
+      });
+
+      if (mandatariosAnteriores.length > 0) {
+        const nuevosMandatariosData = mandatariosAnteriores.map(m => ({
+          IDJunta: nuevaJunta.IDJunta,
+          NumeroIdentificacion: m.NumeroIdentificacion,
+          Residencia: m.Residencia,
+          Profesion: m.Profesion,
+          Expedido: m.Expedido,
+          IDCargo: m.IDCargo,
+          IDComision: m.IDComision
+        }));
+
+        // Insertar los mandatarios vinculados a la nueva junta
+        await MandatarioJunta.bulkCreate(nuevosMandatariosData, { transaction: t });
+        mensajeDignatarios = `Se copiaron ${mandatariosAnteriores.length} dignatarios al nuevo periodo.`;
+      }
+    }
+
+    await t.commit();
+
+    return res.status(201).json({
+      message: "Nuevo periodo de junta creado exitosamente.",
+      detalle: mensajeDignatarios,
+      junta: nuevaJunta
+    });
+
+  } catch (error) {
+    // Si algo falla, revertimos todo (no se crea la junta ni los mandatarios)
+    await t.rollback();
+    console.error("Error cambiando periodo de junta:", error);
+    return res.status(500).json({
+      message: "Error interno del servidor al cambiar periodo",
+      error: error.message
+    });
+  }
+};
+
+// ======================================================
 //  ACTUALIZAR UNA JUNTA
 // ======================================================
 export const actualizarJunta = async (req, res) => {
