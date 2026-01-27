@@ -9,7 +9,7 @@ import { TipoDocumento } from "../model/tipoDocumentoModel.js";
 import { Lugar } from "../model/lugarModel.js";
 import { Op } from "sequelize";
 import { PoblacionesPorPersona } from "../model/poblacionesporpersonaModel.js";
-import { sequelize } from "../database/database.js";
+import { sequelize } from "../config/database.js";
 
 export const validarPeriodoMandato = (junta, inicio, fin) => {
   const inicioJunta = new Date(junta.FechaInicioPeriodo);
