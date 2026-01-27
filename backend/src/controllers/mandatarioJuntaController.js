@@ -123,7 +123,7 @@ export const crearMandatario = async (req, res) => {
         Correo: email,
         IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
         IDTipoDocumento: tipoDocumento
-      });
+      },  { transaction: t });
     }
 
     // Crear mandatario
@@ -144,8 +144,9 @@ export const crearMandatario = async (req, res) => {
         // 1. Opcional: Limpiar asociaciones previas si el usuario ya existía
         // (Útil si estás actualizando un usuario que ya tenía grupos)
         await PoblacionesPorPersona.destroy({
-          where: { numeroidentificacion: documento }
-        });
+          where: { numeroidentificacion: documento },
+          
+        }, { transaction: t });
 
         // 2. Crear las nuevas asociaciones
         const nuevasAsociaciones = gruposPoblacionales.map(idGrupo => ({
@@ -153,7 +154,7 @@ export const crearMandatario = async (req, res) => {
           idgrupopoblacional: idGrupo
         }));
 
-        await PoblacionesPorPersona.bulkCreate(nuevasAsociaciones), { transaction: t };
+        await PoblacionesPorPersona.bulkCreate(nuevasAsociaciones, { transaction: t });
 
         console.log(`Asociados ${nuevasAsociaciones.length} grupos al documento ${documento}`);
       } catch (errorPoblacion) {
