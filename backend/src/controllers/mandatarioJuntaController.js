@@ -123,7 +123,7 @@ export const crearMandatario = async (req, res) => {
         Correo: email,
         IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
         IDTipoDocumento: tipoDocumento
-      }, { transaction: t });
+      });
     }
 
     // Crear mandatario
