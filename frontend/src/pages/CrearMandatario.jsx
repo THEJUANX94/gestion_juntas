@@ -13,6 +13,7 @@ export default function AgregarMandatario() {
   const [cargos, setCargos] = useState([]);
   const [comisiones, setComisiones] = useState([]);
   const [lugares, setLugares] = useState([]);
+  const [listaGrupos, setListaGrupos] = useState([]);
 
   const [formData, setFormData] = useState({
     // Datos Personales
@@ -30,11 +31,11 @@ export default function AgregarMandatario() {
     telefono: "",
     profesion: "",
     email: "",
-
     fInicioPeriodo: "",
     fFinPeriodo: "",
     cargo: "",
-    comision: ""
+    comision: "",
+    gruposPoblacionales: [],
   });
 
   const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
@@ -46,11 +47,13 @@ export default function AgregarMandatario() {
       const resCargos = await fetch(import.meta.env.VITE_PATH + "/cargos");
       const resComisiones = await fetch(import.meta.env.VITE_PATH + "/comisiones");
       const resLugares = await fetch(import.meta.env.VITE_PATH + "/lugares");
+      const resGrupos = await fetch(import.meta.env.VITE_PATH + "/grupospoblacionales");
 
       setTiposDocumento(await resTipoDoc.json());
       setCargos(await resCargos.json());
       setComisiones(await resComisiones.json());
       setLugares(await resLugares.json());
+      setListaGrupos(await resGrupos.json());
     };
 
     cargarDatos();
@@ -96,6 +99,17 @@ export default function AgregarMandatario() {
       ...prev,
       [name]: newValue,
     }));
+  };
+
+  const handleCheckboxChange = (idGrupo) => {
+    setFormData(prev => {
+      const seleccionados = prev.gruposPoblacionales;
+      const nuevoArreglo = seleccionados.includes(idGrupo)
+        ? seleccionados.filter(id => id !== idGrupo) // Si ya está, lo quita
+        : [...seleccionados, idGrupo];               // Si no está, lo agrega
+
+      return { ...prev, gruposPoblacionales: nuevoArreglo };
+    });
   };
 
 
@@ -234,6 +248,29 @@ export default function AgregarMandatario() {
                 <Input label="Teléfono" name="telefono" value={formData.telefono} onChange={handleChange} />
                 <Input label="Profesión" name="profesion" value={formData.profesion} onChange={handleChange} />
                 <Input type="email" label="Email" name="email" value={formData.email} onChange={handleChange} />
+                {/* GRUPOS POBLACIONALES */}
+                <div className="col-span-full mt-4">
+                  <div className="flex gap-4">
+                    <label className="text-sm font-semibold text-gray-700 w-32 text-right pt-2">
+                      Grupos Poblacionales:
+                    </label>
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      {gruposPoblacionales.map((grupo) => (
+                        <label key={grupo.id} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-[#009E76] focus:ring-[#009E76]"
+                            // Verificamos si el ID está en el array del estado
+                            checked={formData.gruposPoblacionales.includes(grupo.id)}
+                            // Llamamos a la función que creamos arriba
+                            onChange={() => handleCheckboxChange(grupo.id)}
+                          />
+                          <span className="text-sm text-gray-600">{grupo.nombre}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

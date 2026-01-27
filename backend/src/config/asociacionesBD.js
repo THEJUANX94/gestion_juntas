@@ -13,6 +13,8 @@ import { TipoDocumento } from '../model/tipoDocumentoModel.js';
 import { Comisiones } from '../model/comisionModel.js';
 import { Periodo } from "../model/periodoModel.js";
 import { PeriodoPorMandato } from "../model/periodopormandato.js";
+import { PoblacionesPorPersona } from '../model/poblacionesporpersonaModel.js';
+import { GrupoPoblacional } from '../model/grupopoblacionalModel.js';
 
 export const Asociaciones = () => {
     // ========================================
@@ -23,6 +25,7 @@ export const Asociaciones = () => {
     Usuario.hasMany(MandatarioJunta, { foreignKey: 'numeroidentificacion' });
     Usuario.hasMany(Firma, { foreignKey: "numeroidentificacion" });
     Usuario.hasOne(Credenciales, { foreignKey: "numeroidentificacion" });
+    Usuario.belongsToMany(PoblacionesPorPersona, { foreignKey: "numeroidentificacion" });
 
     // ========================================
     // RELACIONES PARA MANDATARIOJUNTA
@@ -30,29 +33,10 @@ export const Asociaciones = () => {
     MandatarioJunta.belongsTo(Usuario, { foreignKey: 'numeroidentificacion' });
     MandatarioJunta.belongsTo(Junta, { foreignKey: 'idjunta' });
     MandatarioJunta.belongsTo(Cargo, { foreignKey: "idcargo" });
-    MandatarioJunta.belongsTo(Comisiones, {
-        foreignKey: "idcomision",
-        as: "Comision"
-    });
-
-    MandatarioJunta.belongsTo(Lugar, {
-        as: "LugarExpedido",
-        foreignKey: "expedido",
-        targetKey: "IDLugar"
-    });
-
-    MandatarioJunta.belongsTo(Lugar, {
-        as: "LugarResidencia",
-        foreignKey: "residencia",
-        targetKey: "IDLugar"
-    });
-
-
-    MandatarioJunta.hasMany(PeriodoPorMandato, {
-        foreignKey: "numeroidentificacion",
-        sourceKey: "numeroidentificacion",
-        as: "Periodos"
-    });
+    MandatarioJunta.belongsTo(Comisiones, { foreignKey: "idcomision", as: "Comision" });
+    MandatarioJunta.belongsTo(Lugar, { as: "LugarExpedido", foreignKey: "expedido", targetKey: "IDLugar" });
+    MandatarioJunta.belongsTo(Lugar, {as: "LugarResidencia",foreignKey: "residencia",targetKey: "IDLugar" }); 
+    MandatarioJunta.hasMany(PeriodoPorMandato, { foreignKey: "numeroidentificacion", sourceKey: "numeroidentificacion", as: "Periodos"});
 
     // ========================================
     // RELACIONES PARA JUNTA
@@ -60,10 +44,7 @@ export const Asociaciones = () => {
     Junta.belongsTo(Lugar, { foreignKey: "idmunicipio" });
     Junta.belongsTo(TipoJunta, { foreignKey: "tipojunta" });
     Junta.belongsTo(Institucion, { foreignKey: "idinstitucion" });
-    Junta.belongsTo(Reconocida, {
-        foreignKey: "IDReconocida",
-        targetKey: "IDReconocida"
-    });
+    Junta.belongsTo(Reconocida, { foreignKey: "IDReconocida", targetKey: "IDReconocida" });
     Junta.hasMany(MandatarioJunta, { foreignKey: "idjunta" });
 
     // ========================================
@@ -146,6 +127,17 @@ export const Asociaciones = () => {
     // RELACIONES PARA TIPODOCUMENTO
     // ========================================
     TipoDocumento.hasMany(Usuario, { foreignKey: "idtipodocumento" });
+
+    // ========================================
+    // RELACIONES PARA GRUPOS POBLACIONALES
+    // ========================================
+
+    GrupoPoblacional.belongsToMany(PoblacionesPorPersona, { foreignKey: "idgrupopoblacional" });
+
+    // ========================================
+    // RELACIONES PARA POBLACIONES POR PERSONA
+    // ========================================
+    PoblacionesPorPersona.belongsToMany(Usuario, { foreignKey: "numeroidentificacion" })
 
     console.log(" Asociaciones de Sequelize configuradas exitosamente.");
 };
