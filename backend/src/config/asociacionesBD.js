@@ -25,7 +25,7 @@ export const Asociaciones = () => {
     Usuario.hasMany(MandatarioJunta, { foreignKey: 'numeroidentificacion' });
     Usuario.hasMany(Firma, { foreignKey: "numeroidentificacion" });
     Usuario.hasOne(Credenciales, { foreignKey: "numeroidentificacion" });
-    Usuario.belongsToMany(PoblacionesPorPersona, { foreignKey: "numeroidentificacion" });
+    Usuario.hasMany(PoblacionesPorPersona, { foreignKey: "numeroidentificacion" });
 
     // ========================================
     // RELACIONES PARA MANDATARIOJUNTA
@@ -132,12 +132,13 @@ export const Asociaciones = () => {
     // RELACIONES PARA GRUPOS POBLACIONALES
     // ========================================
 
-    GrupoPoblacional.belongsToMany(PoblacionesPorPersona, { foreignKey: "idgrupopoblacional" });
+    GrupoPoblacional.hasMany(PoblacionesPorPersona, { foreignKey: "idgrupopoblacional" });
 
     // ========================================
     // RELACIONES PARA POBLACIONES POR PERSONA
     // ========================================
-    PoblacionesPorPersona.belongsToMany(Usuario, { foreignKey: "numeroidentificacion" })
+    PoblacionesPorPersona.belongsTo(Usuario, { foreignKey: "numeroidentificacion" });
+    PoblacionesPorPersona.belongsTo(GrupoPoblacional, { foreignKey: "idgrupopoblacional" });
 
     console.log(" Asociaciones de Sequelize configuradas exitosamente.");
 };
