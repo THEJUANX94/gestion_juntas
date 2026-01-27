@@ -33,6 +33,9 @@ export default function EditarMandatario() {
     comision: ""
   });
 
+  const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
+  const municipiosFiltrados = lugares.filter(l => l.TipoLugar === 'Municipio' && l.IDOtroLugar === formData.departamento);
+
   // CARGAR DATOS DEL BACKEND
   useEffect(() => {
     const loadData = async () => {
@@ -206,12 +209,36 @@ export default function EditarMandatario() {
                   onChange={handleChange}
                   options={tiposDocumento.map(t => ({ value: t.IDTipoDocumento, label: t.NombreTipo }))}
                 />
+                {/* 1. Selector de Departamentos */}
                 <Select
-                  label="Expedido en"
+                  label="Departamento"
+                  name="departamento"
+                  value={formData.departamento}
+                  onChange={(e) => {
+                    // Al cambiar de departamento, reseteamos el municipio (expedido)
+                    setFormData({
+                      ...formData,
+                      departamento: e.target.value,
+                      expedido: ""
+                    });
+                  }}
+                  options={departamentos.map(d => ({
+                    value: d.IDLugar,
+                    label: d.NombreLugar
+                  }))}
+                />
+
+                {/* 2. Selector de Municipios (Expedido en) */}
+                <Select
+                  label="Expedido en (Municipio)"
                   name="expedido"
                   value={formData.expedido}
-                  onChange={handleChange}
-                  options={lugares.map(t => ({ value: t.IDLugar, label: t.NombreLugar }))}
+                  onChange={handleChange} // Tu función estándar
+                  disabled={!formData.departamento} // Deshabilitar si no hay departamento
+                  options={municipiosFiltrados.map(m => ({
+                    value: m.IDLugar,
+                    label: m.NombreLugar
+                  }))}
                 />
 
                 <Input label="Primer nombre" name="primernombre" value={formData.primernombre} onChange={handleChange} />
@@ -236,6 +263,28 @@ export default function EditarMandatario() {
                 <Input label="Teléfono" name="telefono" value={formData.telefono} onChange={handleChange} />
                 <Input label="Profesión" name="profesion" value={formData.profesion} onChange={handleChange} />
                 <Input type="email" label="Email" name="email" value={formData.email} onChange={handleChange} />
+                {/* GRUPOS POBLACIONALES */}
+                <div className="col-span-full mt-4">
+                  <div className="flex gap-4">
+                    <label className="text-sm font-semibold text-gray-700 w-32 text-right pt-2">
+                      Grupos Poblacionales:
+                    </label>
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      {listaGrupos.map((grupo) => (
+                        <label key={grupo.IDGrupoPoblacional || grupo.id} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-[#009E76] focus:ring-[#009E76]"
+                            checked={formData.gruposPoblacionales.includes(grupo.IDGrupoPoblacional)}
+                            onChange={() => handleCheckboxChange(grupo.IDGrupoPoblacional)}
+                          />
+                          <span className="text-sm text-gray-600">{grupo.NombreGrupo || grupo.nombre}</span>
+                        </label>
+                      ))}
+
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
