@@ -5,7 +5,7 @@ export const PoblacionesPorPersona = sequelize.define("PoblacionesPorPersona", {
   IDGrupoPoblacional: {
     type: DataTypes.UUID,
     allowNull: false,
-    field: "idperiodo",
+    field: "idgrupopoblacional",
     primaryKey: true
   },
   NumeroIdentificacion: {
