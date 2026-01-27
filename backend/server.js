@@ -24,6 +24,7 @@ import tipoDocumentoRoutes from "./src/routes/tipoDocumentoRoutes.js";
 import comisionesRoutes from "./src/routes/comisionesRoutes.js";
 import mandatarioJuntaRoutes from "./src/routes/mandatarioJuntaRoutes.js";
 import certificadosRoutes from './src/routes/certificadosRoutes.js';
+import grupospoblacionales from './src/routes/gruposPoblacionales.js'
 
 import { logger } from './src/utils/logger.js';
 import { Asociaciones } from "./src/config/asociacionesBD.js";
@@ -200,6 +201,7 @@ app.use("/api/tipodocumento", tipoDocumentoRoutes);
 app.use("/api/comisiones", comisionesRoutes);
 app.use("/api/mandatario", mandatarioJuntaRoutes);
 app.use("/api/certificados", certificadosRoutes);
+app.use("/api/grupospoblacionales", grupospoblacionales);
 
 // Static files (only for production with built frontend)
 const frontendPath = path.join(__dirname, '../frontend/dist');
