@@ -56,15 +56,6 @@ export default function EditarMandatario() {
         const listaLugares = await resLugares.json();
         const mand = await resMand.json();
 
-        const gruposIDs = Array.isArray(mand.gruposPoblacionales)
-          ? mand.gruposPoblacionales.map(g => (typeof g === 'object' ? g.IDGrupoPoblacional : g))
-          : [];
-
-        setFormData({
-          // ... resto de campos
-          gruposPoblacionales: gruposIDs
-        });
-
         // 2. Actualizar los estados de las listas
         setLugares(listaLugares);
         setTiposDocumento(await resTipoDoc.json());
@@ -72,12 +63,16 @@ export default function EditarMandatario() {
         setComisiones(await resComisiones.json());
         setListaGrupos(await resGrupos.json());
 
-        // 3. LÓGICA CLAVE: Buscar el departamento usando la lista que acabamos de recibir
-        // Buscamos el municipio en la data cruda (listaLugares) porque el estado 'lugares' aún no se refleja
+        // 3. Procesar grupos poblacionales correctamente
+        const gruposIDs = Array.isArray(mand.gruposPoblacionales)
+          ? mand.gruposPoblacionales.map(g => (typeof g === 'object' ? g.IDGrupoPoblacional : g))
+          : [];
+
+        // 4. Obtener departamento del municipio
         const municipioInfo = listaLugares.find(l => l.IDLugar === mand.expedido);
         const deptoId = municipioInfo ? municipioInfo.IDOtroLugar : "";
 
-        // 4. Llenar el formulario
+        // 5. Llenar el formulario UNA SOLA VEZ
         setFormData({
           documento: mand.documento,
           tipoDocumento: mand.tipoDocumento,
@@ -97,7 +92,7 @@ export default function EditarMandatario() {
           cargo: mand.cargo || "",
           comision: mand.comision || "",
           departamento: deptoId,
-          gruposPoblacionales: mand.gruposPoblacionales || []
+          gruposPoblacionales: gruposIDs  // ✓ Usar los IDs procesados
         });
 
         setModo(mand.cargo ? "cargo" : "comision");
@@ -109,7 +104,7 @@ export default function EditarMandatario() {
     };
 
     loadData();
-  }, [documento]);
+  }, [documento, id]);
 
   // HANDLE CHANGE
   const handleChange = (e) => {
