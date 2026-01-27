@@ -105,7 +105,7 @@ export default function AgregarMandatario() {
     setFormData(prev => {
       const seleccionados = prev.gruposPoblacionales;
       const nuevoArreglo = seleccionados.includes(idGrupo)
-        ? seleccionados.filter(id => id !== idGrupo)
+        ? seleccionados.filter(IDGrupoPoblacional => IDGrupoPoblacional !== idGrupo)
         : [...seleccionados, idGrupo];
 
       return { ...prev, gruposPoblacionales: nuevoArreglo };
