@@ -50,6 +50,7 @@ export default function EditarMandatario() {
         const resLugares = await fetch(import.meta.env.VITE_PATH + "/lugares");
         const resGrupos = await fetch(import.meta.env.VITE_PATH + "/grupospoblacionales");
 
+        setLugares(await resLugares.json());
         setTiposDocumento(await resTipoDoc.json());
         setCargos(await resCargos.json());
         setComisiones(await resComisiones.json());
