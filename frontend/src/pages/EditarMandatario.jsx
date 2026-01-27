@@ -43,76 +43,46 @@ export default function EditarMandatario() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [resTipoDoc, resCargos, resComisiones, resLugares, resGrupos, resMand] = await Promise.all([
-          fetch(import.meta.env.VITE_PATH + "/tipodocumento"),
-          fetch(import.meta.env.VITE_PATH + "/cargos"),
-          fetch(import.meta.env.VITE_PATH + "/comisiones"),
+        // 1. Cargamos las listas maestras y el mandatario
+        const [resLugares, resGrupos, resMand] = await Promise.all([
           fetch(import.meta.env.VITE_PATH + "/lugares"),
           fetch(import.meta.env.VITE_PATH + "/grupospoblacionales"),
           fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`)
         ]);
 
         const listaLugares = await resLugares.json();
+        const listaGruposPob = await resGrupos.json();
         const mand = await resMand.json();
-        const gruposDisponibles = await resGrupos.json();
 
-        // 🔍 DEBUG: Ver qué llega del backend
-        console.log("📥 Datos del mandatario:", mand);
-        console.log("📥 Grupos del mandatario:", mand.gruposPoblacionales);
-        console.log("📥 Grupos disponibles:", gruposDisponibles);
+        // 2. PETICIÓN CLAVE: Traer la relación de la tabla intermedia
+        // Asumiendo que tu endpoint para la intermedia filtra por el documento del mandatario
+        const resIntermedia = await fetch(import.meta.env.VITE_PATH + `/poblacionesporpersona/${documento}`);
+        const dataIntermedia = await resIntermedia.json();
 
-        // Procesar grupos poblacionales
-        let gruposIDs = [];
+        // 3. Extraer solo los IDs de los grupos
+        // Ajusta 'IDGrupoPoblacional' al nombre exacto que devuelva tu tabla intermedia
+        const idsSeleccionados = dataIntermedia.map(item => item.IDGrupoPoblacional);
 
-        if (Array.isArray(mand.gruposPoblacionales)) {
-          gruposIDs = mand.gruposPoblacionales.map(g => {
-            const id = typeof g === 'object' ? g.IDGrupoPoblacional : g;
-            console.log("🔄 Procesando grupo:", g, "→", id, "Tipo:", typeof id);
-            return id;
-          });
-        }
-
-        console.log("✅ IDs procesados:", gruposIDs);
-
-        // Actualizar estados
-        setLugares(listaLugares);
-        setTiposDocumento(await resTipoDoc.json());
-        setCargos(await resCargos.json());
-        setComisiones(await resComisiones.json());
-        setListaGrupos(gruposDisponibles);
-
+        // 4. Lógica de lugar (Municipio/Departamento)
         const municipioInfo = listaLugares.find(l => l.IDLugar === mand.expedido);
         const deptoId = municipioInfo ? municipioInfo.IDOtroLugar : "";
 
+        // 5. Actualizar estados
+        setLugares(listaLugares);
+        setListaGrupos(listaGruposPob);
+
         setFormData({
-          documento: mand.documento,
-          tipoDocumento: mand.tipoDocumento,
-          expedido: mand.expedido,
-          primernombre: mand.primernombre,
-          segundonombre: mand.segundonombre,
-          primerapellido: mand.primerapellido,
-          segundoapellido: mand.segundoapellido,
-          genero: mand.genero,
+          ...mand,
           fNacimiento: mand.fNacimiento?.split("T")[0] || "",
-          residencia: mand.residencia,
-          telefono: mand.telefono,
-          profesion: mand.profesion,
-          email: mand.email,
           fInicioPeriodo: mand.fInicioPeriodo?.split("T")[0] || "",
           fFinPeriodo: mand.fFinPeriodo?.split("T")[0] || "",
-          cargo: mand.cargo || "",
-          comision: mand.comision || "",
           departamento: deptoId,
-          gruposPoblacionales: gruposIDs
+          // AQUÍ cargamos los IDs que vienen de la tabla intermedia
+          gruposPoblacionales: idsSeleccionados
         });
 
-        console.log("✅ FormData actualizado con grupos:", gruposIDs);
-
-        setModo(mand.cargo ? "cargo" : "comision");
-
       } catch (err) {
-        AlertMessage.error("Error cargando datos del mandatario");
-        console.error(err);
+        console.error("Error en carga de datos:", err);
       }
     };
 
