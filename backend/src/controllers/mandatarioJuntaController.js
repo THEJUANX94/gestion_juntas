@@ -9,6 +9,7 @@ import { TipoDocumento } from "../model/tipoDocumentoModel.js";
 import { Lugar } from "../model/lugarModel.js";
 import { Op } from "sequelize";
 import { PoblacionesPorPersona } from "../model/poblacionesporpersonaModel.js";
+import { sequelize } from "../database/database.js";
 
 export const validarPeriodoMandato = (junta, inicio, fin) => {
   const inicioJunta = new Date(junta.FechaInicioPeriodo);
@@ -70,6 +71,7 @@ export const crearPeriodoYVinculo = async (documento, idJunta, inicio, fin) => {
 
 
 export const crearMandatario = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const idJunta = req.params.id;
 
@@ -106,7 +108,7 @@ export const crearMandatario = async (req, res) => {
     if (errorCargo) return res.status(400).json({ message: errorCargo });
 
     // Crear o actualizar usuario
-    let usuario = await Usuario.findByPk(documento);
+    let usuario = await Usuario.findByPk(documento, { transaction: t });
     if (!usuario) {
       usuario = await Usuario.create({
         NumeroIdentificacion: documento,
@@ -133,7 +135,7 @@ export const crearMandatario = async (req, res) => {
       Residencia: residencia,
       Expedido: expedido,
       Profesion: profesion
-    });
+    }, { transaction: t });
 
     //Lógica para guardar Grupos Poblacionales
 
@@ -151,7 +153,7 @@ export const crearMandatario = async (req, res) => {
           idgrupopoblacional: idGrupo
         }));
 
-        await PoblacionesPorPersona.bulkCreate(nuevasAsociaciones);
+        await PoblacionesPorPersona.bulkCreate(nuevasAsociaciones), { transaction: t };
 
         console.log(`Asociados ${nuevasAsociaciones.length} grupos al documento ${documento}`);
       } catch (errorPoblacion) {
@@ -161,6 +163,8 @@ export const crearMandatario = async (req, res) => {
 
     const periodo = await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo);
 
+    await t.commit();
+
     res.json({
       message: "Mandatario creado correctamente y grupos asociados",
       mandatario,
@@ -169,6 +173,7 @@ export const crearMandatario = async (req, res) => {
     });
 
   } catch (error) {
+    if (t) await t.rollback();
     console.error(error);
     res.status(500).json({ message: "Error al crear mandatario", error: error.message });
   }
