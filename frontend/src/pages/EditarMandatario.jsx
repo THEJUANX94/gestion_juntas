@@ -72,7 +72,7 @@ export default function EditarMandatario() {
         setFormData({
           documento: mand.documento,
           tipoDocumento: mand.tipoDocumento,
-          expedido: mand.expedido, // ID del Municipio
+          expedido: mand.expedido,
           primernombre: mand.primernombre,
           segundonombre: mand.segundonombre,
           primerapellido: mand.primerapellido,
@@ -87,7 +87,7 @@ export default function EditarMandatario() {
           fFinPeriodo: mand.fFinPeriodo?.split("T")[0] || "",
           cargo: mand.cargo || "",
           comision: mand.comision || "",
-          departamento: deptoId, // Se asigna el ID del departamento padre
+          departamento: deptoId,
           gruposPoblacionales: mand.gruposPoblacionales || []
         });
 
