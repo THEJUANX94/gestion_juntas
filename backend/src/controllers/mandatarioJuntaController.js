@@ -54,17 +54,17 @@ export const validarPresidenteUnico = async (documento, cargoID, idJunta) => {
 };
 
 
-export const crearPeriodoYVinculo = async (documento, idJunta, inicio, fin) => {
+export const crearPeriodoYVinculo = async (documento, idJunta, inicio, fin, t) => {
   const periodo = await Periodo.create({
     FechaInicio: inicio,
     FechaFin: fin
-  });
+  }, { transaction: t });
 
   await PeriodoPorMandato.create({
     IDPeriodo: periodo.IDPeriodo,
     NumeroIdentificacion: documento,
     IDJunta: idJunta
-  });
+  },  { transaction: t });
 
   return periodo;
 };
@@ -123,7 +123,7 @@ export const crearMandatario = async (req, res) => {
         Correo: email,
         IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
         IDTipoDocumento: tipoDocumento
-      });
+      }, { transaction: t });
     }
 
     // Crear mandatario
@@ -161,7 +161,7 @@ export const crearMandatario = async (req, res) => {
       }
     }
 
-    const periodo = await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo);
+    const periodo = await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, t);
 
     await t.commit();
 
