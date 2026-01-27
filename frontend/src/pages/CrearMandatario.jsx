@@ -104,9 +104,9 @@ export default function AgregarMandatario() {
   const handleCheckboxChange = (idGrupo) => {
     setFormData(prev => {
       const seleccionados = prev.gruposPoblacionales;
-      const nuevoArreglo = seleccionados.includes(idGrupo)
-        ? seleccionados.filter(id => id !== idGrupo) // Si ya está, lo quita
-        : [...seleccionados, idGrupo];               // Si no está, lo agrega
+      const nuevoArreglo = seleccionados.includes(IDGrupoPoblacional)
+        ? seleccionados.filter(id => id !== IDGrupoPoblacional)
+        : [...seleccionados, IDGrupoPoblacional];
 
       return { ...prev, gruposPoblacionales: nuevoArreglo };
     });
@@ -117,7 +117,7 @@ export default function AgregarMandatario() {
   const handleSubmit = async () => {
 
     if (!/^\d{6,10}$/.test(formData.documento)) {
-      AlertMessage.success("El documento debe tener entre 6 y 10 números");
+      AlertMessage.warning("El documento debe tener entre 6 y 10 números");
       return;
     }
 
@@ -256,12 +256,12 @@ export default function AgregarMandatario() {
                     </label>
                     <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                       {listaGrupos.map((grupo) => (
-                        <label key={grupo.IDGrupo || grupo.id} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
+                        <label key={grupo.IDGrupoPoblacional || grupo.id} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded border-gray-300 text-[#009E76] focus:ring-[#009E76]"
-                            checked={formData.gruposPoblacionales.includes(grupo.IDGrupo)}
-                            onChange={() => handleCheckboxChange(grupo.IDGrupo)}
+                            checked={formData.gruposPoblacionales.includes(grupo.IDGrupoPoblacional)}
+                            onChange={() => handleCheckboxChange(grupo.IDGrupoPoblacional)}
                           />
                           <span className="text-sm text-gray-600">{grupo.NombreGrupo || grupo.nombre}</span>
                         </label>
