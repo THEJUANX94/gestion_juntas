@@ -137,11 +137,24 @@ export const crearMandatario = async (req, res) => {
     //Lógica para guardar Grupos Poblacionales
 
     if (gruposPoblacionales && Array.isArray(gruposPoblacionales) && gruposPoblacionales.length > 0) {
-
       try {
-        await mandatario.setGrupoPoblacionals(gruposPoblacionales);
-      } catch (assocError) {
-        console.error("Error asociando grupos (intentando fallback manual):", assocError);
+        // 1. Opcional: Limpiar asociaciones previas si el usuario ya existía
+        // (Útil si estás actualizando un usuario que ya tenía grupos)
+        await PoblacionesPorPersona.destroy({
+          where: { numeroidentificacion: documento }
+        });
+
+        // 2. Crear las nuevas asociaciones
+        const nuevasAsociaciones = gruposPoblacionales.map(idGrupo => ({
+          numeroidentificacion: documento,
+          idgrupopoblacional: idGrupo
+        }));
+
+        await PoblacionesPorPersona.bulkCreate(nuevasAsociaciones);
+
+        console.log(`Asociados ${nuevasAsociaciones.length} grupos al documento ${documento}`);
+      } catch (errorPoblacion) {
+        console.error("Error al guardar grupos poblacionales:", errorPoblacion);
       }
     }
 
