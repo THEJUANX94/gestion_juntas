@@ -60,7 +60,7 @@ export default function EditarMandatario() {
         const resMand = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`);
         const mand = await resMand.json();
 
-        const municipioInfo = dataLugares.find(l => l.IDLugar === mand.expedido);
+        const municipioInfo = lugares.find(l => l.IDLugar === mand.expedido);
         const deptoId = municipioInfo ? municipioInfo.IDOtroLugar : "";
 
         setFormData({
