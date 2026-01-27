@@ -43,30 +43,36 @@ export default function EditarMandatario() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Cargar selects
-        const resTipoDoc = await fetch(import.meta.env.VITE_PATH + "/tipodocumento");
-        const resCargos = await fetch(import.meta.env.VITE_PATH + "/cargos");
-        const resComisiones = await fetch(import.meta.env.VITE_PATH + "/comisiones");
-        const resLugares = await fetch(import.meta.env.VITE_PATH + "/lugares");
-        const resGrupos = await fetch(import.meta.env.VITE_PATH + "/grupospoblacionales");
+        // 1. Cargar todas las listas primero
+        const [resTipoDoc, resCargos, resComisiones, resLugares, resGrupos, resMand] = await Promise.all([
+          fetch(import.meta.env.VITE_PATH + "/tipodocumento"),
+          fetch(import.meta.env.VITE_PATH + "/cargos"),
+          fetch(import.meta.env.VITE_PATH + "/comisiones"),
+          fetch(import.meta.env.VITE_PATH + "/lugares"),
+          fetch(import.meta.env.VITE_PATH + "/grupospoblacionales"),
+          fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`)
+        ]);
 
-        setLugares(await resLugares.json());
+        const listaLugares = await resLugares.json();
+        const mand = await resMand.json();
+
+        // 2. Actualizar los estados de las listas
+        setLugares(listaLugares);
         setTiposDocumento(await resTipoDoc.json());
         setCargos(await resCargos.json());
         setComisiones(await resComisiones.json());
         setListaGrupos(await resGrupos.json());
 
-        // Cargar datos del mandatario
-        const resMand = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`);
-        const mand = await resMand.json();
-
-        const municipioInfo = lugares.find(l => l.IDLugar === mand.expedido);
+        // 3. LÓGICA CLAVE: Buscar el departamento usando la lista que acabamos de recibir
+        // Buscamos el municipio en la data cruda (listaLugares) porque el estado 'lugares' aún no se refleja
+        const municipioInfo = listaLugares.find(l => l.IDLugar === mand.expedido);
         const deptoId = municipioInfo ? municipioInfo.IDOtroLugar : "";
 
+        // 4. Llenar el formulario
         setFormData({
           documento: mand.documento,
           tipoDocumento: mand.tipoDocumento,
-          expedido: mand.expedido,
+          expedido: mand.expedido, // ID del Municipio
           primernombre: mand.primernombre,
           segundonombre: mand.segundonombre,
           primerapellido: mand.primerapellido,
@@ -81,11 +87,10 @@ export default function EditarMandatario() {
           fFinPeriodo: mand.fFinPeriodo?.split("T")[0] || "",
           cargo: mand.cargo || "",
           comision: mand.comision || "",
-          departamento: deptoId,
+          departamento: deptoId, // Se asigna el ID del departamento padre
           gruposPoblacionales: mand.gruposPoblacionales || []
         });
 
-        // Definir modo inicial
         setModo(mand.cargo ? "cargo" : "comision");
 
       } catch (err) {
