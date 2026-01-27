@@ -104,9 +104,9 @@ export default function AgregarMandatario() {
   const handleCheckboxChange = (idGrupo) => {
     setFormData(prev => {
       const seleccionados = prev.gruposPoblacionales;
-      const nuevoArreglo = seleccionados.includes(IDGrupoPoblacional)
-        ? seleccionados.filter(id => id !== IDGrupoPoblacional)
-        : [...seleccionados, IDGrupoPoblacional];
+      const nuevoArreglo = seleccionados.includes(idGrupo)
+        ? seleccionados.filter(id => id !== idGrupo)
+        : [...seleccionados, idGrupo];
 
       return { ...prev, gruposPoblacionales: nuevoArreglo };
     });
