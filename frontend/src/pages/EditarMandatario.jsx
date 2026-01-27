@@ -56,6 +56,15 @@ export default function EditarMandatario() {
         const listaLugares = await resLugares.json();
         const mand = await resMand.json();
 
+        const gruposIDs = Array.isArray(mand.gruposPoblacionales)
+          ? mand.gruposPoblacionales.map(g => (typeof g === 'object' ? g.IDGrupoPoblacional : g))
+          : [];
+
+        setFormData({
+          // ... resto de campos
+          gruposPoblacionales: gruposIDs
+        });
+
         // 2. Actualizar los estados de las listas
         setLugares(listaLugares);
         setTiposDocumento(await resTipoDoc.json());
@@ -138,12 +147,17 @@ export default function EditarMandatario() {
     setFormData(prev => ({ ...prev, [name]: newValue }));
   };
 
-  const handleCheckboxChange = (idGrupo) => {
-    setFormData(prev => {
-      const seleccionados = prev.gruposPoblacionales.includes(idGrupo)
-        ? prev.gruposPoblacionales.filter(id => id !== idGrupo)
-        : [...prev.gruposPoblacionales, idGrupo];
-      return { ...prev, gruposPoblacionales: seleccionados };
+  const handleCheckboxChange = (id) => {
+    setFormData((prev) => {
+      const seleccionados = prev.gruposPoblacionales;
+      const esNuevo = !seleccionados.includes(id);
+
+      return {
+        ...prev,
+        gruposPoblacionales: esNuevo
+          ? [...seleccionados, id]          // Si no está, lo agregamos
+          : seleccionados.filter(g => g !== id) // Si está, lo quitamos
+      };
     });
   };
 
