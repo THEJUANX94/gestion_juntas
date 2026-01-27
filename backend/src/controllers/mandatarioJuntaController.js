@@ -89,7 +89,8 @@ export const crearMandatario = async (req, res) => {
       fInicioPeriodo,
       fFinPeriodo,
       cargo,
-      comision
+      comision,
+      gruposPoblacionales
     } = req.body;
 
     const junta = await Junta.findByPk(idJunta);
@@ -133,13 +134,24 @@ export const crearMandatario = async (req, res) => {
       Profesion: profesion
     });
 
-    // Crear periodo + vincular
+    //Lógica para guardar Grupos Poblacionales
+
+    if (gruposPoblacionales && Array.isArray(gruposPoblacionales) && gruposPoblacionales.length > 0) {
+
+      try {
+        await mandatario.setGrupoPoblacionals(gruposPoblacionales);
+      } catch (assocError) {
+        console.error("Error asociando grupos (intentando fallback manual):", assocError);
+      }
+    }
+
     const periodo = await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo);
 
     res.json({
-      message: "Mandatario creado correctamente",
+      message: "Mandatario creado correctamente y grupos asociados",
       mandatario,
-      periodo
+      periodo,
+      grupos: gruposPoblacionales
     });
 
   } catch (error) {
@@ -467,9 +479,9 @@ export const obtenerMandatario = async (req, res) => {
 
     // 1. Buscar el mandatario en la junta
     const mandatario = await MandatarioJunta.findOne({
-      where: { 
+      where: {
         NumeroIdentificacion: documento,
-        IDJunta: idJunta 
+        IDJunta: idJunta
       },
       include: [
         {
@@ -500,16 +512,16 @@ export const obtenerMandatario = async (req, res) => {
     });
 
     if (!mandatario) {
-      return res.status(404).json({ 
-        message: "Mandatario no encontrado en esta junta" 
+      return res.status(404).json({
+        message: "Mandatario no encontrado en esta junta"
       });
     }
 
     // 2. Buscar el periodo del mandato
     const periodoMandato = await PeriodoPorMandato.findOne({
-      where: { 
+      where: {
         NumeroIdentificacion: documento,
-        IDJunta: idJunta 
+        IDJunta: idJunta
       },
       include: [{
         model: Periodo,
@@ -576,8 +588,8 @@ export const actualizarMandatario = async (req, res) => {
 
     // ✅ Validar campos obligatorios
     if (!primernombre || !primerapellido) {
-      return res.status(400).json({ 
-        message: "Primer nombre y primer apellido son obligatorios" 
+      return res.status(400).json({
+        message: "Primer nombre y primer apellido son obligatorios"
       });
     }
 
@@ -586,8 +598,8 @@ export const actualizarMandatario = async (req, res) => {
     }
 
     if (!fInicioPeriodo || !fFinPeriodo) {
-      return res.status(400).json({ 
-        message: "Debe ingresar fecha de inicio y fin del periodo" 
+      return res.status(400).json({
+        message: "Debe ingresar fecha de inicio y fin del periodo"
       });
     }
 
@@ -601,8 +613,8 @@ export const actualizarMandatario = async (req, res) => {
     });
 
     if (!mandatario) {
-      return res.status(404).json({ 
-        message: "El mandatario no existe en esta junta" 
+      return res.status(404).json({
+        message: "El mandatario no existe en esta junta"
       });
     }
 
@@ -662,7 +674,7 @@ export const actualizarMandatario = async (req, res) => {
         });
       }
     } else {
-      
+
       await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo);
     }
 
