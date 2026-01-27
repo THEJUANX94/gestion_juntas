@@ -12,6 +12,7 @@ export default function EditarMandatario() {
   const [cargos, setCargos] = useState([]);
   const [comisiones, setComisiones] = useState([]);
   const [lugares, setLugares] = useState([]);
+  const [listaGrupos, setListaGrupos] = useState([]);
 
   const [formData, setFormData] = useState({
     documento: "",
@@ -50,6 +51,7 @@ export default function EditarMandatario() {
         setCargos(await resCargos.json());
         setComisiones(await resComisiones.json());
         setLugares(await resLugares.json());
+        setListaGrupos(await resGrupos.json());
 
         // Cargar datos del mandatario
         const resMand = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`);
