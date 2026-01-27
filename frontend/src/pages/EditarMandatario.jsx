@@ -43,7 +43,6 @@ export default function EditarMandatario() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // 1. Cargar todas las listas primero
         const [resTipoDoc, resCargos, resComisiones, resLugares, resGrupos, resMand] = await Promise.all([
           fetch(import.meta.env.VITE_PATH + "/tipodocumento"),
           fetch(import.meta.env.VITE_PATH + "/cargos"),
@@ -55,24 +54,36 @@ export default function EditarMandatario() {
 
         const listaLugares = await resLugares.json();
         const mand = await resMand.json();
+        const gruposDisponibles = await resGrupos.json();
 
-        // 2. Actualizar los estados de las listas
+        // 🔍 DEBUG: Ver qué llega del backend
+        console.log("📥 Datos del mandatario:", mand);
+        console.log("📥 Grupos del mandatario:", mand.gruposPoblacionales);
+        console.log("📥 Grupos disponibles:", gruposDisponibles);
+
+        // Procesar grupos poblacionales
+        let gruposIDs = [];
+
+        if (Array.isArray(mand.gruposPoblacionales)) {
+          gruposIDs = mand.gruposPoblacionales.map(g => {
+            const id = typeof g === 'object' ? g.IDGrupoPoblacional : g;
+            console.log("🔄 Procesando grupo:", g, "→", id, "Tipo:", typeof id);
+            return id;
+          });
+        }
+
+        console.log("✅ IDs procesados:", gruposIDs);
+
+        // Actualizar estados
         setLugares(listaLugares);
         setTiposDocumento(await resTipoDoc.json());
         setCargos(await resCargos.json());
         setComisiones(await resComisiones.json());
-        setListaGrupos(await resGrupos.json());
+        setListaGrupos(gruposDisponibles);
 
-        // 3. Procesar grupos poblacionales correctamente
-        const gruposIDs = Array.isArray(mand.gruposPoblacionales)
-          ? mand.gruposPoblacionales.map(g => (typeof g === 'object' ? g.IDGrupoPoblacional : g))
-          : [];
-
-        // 4. Obtener departamento del municipio
         const municipioInfo = listaLugares.find(l => l.IDLugar === mand.expedido);
         const deptoId = municipioInfo ? municipioInfo.IDOtroLugar : "";
 
-        // 5. Llenar el formulario UNA SOLA VEZ
         setFormData({
           documento: mand.documento,
           tipoDocumento: mand.tipoDocumento,
@@ -92,8 +103,10 @@ export default function EditarMandatario() {
           cargo: mand.cargo || "",
           comision: mand.comision || "",
           departamento: deptoId,
-          gruposPoblacionales: gruposIDs  // ✓ Usar los IDs procesados
+          gruposPoblacionales: gruposIDs
         });
+
+        console.log("✅ FormData actualizado con grupos:", gruposIDs);
 
         setModo(mand.cargo ? "cargo" : "comision");
 
@@ -298,17 +311,24 @@ export default function EditarMandatario() {
                       Grupos Poblacionales:
                     </label>
                     <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      {listaGrupos.map((grupo) => (
-                        <label key={grupo.IDGrupoPoblacional || grupo.id} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-gray-300 text-[#009E76] focus:ring-[#009E76]"
-                            checked={formData.gruposPoblacionales.includes(grupo.IDGrupoPoblacional)}
-                            onChange={() => handleCheckboxChange(grupo.IDGrupoPoblacional)}
-                          />
-                          <span className="text-sm text-gray-600">{grupo.NombreGrupo || grupo.nombre}</span>
-                        </label>
-                      ))}
+                      {listaGrupos.map((grupo) => {
+                        const grupoId = grupo.IDGrupoPoblacional || grupo.id;
+                        const estaSeleccionado = formData.gruposPoblacionales.includes(grupoId);
+
+                        console.log("🔍 Checkbox:", grupo.NombreGrupo, "ID:", grupoId, "Tipo:", typeof grupoId, "Seleccionado:", estaSeleccionado);
+
+                        return (
+                          <label key={grupoId} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-gray-300 text-[#009E76] focus:ring-[#009E76]"
+                              checked={estaSeleccionado}
+                              onChange={() => handleCheckboxChange(grupoId)}
+                            />
+                            <span className="text-sm text-gray-600">{grupo.NombreGrupo || grupo.nombre}</span>
+                          </label>
+                        );
+                      })}
 
                     </div>
                   </div>
