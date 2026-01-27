@@ -54,7 +54,6 @@ export default function EditarMandatario() {
         setTiposDocumento(await resTipoDoc.json());
         setCargos(await resCargos.json());
         setComisiones(await resComisiones.json());
-        setLugares(await resLugares.json());
         setListaGrupos(await resGrupos.json());
 
         // Cargar datos del mandatario
