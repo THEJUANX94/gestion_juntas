@@ -31,7 +31,9 @@ export default function EditarMandatario() {
     fInicioPeriodo: "",
     fFinPeriodo: "",
     cargo: "",
-    comision: ""
+    comision: "",
+    gruposPoblacionales: [],
+    departamento: ""
   });
 
   const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
@@ -46,6 +48,7 @@ export default function EditarMandatario() {
         const resCargos = await fetch(import.meta.env.VITE_PATH + "/cargos");
         const resComisiones = await fetch(import.meta.env.VITE_PATH + "/comisiones");
         const resLugares = await fetch(import.meta.env.VITE_PATH + "/lugares");
+        const resGrupos = await fetch(import.meta.env.VITE_PATH + "/grupospoblacionales");
 
         setTiposDocumento(await resTipoDoc.json());
         setCargos(await resCargos.json());
@@ -74,7 +77,9 @@ export default function EditarMandatario() {
           fInicioPeriodo: mand.fInicioPeriodo?.split("T")[0] || "",
           fFinPeriodo: mand.fFinPeriodo?.split("T")[0] || "",
           cargo: mand.cargo || "",
-          comision: mand.comision || ""
+          comision: mand.comision || "",
+          departamento: deptoId,
+          gruposPoblacionales: mand.gruposPoblacionales || []
         });
 
         // Definir modo inicial
@@ -123,6 +128,15 @@ export default function EditarMandatario() {
     }
 
     setFormData(prev => ({ ...prev, [name]: newValue }));
+  };
+
+  const handleCheckboxChange = (idGrupo) => {
+    setFormData(prev => {
+      const seleccionados = prev.gruposPoblacionales.includes(idGrupo)
+        ? prev.gruposPoblacionales.filter(id => id !== idGrupo)
+        : [...prev.gruposPoblacionales, idGrupo];
+      return { ...prev, gruposPoblacionales: seleccionados };
+    });
   };
 
   // ENVIAR FORMULARIO
