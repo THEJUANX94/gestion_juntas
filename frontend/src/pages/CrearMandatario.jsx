@@ -255,19 +255,18 @@ export default function AgregarMandatario() {
                       Grupos Poblacionales:
                     </label>
                     <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      {gruposPoblacionales.map((grupo) => (
-                        <label key={grupo.id} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
+                      {listaGrupos.map((grupo) => (
+                        <label key={grupo.IDGrupo || grupo.id} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded border-gray-300 text-[#009E76] focus:ring-[#009E76]"
-                            // Verificamos si el ID está en el array del estado
-                            checked={formData.gruposPoblacionales.includes(grupo.id)}
-                            // Llamamos a la función que creamos arriba
-                            onChange={() => handleCheckboxChange(grupo.id)}
+                            checked={formData.gruposPoblacionales.includes(grupo.IDGrupo)}
+                            onChange={() => handleCheckboxChange(grupo.IDGrupo)}
                           />
-                          <span className="text-sm text-gray-600">{grupo.nombre}</span>
+                          <span className="text-sm text-gray-600">{grupo.NombreGrupo || grupo.nombre}</span>
                         </label>
                       ))}
+
                     </div>
                   </div>
                 </div>
