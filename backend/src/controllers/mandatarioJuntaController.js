@@ -246,7 +246,8 @@ export const getMiembrosJunta = async (req, res) => {
             "Sexo",
             "FechaNacimiento",
             "Celular",
-            "Correo"
+            "Correo",
+            "residencia"
           ],
           include: [
             {
