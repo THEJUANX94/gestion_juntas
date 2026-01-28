@@ -258,7 +258,6 @@ export const getMiembrosJunta = async (req, res) => {
         { model: Cargo, attributes: ["NombreCargo"] },
         { model: Comisiones, as: "Comision", attributes: ["Nombre"] },
         { model: Lugar, as: "LugarExpedido", attributes: ["NombreLugar"] },
-        { model: Lugar, as: "LugarResidencia", attributes: ["NombreLugar"] },
 
         {
           model: PeriodoPorMandato,
@@ -304,7 +303,7 @@ export const getMiembrosJunta = async (req, res) => {
         documento: u.NumeroIdentificacion,
         tipoDocumento: u.TipoDocumento?.NombreTipo || "",
         expedido: m.LugarExpedido?.NombreLugar || "",
-        residencia: m.LugarResidencia?.NombreLugar || "",
+        residencia: u.Residencia || "",
         genero: u.Sexo,
         edad,
         nacimiento,
