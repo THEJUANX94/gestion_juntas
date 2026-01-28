@@ -169,8 +169,8 @@ export default function EditarMandatario() {
     try {
       const payload = { ...formData, email: formData.email || null };
 
-      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/crear/${id}`, {
-        method: "POST",
+      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/actualizar/${id}/${documento}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
