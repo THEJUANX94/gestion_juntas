@@ -246,8 +246,7 @@ export const getMiembrosJunta = async (req, res) => {
             "Sexo",
             "FechaNacimiento",
             "Celular",
-            "Correo",
-            "residencia"
+            "Correo"
           ],
           include: [
             {
@@ -304,7 +303,7 @@ export const getMiembrosJunta = async (req, res) => {
         documento: u.NumeroIdentificacion,
         tipoDocumento: u.TipoDocumento?.NombreTipo || "",
         expedido: m.LugarExpedido?.NombreLugar || "",
-        residencia: u.Residencia || "",
+        residencia: m.Residencia || "",
         genero: u.Sexo,
         edad,
         nacimiento,
