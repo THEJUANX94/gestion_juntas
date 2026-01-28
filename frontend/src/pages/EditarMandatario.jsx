@@ -77,7 +77,7 @@ export default function EditarMandatario() {
           fInicioPeriodo: mand.fInicioPeriodo?.split("T")[0] || "",
           fFinPeriodo: mand.fFinPeriodo?.split("T")[0] || "",
           departamento: deptoId,
-          // AQUÍ cargamos los IDs que vienen de la tabla intermedia
+          residencia: mand.residencia || "",
           gruposPoblacionales: idsSeleccionados
         });
 
@@ -264,13 +264,7 @@ export default function EditarMandatario() {
                   options={["Masculino", "Femenino", "Otro"]}
                 />
                 <Input type="date" label="F Nacimiento" name="fNacimiento" value={formData.fNacimiento} onChange={handleChange} />
-                <Select
-                  label="Residencia"
-                  name="residencia"
-                  value={formData.residencia}
-                  onChange={handleChange}
-                  options={lugares.map(t => ({ value: t.IDLugar, label: t.NombreLugar }))}
-                />
+                <Input label="Residencia" name="residencia" value={formData.residencia} onChange={handleChange} />
                 <Input label="Teléfono" name="telefono" value={formData.telefono} onChange={handleChange} />
                 <Input label="Profesión" name="profesion" value={formData.profesion} onChange={handleChange} />
                 <Input type="email" label="Email" name="email" value={formData.email} onChange={handleChange} />
