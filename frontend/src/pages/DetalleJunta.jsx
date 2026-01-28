@@ -246,7 +246,8 @@ export default function DetalleJunta() {
       miembro.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
       miembro.documento.includes(searchTerm) ||
       miembro.cargo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      miembro.profesion.toLowerCase().includes(searchTerm.toLowerCase());
+      miembro.profesion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      miembro.residencia.toLowerCase().includes(searchTerm.toLowerCase());
 
     const cumpleFiltros =
       (!filtros.cargo || miembro.cargo === filtros.cargo) &&
