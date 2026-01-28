@@ -238,13 +238,7 @@ export default function AgregarMandatario() {
                   options={["Masculino", "Femenino", "Otro"]}
                 />
                 <Input type="date" label="F Nacimiento" name="fNacimiento" value={formData.fNacimiento} onChange={handleChange} />
-                <Select
-                  label="Residencia"
-                  name="residencia"
-                  value={formData.residencia}
-                  onChange={handleChange}
-                  options={lugares.map(t => ({ value: t.IDLugar, label: t.NombreLugar }))}
-                />
+                <Input label="Residencia" name="residencia" value={formData.residencia} onChange={handleChange} />
                 <Input label="Teléfono" name="telefono" value={formData.telefono} onChange={handleChange} />
                 <Input label="Profesión" name="profesion" value={formData.profesion} onChange={handleChange} />
                 <Input type="email" label="Email" name="email" value={formData.email} onChange={handleChange} />
