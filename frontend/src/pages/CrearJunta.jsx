@@ -18,6 +18,7 @@ export default function CrearJunta() {
     tipoJunta: "",
     idMunicipio: "",
     idInstitucion: "",
+    correo: "",
   });
 
   const [lugares, setLugares] = useState([]);
@@ -105,6 +106,11 @@ export default function CrearJunta() {
   // Enviar al backend
   // ==========================
   const handleSubmit = async () => {
+
+    if (formData.email && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
+      AlertMessage.success("El correo debe tener un dominio válido, como usuario@correo.com");
+      return;
+    }
 
     try {
       const resp = await fetch(import.meta.env.VITE_PATH + "/juntas", {
@@ -295,6 +301,21 @@ export default function CrearJunta() {
                   name="fechaCreacion"
                   value={formData.fechaCreacion}
                   onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              {/* Correo de la junta */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Correo de la junta <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="correo"
+                  value={formData.correo}
+                  onChange={handleChange}
+                  placeholder="Ingrese el correo de la junta"
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
                 />
               </div>

@@ -24,7 +24,8 @@ export const crearJunta = async (req, res) => {
       idMunicipio,
       idInstitucion,
       idReconocida,
-      zona
+      zona,
+      correo
     } = req.body;
 
     // ------------------------------------------
@@ -34,7 +35,7 @@ export const crearJunta = async (req, res) => {
       !razonSocial || !direccion || !numPersoneriaJuridica ||
       !fechaCreacion || !fechaInicioPeriodo || !fechaFinPeriodo ||
       !fechaAsamblea || !tipoJunta || !idMunicipio ||
-      !idInstitucion || !zona
+      !idInstitucion || !zona || !correo
     ) {
       return res.status(400).json({
         message: "Todos los campos son obligatorios"
@@ -123,6 +124,7 @@ export const crearJunta = async (req, res) => {
       TipoJunta: tipoJunta,
       IDMunicipio: idMunicipio,
       IDInstitucion: idInstitucion,
+      Correo: correo,
       IDReconocida: "123e4567-e89b-12d3-a456-426614174000"
     });
 
@@ -464,7 +466,8 @@ export const actualizarJunta = async (req, res) => {
       tipoJunta,
       idMunicipio,
       idInstitucion,
-      zona
+      zona,
+      correo
     } = req.body;
 
     // ------------------------------------------
@@ -484,7 +487,7 @@ export const actualizarJunta = async (req, res) => {
       !razonSocial || !direccion || !numPersoneriaJuridica ||
       !fechaCreacion || !fechaInicioPeriodo || !fechaFinPeriodo ||
       !fechaAsamblea || !tipoJunta || !idMunicipio ||
-      !idInstitucion || !zona
+      !idInstitucion || !zona || !correo
     ) {
       return res.status(400).json({
         message: "Todos los campos son obligatorios"
@@ -611,7 +614,8 @@ export const actualizarJunta = async (req, res) => {
       Zona: zona,
       TipoJunta: tipoJunta,
       IDMunicipio: idMunicipio,
-      IDInstitucion: idInstitucion
+      IDInstitucion: idInstitucion,
+      Correo: correo
     });
 
     return res.json({
@@ -728,6 +732,7 @@ export const exportarJuntasExcel = async (req, res) => {
       { header: "Fin Periodo", key: "fin", width: 15 },
       { header: "Fecha Asamblea", key: "asamblea", width: 18 },
       { header: "Reconocida", key: "reconocida", width: 15 },
+      { header: "Correo", key: "correo", width: 18 }
     ];
 
     /* 🎨 Estilo encabezados */
@@ -762,6 +767,7 @@ export const exportarJuntasExcel = async (req, res) => {
         fin: j.FechaFinPeriodo,
         asamblea: j.FechaAsamblea,
         reconocida: j.Reconocida?.Nombre || "",
+        correo: j.Correo?.nombre || "",
       });
     });
 

@@ -21,6 +21,7 @@ export default function EditarJunta() {
     tipoJunta: "",
     idMunicipio: "",
     idInstitucion: "",
+    correo: "",
   });
 
   const [numeroAfiliados, setNumeroAfiliados] = useState(0);
@@ -70,6 +71,7 @@ export default function EditarJunta() {
           tipoJunta: juntaData.IDTipoJunta,
           idMunicipio: juntaData.IDMunicipio,
           idInstitucion: juntaData.IDInstitucion,
+          correo: juntaData.Correo || ""
         });
 
         setNumeroAfiliados(juntaData.NumeroAfiliados || 0);
@@ -350,6 +352,20 @@ export default function EditarJunta() {
                   name="fechaCreacion"
                   value={formData.fechaCreacion}
                   onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Razón Social <span className="text-[#E43440]">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="correo"
+                  value={formData.correo}
+                  onChange={handleChange}
+                  placeholder="Ingrese el correo de la junta"
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#009E76] focus:border-transparent outline-none transition-all"
                 />
               </div>
