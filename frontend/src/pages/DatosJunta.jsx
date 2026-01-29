@@ -71,7 +71,7 @@ export default function EditarJunta() {
           tipoJunta: juntaData.IDTipoJunta,
           idMunicipio: juntaData.IDMunicipio,
           idInstitucion: juntaData.IDInstitucion,
-          correo: juntaData.Correo || ""
+          correo: juntaData.Correo
         });
 
         setNumeroAfiliados(juntaData.NumeroAfiliados || 0);
@@ -358,7 +358,7 @@ export default function EditarJunta() {
 
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Razón Social <span className="text-[#E43440]">*</span>
+                  Correo Junta <span className="text-[#E43440]">*</span>
                 </label>
                 <input
                   type="email"
