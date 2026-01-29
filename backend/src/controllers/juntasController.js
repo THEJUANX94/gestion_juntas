@@ -330,6 +330,7 @@ export const obtenerJuntaPorId = async (req, res) => {
       IDInstitucion: junta.IDInstitucion,
       IDReconocida: junta.IDReconocida,
       NumeroAfiliados: numeroAfiliados,
+      Correo: junta.Correo,
       
       // Datos relacionados
       Municipio: junta.Lugar,
@@ -389,7 +390,7 @@ export const cambiarPeriodoJunta = async (req, res) => {
 
     // 3. CREAR LA NUEVA JUNTA (COPIAR DATOS)
     const nuevaJunta = await Junta.create({
-      RazonSocial: juntaOriginal.RazonSocial,
+      RazonSocial: juntaOriginal.RazonSocial, 
       Direccion: juntaOriginal.Direccion,
       NumPersoneriaJuridica: juntaOriginal.NumPersoneriaJuridica,
       FechaCreacion: juntaOriginal.FechaCreacion,
@@ -400,7 +401,8 @@ export const cambiarPeriodoJunta = async (req, res) => {
       TipoJunta: juntaOriginal.TipoJunta,
       IDMunicipio: juntaOriginal.IDMunicipio,
       IDInstitucion: juntaOriginal.IDInstitucion,
-      IDReconocida: juntaOriginal.IDReconocida
+      IDReconocida: juntaOriginal.IDReconocida,
+      Correo: juntaOriginal.Correo
     }, { transaction: t });
 
     // 4. COPIAR DIGNATARIOS
