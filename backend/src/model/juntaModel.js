@@ -85,6 +85,12 @@ export const Junta = sequelize.define("Junta", {
     type: DataTypes.STRING,
     allowNull: false,
     field: "correo"
+  },
+  Activo: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    field: "activo"
   }
 
 }, {

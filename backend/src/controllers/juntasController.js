@@ -362,7 +362,7 @@ export const cambiarPeriodoJunta = async (req, res) => {
       fechaInicioPeriodo,
       fechaFinPeriodo,
       fechaAsamblea,
-      copiarDignatarios, // Boolean: true para copiar miembros
+      copiarDignatarios, 
     } = req.body;
 
     // 1. VALIDAR DATOS DE ENTRADA (FECHAS)
@@ -389,6 +389,7 @@ export const cambiarPeriodoJunta = async (req, res) => {
     }
 
     // 3. CREAR LA NUEVA JUNTA (COPIAR DATOS)
+    // Nota: Asumimos que la nueva junta nace activa por defecto en la BD o modelo.
     const nuevaJunta = await Junta.create({
       RazonSocial: juntaOriginal.RazonSocial, 
       Direccion: juntaOriginal.Direccion,
@@ -405,11 +406,15 @@ export const cambiarPeriodoJunta = async (req, res) => {
       Correo: juntaOriginal.Correo
     }, { transaction: t });
 
+    //DESACTIVAR JUNTA ANTERIOR
+    await juntaOriginal.update({ 
+      activo: false 
+    }, { transaction: t });
+
     // 4. COPIAR DIGNATARIOS
     let mensajeDignatarios = "No se copiaron dignatarios.";
 
     if (copiarDignatarios === true || copiarDignatarios === 'true') {
-      // Buscar mandatarios de la junta anterior
       const mandatariosAnteriores = await MandatarioJunta.findAll({
         where: { IDJunta: id }
       });
@@ -425,7 +430,6 @@ export const cambiarPeriodoJunta = async (req, res) => {
           IDComision: m.IDComision
         }));
 
-        // Insertar los mandatarios vinculados a la nueva junta
         await MandatarioJunta.bulkCreate(nuevosMandatariosData, { transaction: t });
         mensajeDignatarios = `Se copiaron ${mandatariosAnteriores.length} dignatarios al nuevo periodo.`;
       }
@@ -434,13 +438,12 @@ export const cambiarPeriodoJunta = async (req, res) => {
     await t.commit();
 
     return res.status(201).json({
-      message: "Nuevo periodo de junta creado exitosamente.",
+      message: "Nuevo periodo creado y junta anterior desactivada exitosamente.",
       detalle: mensajeDignatarios,
       junta: nuevaJunta
     });
 
   } catch (error) {
-    // Si algo falla, revertimos todo (no se crea la junta ni los mandatarios)
     await t.rollback();
     console.error("Error cambiando periodo de junta:", error);
     return res.status(500).json({

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Search, Filter, ExternalLink, FileSearch, Trash2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // 1. Importar useNavigate
 import { AlertMessage } from "../components/ui/AlertMessage";
 import Select from "react-select";
 
-
-
 export default function ConsultarJunta() {
+    const navigate = useNavigate(); // 2. Inicializar hook de navegación
+
     const [filtros, setFiltros] = useState({
         tipoJunta: "",
         municipio: "",
@@ -21,7 +21,6 @@ export default function ConsultarJunta() {
         value: m.IDLugar,
         label: m.NombreLugar,
     }));
-
 
     useEffect(() => {
         const loadData = async () => {
@@ -45,14 +44,12 @@ export default function ConsultarJunta() {
         loadData();
     }, []);
 
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFiltros((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleConsultar = async () => {
-
         if (!filtros.tipoJunta || !filtros.municipio) {
             return AlertMessage.error(
                 "Filtros incompletos",
@@ -65,9 +62,7 @@ export default function ConsultarJunta() {
                 import.meta.env.VITE_PATH + `/juntas?tipoJunta=${filtros.tipoJunta}&idMunicipio=${filtros.municipio}`
             );
 
-
             const data = await resp.json();
-
             console.log(data);
 
             if (!resp.ok) {
@@ -76,23 +71,15 @@ export default function ConsultarJunta() {
 
             setJuntas(data);
             setConsultado(true);
-
             AlertMessage.success("Consulta realizada", "Las juntas han sido cargadas");
 
         } catch (e) {
-            AlertMessage.error(
-                "Error de conexión",
-                "No se pudo comunicar con el servidor"
-            );
+            AlertMessage.error("Error de conexión", "No se pudo comunicar con el servidor");
         }
     };
 
-
     const limpiarFiltros = () => {
-        setFiltros({
-            tipoJunta: "",
-            municipio: "",
-        });
+        setFiltros({ tipoJunta: "", municipio: "" });
         setJuntas([]);
         setConsultado(false);
     };
@@ -103,16 +90,12 @@ export default function ConsultarJunta() {
             "Esta acción no se puede deshacer. ¿Desea continuar?"
         );
 
-        console.log("Resultado confirmación:", confirm)
-
         if (!confirm) return;
 
-
         try {
-            const resp = await fetch(import.meta.env.VITE_PATH +  `/juntas/${idJunta}`, {
+            const resp = await fetch(import.meta.env.VITE_PATH + `/juntas/${idJunta}`, {
                 method: "DELETE",
             });
-
             const data = await resp.json();
 
             if (!resp.ok) {
@@ -120,8 +103,6 @@ export default function ConsultarJunta() {
             }
 
             AlertMessage.success("Eliminada", "La junta fue eliminada exitosamente");
-
-            // ❗ Removerla de la tabla sin recargar toda la pantalla
             setJuntas(prev => prev.filter(j => j.IDJunta !== idJunta));
 
         } catch (e) {
@@ -129,6 +110,20 @@ export default function ConsultarJunta() {
         }
     };
 
+    // --- NUEVA FUNCIÓN PARA MANEJAR LA NAVEGACIÓN ---
+    const handleVerDetalle = async (junta) => {
+        // Si activo es false (o null/undefined según tu BD, aquí asumo false explícito)
+        if (junta.activo === false) {
+            const confirm = await AlertMessage.confirm(
+                "Junta Desactivada",
+                "Esta junta se encuentra desactivada (período anterior). ¿Aún así desea ver los detalles?"
+            );
+            if (!confirm) return; // Si cancela, no hace nada
+        }
+
+        // Navegación manual enviando el estado
+        navigate(`/juntas/detalle-junta/${junta.IDJunta}`, { state: { junta } });
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
@@ -151,9 +146,7 @@ export default function ConsultarJunta() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-end">
                         {/* Tipo de Junta */}
                         <div>
-                            <label className="block text-sm font-semibold mb-2 text-gray-700">
-                                Tipo de Junta
-                            </label>
+                            <label className="block text-sm font-semibold mb-2 text-gray-700">Tipo de Junta</label>
                             <select
                                 name="tipoJunta"
                                 value={filtros.tipoJunta}
@@ -167,7 +160,6 @@ export default function ConsultarJunta() {
                                     </option>
                                 ))}
                             </select>
-
                         </div>
 
                         {/* Municipio */}
@@ -175,7 +167,6 @@ export default function ConsultarJunta() {
                             <label className="block text-sm font-semibold mb-2 text-gray-700">
                                 Municipio <span className="text-[#E43440]">*</span>
                             </label>
-
                             <Select
                                 options={opcionesMunicipios}
                                 value={opcionesMunicipios.find(o => o.value === filtros.municipio)}
@@ -186,9 +177,7 @@ export default function ConsultarJunta() {
                                 isSearchable={true}
                                 className="text-black"
                             />
-
                         </div>
-
 
                         {/* Botones */}
                         <div className="flex gap-3">
@@ -196,8 +185,7 @@ export default function ConsultarJunta() {
                                 onClick={handleConsultar}
                                 className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white font-semibold px-6 py-2.5 rounded-lg shadow-md transition-all flex-1"
                             >
-                                <Search size={18} />
-                                Consultar
+                                <Search size={18} /> Consultar
                             </button>
                             {consultado && (
                                 <button
@@ -237,59 +225,59 @@ export default function ConsultarJunta() {
 
                                 <tbody>
                                     {juntas.length > 0 ? (
-                                        juntas.map((junta, index) => (
-                                            <tr
-                                                key={index}
-                                                className={`${index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                                                    } border-t border-gray-200 hover:bg-blue-50 transition-colors`}
-                                            >
-                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                    {junta.RazonSocial}
-                                                </td>
-                                                <td>
-                                                    {new Date(junta.FechaCreacion).toLocaleDateString("es-CO", {
-                                                        year: "numeric",
-                                                        month: "long",
-                                                        day: "numeric",
-                                                    })}
-                                                </td>
+                                        juntas.map((junta, index) => {
+                                            // Lógica de estilos para juntas inactivas
+                                            const isInactive = junta.activo === false;
+                                            const rowClass = isInactive
+                                                ? "bg-gray-200 text-gray-500 hover:bg-gray-300" // Estilo Inactiva (Oscura/Gris)
+                                                : (index % 2 === 0 ? "bg-white" : "bg-gray-50 hover:bg-blue-50"); // Estilo Activa
 
-                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.Institucion.NombreInstitucion}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.Reconocida?.Nombre}</td>
-                                                <td className="px-6 py-4 text-sm text-gray-700">{junta.NumPersoneriaJuridica}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <div className="flex justify-center items-center gap-4">
+                                            return (
+                                                <tr key={index} className={`${rowClass} border-t border-gray-200 transition-colors`}>
+                                                    <td className={`px-6 py-4 text-sm font-medium ${isInactive ? "text-gray-600" : "text-gray-900"}`}>
+                                                        {junta.RazonSocial}
+                                                        {isInactive && <span className="ml-2 text-xs bg-gray-500 text-white px-2 py-0.5 rounded-full">Inactiva</span>}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">
+                                                        {new Date(junta.FechaCreacion).toLocaleDateString("es-CO", {
+                                                            year: "numeric", month: "long", day: "numeric",
+                                                        })}
+                                                    </td>
 
-                                                        {/* Ver detalles */}
-                                                        <Link
-                                                            to={`/juntas/detalle-junta/${junta.IDJunta}`}
-                                                            state={{ junta }}
-                                                            className="inline-flex items-center gap-1 text-[#009E76] hover:text-[#007d5e] font-medium text-sm transition-colors"
-                                                        >
-                                                            Ver detalles
-                                                            <ExternalLink size={16} />
-                                                        </Link>
+                                                    <td className="px-6 py-4 text-sm">{junta.Institucion.NombreInstitucion}</td>
+                                                    <td className="px-6 py-4 text-sm">{junta.Reconocida?.Nombre}</td>
+                                                    <td className="px-6 py-4 text-sm">{junta.NumPersoneriaJuridica}</td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div className="flex justify-center items-center gap-4">
 
-                                                        {/* Eliminar */}
-                                                        <button
-                                                            onClick={() => eliminarJunta(junta.IDJunta)}
-                                                            className="text-red-500 hover:text-red-700 transition-colors"
-                                                            title="Eliminar junta"
-                                                        >
-                                                            <Trash2 size={18} />
-                                                        </button>
-                                                    </div>
-                                                </td>
+                                                            {/* BOTÓN VER DETALLES MODIFICADO */}
+                                                            <button
+                                                                onClick={() => handleVerDetalle(junta)}
+                                                                className={`inline-flex items-center gap-1 font-medium text-sm transition-colors ${isInactive
+                                                                        ? "text-gray-600 hover:text-gray-900"
+                                                                        : "text-[#009E76] hover:text-[#007d5e]"
+                                                                    }`}
+                                                            >
+                                                                Ver detalles
+                                                                <ExternalLink size={16} />
+                                                            </button>
 
-
-                                            </tr>
-                                        ))
+                                                            {/* Eliminar */}
+                                                            <button
+                                                                onClick={() => eliminarJunta(junta.IDJunta)}
+                                                                className="text-red-500 hover:text-red-700 transition-colors"
+                                                                title="Eliminar junta"
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     ) : (
                                         <tr>
-                                            <td
-                                                colSpan="6"
-                                                className="text-center text-gray-500 py-12"
-                                            >
+                                            <td colSpan="6" className="text-center text-gray-500 py-12">
                                                 <div className="flex flex-col items-center gap-3">
                                                     <Search className="text-gray-300" size={48} />
                                                     <p className="text-lg font-medium">No se encontraron juntas</p>
