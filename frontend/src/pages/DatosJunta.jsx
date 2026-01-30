@@ -153,7 +153,6 @@ export default function EditarJunta() {
       }
 
       AlertMessage.info("Junta actualizada correctamente");
-      navigate(`juntas/consultar`);
 
     } catch (e) {
       AlertMessage.error("Error de conexión con el servidor");

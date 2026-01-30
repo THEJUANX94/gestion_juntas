@@ -389,7 +389,6 @@ export const cambiarPeriodoJunta = async (req, res) => {
     }
 
     // 3. CREAR LA NUEVA JUNTA (COPIAR DATOS)
-    // Nota: Asumimos que la nueva junta nace activa por defecto en la BD o modelo.
     const nuevaJunta = await Junta.create({
       RazonSocial: juntaOriginal.RazonSocial, 
       Direccion: juntaOriginal.Direccion,
@@ -408,7 +407,7 @@ export const cambiarPeriodoJunta = async (req, res) => {
 
     //DESACTIVAR JUNTA ANTERIOR
     await juntaOriginal.update({ 
-      activo: false 
+      Activo: false 
     }, { transaction: t });
 
     // 4. COPIAR DIGNATARIOS
