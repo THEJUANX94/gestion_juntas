@@ -113,7 +113,7 @@ export default function ConsultarJunta() {
     // --- NUEVA FUNCIÓN PARA MANEJAR LA NAVEGACIÓN ---
     const handleVerDetalle = async (junta) => {
         // Si activo es false (o null/undefined según tu BD, aquí asumo false explícito)
-        if (junta.activo === false) {
+        if (junta.Activo === false) {
             const confirm = await AlertMessage.confirm(
                 "Junta Desactivada",
                 "Esta junta se encuentra desactivada (período anterior). ¿Aún así desea ver los detalles?"
@@ -227,7 +227,7 @@ export default function ConsultarJunta() {
                                     {juntas.length > 0 ? (
                                         juntas.map((junta, index) => {
                                             // Lógica de estilos para juntas inactivas
-                                            const isInactive = junta.activo === false;
+                                            const isInactive = junta.Activo === false;
                                             const rowClass = isInactive
                                                 ? "bg-gray-200 text-gray-500 hover:bg-gray-300" // Estilo Inactiva (Oscura/Gris)
                                                 : (index % 2 === 0 ? "bg-white" : "bg-gray-50 hover:bg-blue-50"); // Estilo Activa
