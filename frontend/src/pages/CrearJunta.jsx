@@ -21,14 +21,10 @@ export default function CrearJunta() {
     correo: "",
   });
 
+  const [municipiosFiltrados, setMunicipiosFiltrados] = useState([]);
   const [lugares, setLugares] = useState([]);
   const [instituciones, setInstituciones] = useState([]);
   const [tiposJunta, setTiposJunta] = useState([]);
-
-  const opcionesMunicipios = lugares.map(l => ({
-    value: l.IDLugar,
-    label: l.NombreLugar,
-  }));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,25 +36,37 @@ export default function CrearJunta() {
         ]);
 
         const lugaresData = await resLugares.json();
-        const instData = await resInst.json();
-        const tiposData = await resTipos.json();
+        const deptoBoyaca = lugaresData.find(
+          l => l.NombreLugar.toUpperCase() === "BOYACA" && l.TipoLugar === "Departamento"
+        );
+
+        if (deptoBoyaca) {
+          const provinciasBoyacaIds = lugaresData
+            .filter(l => l.TipoLugar === "Provincia" && l.idotrolugar === deptoBoyaca.IDLugar)
+            .map(p => p.IDLugar);
+          const soloMunicipiosBoyaca = lugaresData.filter(
+            l => l.TipoLugar === "Municipio" && provinciasBoyacaIds.includes(l.idotrolugar)
+          );
+
+          setMunicipiosFiltrados(soloMunicipiosBoyaca);
+        }
 
         setLugares(lugaresData);
-        setInstituciones(instData);
-        setTiposJunta(tiposData);
+        setInstituciones(await resInst.json());
+        setTiposJunta(await resTipos.json());
 
       } catch (error) {
         console.error("Error cargando datos:", error);
-        AlertMessage.error(
-          "Error al cargar datos",
-          "No fue posible obtener la información desde el servidor"
-        );
-
+        AlertMessage.error("Error", "No fue posible obtener la información");
       }
     };
-
     fetchData();
   }, []);
+
+  const opcionesMunicipios = municipiosFiltrados.map(m => ({
+    value: m.IDLugar,
+    label: m.NombreLugar,
+  }));
 
   // ==========================
   // Manejo de inputs
