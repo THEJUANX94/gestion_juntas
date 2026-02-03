@@ -188,14 +188,13 @@ export default function CrearJunta() {
                   options={opcionesMunicipios}
                   value={opcionesMunicipios.find(o => o.value === formData.idMunicipio)}
                   onChange={(selected) =>
-                    setFormData(prev => ({ ...prev, idMunicipio: selected.value }))
+                    setFormData(prev => ({ ...prev, idMunicipio: selected?.value }))
                   }
-                  placeholder="Selecciona un municipio..."
+                  placeholder="Selecciona un municipio de Boyacá..."
                   isSearchable={true}
                   className="text-black"
                 />
               </div>
-
 
               {/* Institución */}
               <div>
