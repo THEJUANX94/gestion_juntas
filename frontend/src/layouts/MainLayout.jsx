@@ -12,7 +12,8 @@ import {
   Handshake,
   ScanEye,
   MapPin,
-  Signature
+  Signature,
+  KeyRound
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
