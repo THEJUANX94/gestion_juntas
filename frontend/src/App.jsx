@@ -38,6 +38,7 @@ import EditarInstitucion from "./pages/EditarInstitucion";
 import EditarComision from "./pages/EditarComision";
 import ValidacionQR from "./pages/ValidacionQR";
 import ListarMandatarios from "./pages/ListarMandatarios";
+import ChangePassword from "./pages/CambioContraseña";
 
 export default function App() {
   return (
