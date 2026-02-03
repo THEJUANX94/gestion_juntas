@@ -12,37 +12,57 @@ export default function ConsultarJunta() {
         municipio: "",
     });
 
+    const [municipiosFiltrados, setMunicipiosFiltrados] = useState([]);
+    const [lugares, setLugares] = useState([]);
+    const [instituciones, setInstituciones] = useState([]);
     const [municipios, setMunicipios] = useState([]);
     const [juntas, setJuntas] = useState([]);
     const [consultado, setConsultado] = useState(false);
     const [tiposJunta, setTiposJunta] = useState([]);
 
-    const opcionesMunicipios = municipios.map(m => ({
-        value: m.IDLugar,
-        label: m.NombreLugar,
-    }));
-
     useEffect(() => {
-        const loadData = async () => {
+        const fetchData = async () => {
             try {
-                const [resMunicipios, resTipos] = await Promise.all([
+                const [resLugares, resInst, resTipos] = await Promise.all([
                     fetch(import.meta.env.VITE_PATH + "/lugares"),
+                    fetch(import.meta.env.VITE_PATH + "/instituciones"),
                     fetch(import.meta.env.VITE_PATH + "/tipojunta"),
                 ]);
 
-                const munData = await resMunicipios.json();
-                const tipoData = await resTipos.json();
+                const lugaresData = await resLugares.json();
+                const deptoBoyaca = lugaresData.find(
+                    l => l.NombreLugar === "Boyacá" && l.TipoLugar === "Departamento"
+                );
 
-                setMunicipios(munData);
-                setTiposJunta(tipoData);
+                if (deptoBoyaca) {
+                    const provinciasBoyacaIds = lugaresData
+                        .filter(l => l.TipoLugar === "Provincia" && l.idotrolugar === deptoBoyaca.IDLugar)
+                        .map(p => p.IDLugar);
+                    const soloMunicipiosBoyaca = lugaresData.filter(
+                        l => l.TipoLugar === "Municipio" && provinciasBoyacaIds.includes(l.idotrolugar)
+                    );
 
-            } catch (e) {
-                AlertMessage.error("Error", "No se pudieron cargar los datos iniciales");
+                    setMunicipiosFiltrados(soloMunicipiosBoyaca);
+                }
+
+                setLugares(lugaresData);
+                setInstituciones(await resInst.json());
+                setTiposJunta(await resTipos.json());
+
+            } catch (error) {
+                console.error("Error cargando datos:", error);
+                AlertMessage.error("Error", "No fue posible obtener la información");
             }
         };
-
-        loadData();
+        fetchData();
     }, []);
+
+    const opcionesMunicipios = municipiosFiltrados
+        .map(m => ({
+            value: m.IDLugar,
+            label: m.NombreLugar,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -169,11 +189,11 @@ export default function ConsultarJunta() {
                             </label>
                             <Select
                                 options={opcionesMunicipios}
-                                value={opcionesMunicipios.find(o => o.value === filtros.municipio)}
+                                value={opcionesMunicipios.find(o => o.value === formData.idMunicipio)}
                                 onChange={(selected) =>
-                                    setFiltros(prev => ({ ...prev, municipio: selected.value }))
+                                    setFormData(prev => ({ ...prev, idMunicipio: selected?.value }))
                                 }
-                                placeholder="Selecciona un municipio..."
+                                placeholder="Selecciona un municipio de Boyacá..."
                                 isSearchable={true}
                                 className="text-black"
                             />
@@ -254,8 +274,8 @@ export default function ConsultarJunta() {
                                                             <button
                                                                 onClick={() => handleVerDetalle(junta)}
                                                                 className={`inline-flex items-center gap-1 font-medium text-sm transition-colors ${isInactive
-                                                                        ? "text-gray-600 hover:text-gray-900"
-                                                                        : "text-[#009E76] hover:text-[#007d5e]"
+                                                                    ? "text-gray-600 hover:text-gray-900"
+                                                                    : "text-[#009E76] hover:text-[#007d5e]"
                                                                     }`}
                                                             >
                                                                 Ver detalles
