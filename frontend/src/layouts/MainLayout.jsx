@@ -23,10 +23,14 @@ export default function MainLayout() {
   const { user, logout } = useAuth();
   const [logo, setLogo] = useState(localStorage.getItem("logo") || "/logo.png");
   const [collapsed, setCollapsed] = useState(false);
-  const [juntasOpen, setJuntasOpen] = useState(true);
-  const [usuariosOpen, setUsuariosOpen] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
+
+  const userRole =  user?.rol; 
+
+  const hasPermission = (allowedRoles) => {
+    return allowedRoles.includes(userRole);
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -94,7 +98,6 @@ export default function MainLayout() {
 
           {/* Navbar con iconos */}
           <nav className="flex items-center gap-6 relative">
-            {/* Botón de ayuda modificado para ser un enlace a PDF */}
             <a
               href="/Manual_Usuario_Juntas.pdf"
               target="_blank"
@@ -105,14 +108,16 @@ export default function MainLayout() {
               <HelpCircle className="h-5 w-5" />
             </a>
 
-            {/* Botón de configuración */}
-            <button
-              onClick={() => navigate("/configuracion")}
-              className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]"
-              title="Configuración"
-            >
-              <Settings className="h-5 w-5" />
-            </button>
+            {/* Configuración en Header: Solo Admin */}
+            {hasPermission(["Administrador"]) && (
+              <button
+                onClick={() => navigate("/configuracion")}
+                className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]"
+                title="Configuración"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            )}
 
             {/* Menú de usuario */}
             <div className="relative" ref={menuRef}>
@@ -132,6 +137,9 @@ export default function MainLayout() {
                     </p>
                     <p className="text-xs text-gray-500 truncate">
                       {user?.correo || ""}
+                    </p>
+                    <p className="text-xs text-blue-600 font-bold mt-1">
+                      {userRole}
                     </p>
                   </div>
                   <button
@@ -156,170 +164,180 @@ export default function MainLayout() {
           } transition-all duration-300 border-r shadow-sm bg-white`}
         >
           <nav className="p-4 space-y-6">
-            {/* Sección: Gestión de Juntas */}
-            <div>
-              {!collapsed && (
-                <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
-                  Gestión de Juntas
-                </h2>
-              )}
-              <ul className="space-y-1">
-                <li>
-                  <Link
-                    to="/juntas/crear"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/juntas/crear"
-                    )}`}
-                  >
-                    <Handshake className="h-5 w-5" />
-                    {!collapsed && "Crear Junta"}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/juntas/consultar"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/juntas/consultar"
-                    )}`}
-                  >
-                    <List className="h-5 w-5" />
-                    {!collapsed && "Consultar Juntas"}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/juntas/listar"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/juntas/listar"
-                    )}`}
-                  >
-                    <List className="h-5 w-5" />
-                    {!collapsed && "Listar Juntas"}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            
+            {/* Sección: Gestión de Juntas (Admin y Auxiliar) */}
+            {hasPermission(["Administrador", "Auxiliar"]) && (
+              <div>
+                {!collapsed && (
+                  <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
+                    Gestión de Juntas
+                  </h2>
+                )}
+                <ul className="space-y-1">
+                  <li>
+                    <Link
+                      to="/juntas/crear"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/juntas/crear"
+                      )}`}
+                    >
+                      <Handshake className="h-5 w-5" />
+                      {!collapsed && "Crear Junta"}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/juntas/consultar"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/juntas/consultar"
+                      )}`}
+                    >
+                      <List className="h-5 w-5" />
+                      {!collapsed && "Consultar Juntas"}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/juntas/listar"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/juntas/listar"
+                      )}`}
+                    >
+                      <List className="h-5 w-5" />
+                      {!collapsed && "Listar Juntas"}
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            )}
 
-            {/* Sección: Gestión de Cosas */}
-            <div>
-              {!collapsed && (
-                <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
-                  Consultas Generales
-                </h2>
-              )}
-              <ul className="space-y-1">
-                <li>
-                  <Link
-                    to="/cargos/listar"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/cargos/listar"
-                    )}`}
-                  >
-                    <ScanEye className="h-5 w-5" />
-                    {!collapsed && "Listar Cargos"}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/instituciones/listar"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/instituciones/listar"
-                    )}`}
-                  >
-                    <Building2 className="h-5 w-5" />
-                    {!collapsed && "Listar Instituciones"}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/comisiones/listar"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/comisiones/listar"
-                    )}`}
-                  >
-                    <Landmark className="h-5 w-5" />
-                    {!collapsed && "Listar Comisiones"}
-                  </Link>
-                </li>
-                 <li>
-                  <Link
-                    to="/lugares/listar"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/lugares/listar"
-                    )}`}
-                  >
-                    <MapPin className="h-5 w-5" />
-                    {!collapsed && "Listar Lugares"}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/usuarios/mandatarios"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/usuarios/mandatarios"
-                    )}`}
-                  >
-                    <Signature className="h-5 w-5" />
-                    {!collapsed && "Listar Mandatarios"}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            {/* Sección: Consultas Generales */}
+            {hasPermission(["Administrador", "Auxiliar", "Consulta"]) && (
+              <div>
+                {!collapsed && (
+                  <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
+                    Consultas Generales
+                  </h2>
+                )}
+                <ul className="space-y-1">
+                  <li>
+                    <Link
+                      to="/cargos/listar"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/cargos/listar"
+                      )}`}
+                    >
+                      <ScanEye className="h-5 w-5" />
+                      {!collapsed && "Listar Cargos"}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/instituciones/listar"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/instituciones/listar"
+                      )}`}
+                    >
+                      <Building2 className="h-5 w-5" />
+                      {!collapsed && "Listar Instituciones"}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/comisiones/listar"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/comisiones/listar"
+                      )}`}
+                    >
+                      <Landmark className="h-5 w-5" />
+                      {!collapsed && "Listar Comisiones"}
+                    </Link>
+                  </li>
+                   <li>
+                    <Link
+                      to="/lugares/listar"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/lugares/listar"
+                      )}`}
+                    >
+                      <MapPin className="h-5 w-5" />
+                      {!collapsed && "Listar Lugares"}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/usuarios/mandatarios"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/usuarios/mandatarios"
+                      )}`}
+                    >
+                      <Signature className="h-5 w-5" />
+                      {!collapsed && "Listar Mandatarios"}
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            )}
 
-            {/* Sección: Gestión de Usuarios */}
-            <div>
-              {!collapsed && (
-                <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
-                  Gestión de Usuarios
-                </h2>
-              )}
-              <ul className="space-y-1">
-                <li>
-                  <Link
-                    to="/usuarios/crear"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/usuarios/crear"
-                    )}`}
-                  >
-                    <UserPlus className="h-5 w-5" />
-                    {!collapsed && "Crear Usuario"}
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/usuarios/listar"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/usuarios/listar"
-                    )}`}
-                  >
-                    <Users className="h-5 w-5" />
-                    {!collapsed && "Listar Usuarios"}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            {/* Sección: Gestión de Usuarios (Solo Admin) */}
+            {hasPermission(["Administrador"]) && (
+              <div>
+                {!collapsed && (
+                  <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
+                    Gestión de Usuarios
+                  </h2>
+                )}
+                <ul className="space-y-1">
+                  <li>
+                    <Link
+                      to="/usuarios/crear"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/usuarios/crear"
+                      )}`}
+                    >
+                      <UserPlus className="h-5 w-5" />
+                      {!collapsed && "Crear Usuario"}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/usuarios/listar"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/usuarios/listar"
+                      )}`}
+                    >
+                      <Users className="h-5 w-5" />
+                      {!collapsed && "Listar Usuarios"}
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            )}
 
-            {/* Sección: Configuración */}
-            <div>
-              {!collapsed && (
-                <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
-                  Configuración
-                </h2>
-              )}
-              <ul className="space-y-1">
-                <li>
-                  <Link
-                    to="/configuracion"
-                    className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
-                      "/configuracion"
-                    )}`}
-                  >
-                    <Settings className="h-5 w-5" />
-                    {!collapsed && "Configuración General"}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            {/* Sección: Configuración (Solo Admin) */}
+            {hasPermission(["Administrador"]) && (
+              <div>
+                {!collapsed && (
+                  <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
+                    Configuración
+                  </h2>
+                )}
+                <ul className="space-y-1">
+                  <li>
+                    <Link
+                      to="/configuracion"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/configuracion"
+                      )}`}
+                    >
+                      <Settings className="h-5 w-5" />
+                      {!collapsed && "Configuración General"}
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            )}
+
           </nav>
 
           {/* Botón colapsar */}
