@@ -13,7 +13,7 @@ import {
   obtenerMandatarios,
   actualizarEstadoFirma
 } from "../controllers/usuarioController.js";
-import { verificarAuth } from "../utils/authMiddleware.js";
+import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 
 const router = Router();
 
@@ -34,13 +34,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post("/", upload.single("Firma"), crearUsuario);
-router.get("/", verificarAuth, obtenerUsuarios);
-router.get("/mandatarios", verificarAuth, obtenerMandatarios);
+router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerUsuarios);
+router.get("/mandatarios", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerMandatarios);
 router.get("/verificar/:NumeroIdentificacion", verificarIdentificacion);
 router.get("/verificar-correo/:correo", verificarCorreo);
-router.get("/:NumeroIdentificacion", verificarAuth, obtenerUsuarioPorId);
-router.put("/:IDUsuario", verificarAuth, actualizarUsuario);
-router.delete("/:IDUsuario", verificarAuth, eliminarUsuario);
-router.patch("/:idUsuario/firma/estado", verificarAuth, actualizarEstadoFirma);
+router.get("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerUsuarioPorId);
+router.put("/:IDUsuario", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarUsuario);
+router.delete("/:IDUsuario", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarUsuario);
+router.patch("/:idUsuario/firma/estado", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarEstadoFirma);
 
 export default router;

@@ -135,6 +135,7 @@ export const loginUsuario = async (req, res) => {
                 id: user.numeroIdentificacion,
                 nombre: `${user.PrimerNombre} ${user.PrimerApellido}`,
                 correo: user.Correo,
+                rol: user.IDRol,
                 ultimo_inicio_sesion: user.ultimo_inicio_sesion
             },
         });

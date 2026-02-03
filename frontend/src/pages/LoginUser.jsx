@@ -101,7 +101,7 @@ export default function LoginUser() {
       const data = await response.json();
       console.log("Login exitoso:", data);
 
-      contextLogin();
+      contextLogin(data.user);
 
       AlertMessage.success("Inicio de sesión exitoso", "Bienvenido/a al sistema.");
 

@@ -1,13 +1,12 @@
 import { Router } from "express";
-import { verificarAuth } from "../utils/authMiddleware.js";
+import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import { obtenerComisiones, obtenerComisionPorId, crearComision, actualizarComision, eliminarComision } from "../controllers/comisionesController.js";
 const router = Router();
 
-router.get("/",  verificarAuth, obtenerComisiones);
-router.get("/:idcomision", verificarAuth, obtenerComisionPorId);
-router.post("/crearcomision", verificarAuth, crearComision);
-router.put("/:idcomision", verificarAuth, actualizarComision);
-router.delete("/:idcomision", verificarAuth, eliminarComision);
-
+router.get("/",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerComisiones);
+router.get("/:idcomision", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerComisionPorId);
+router.post("/crearcomision", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), crearComision);
+router.put("/:idcomision", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarComision);
+router.delete("/:idcomision", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarComision);
 
 export default router;

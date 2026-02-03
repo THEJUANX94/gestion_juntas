@@ -9,9 +9,9 @@ import {
 
 const router = Router();
 
-router.get("/",  verificarAuth, obtenerTiposJunta);
-router.get("/:idtipojunta",  verificarAuth, obtenerTipoJuntaPorId);
-router.delete("/:idtipojunta", verificarAuth, eliminarTipoJunta);
-router.post("/creartipojunta", verificarAuth, crearTipoJunta);
+router.get("/",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerTiposJunta);
+router.get("/:idtipojunta",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerTipoJuntaPorId);
+router.delete("/:idtipojunta", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarTipoJunta);
+router.post("/creartipojunta", verificarAuth, verificarRol([ROLES.ADMIN]), crearTipoJunta);
 
 export default router;

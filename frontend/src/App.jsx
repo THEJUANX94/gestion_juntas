@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import RoleRoute from "./components/RoleRoute";
+import { ROLES } from "./assets/roles";
 
 import MainLayout from "./layouts/MainLayout";
 import HomeLayout from "./layouts/HomeLayout";
@@ -43,11 +45,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route element={<HomeLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/validacionqr/:IDCertificado" element={<ValidacionQR/>} />
-            <Route path="/login" element={<LoginUser />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
+
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
@@ -59,18 +57,18 @@ export default function App() {
               <Route path="/juntas/:id/mandatario/buscar" element={<BuscarMandatario />} />
               <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
               <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
-              <Route path="/juntas/:idJunta/mandatario/editar-datos/:idUsuario" element={<EditarMandatarioExistente />}/>
-              <Route path="cargos/listar" element={<ListarCargos/>}/>
-              <Route path="/cargos/update/:id" element={<EditarCargo/>}/>
-              <Route path="comisiones/listar" element={<ListarComisiones/>} />
-              <Route path="comisiones/create" element={<CrearComision/>} />
-              <Route path="comisiones/update/:id" element={<EditarComision/>} />
-              <Route path="cargos/create" element={<CrearCargo/>} />
-              <Route path="instituciones/listar" element={<ListarInstituciones/>} />
-              <Route path="instituciones/create" element={<CrearInstitucion/>} />
-              <Route path="instituciones/update/:id" element={<EditarInstitucion/>} />
-              <Route path="instituciones/listar" element={<ListarInstituciones/>} />
-              <Route path="lugares/listar" element={<ListarLugares/>} />
+              <Route path="/juntas/:idJunta/mandatario/editar-datos/:idUsuario" element={<EditarMandatarioExistente />} />
+              <Route path="cargos/listar" element={<ListarCargos />} />
+              <Route path="/cargos/update/:id" element={<EditarCargo />} />
+              <Route path="comisiones/listar" element={<ListarComisiones />} />
+              <Route path="comisiones/create" element={<CrearComision />} />
+              <Route path="comisiones/update/:id" element={<EditarComision />} />
+              <Route path="cargos/create" element={<CrearCargo />} />
+              <Route path="instituciones/listar" element={<ListarInstituciones />} />
+              <Route path="instituciones/create" element={<CrearInstitucion />} />
+              <Route path="instituciones/update/:id" element={<EditarInstitucion />} />
+              <Route path="instituciones/listar" element={<ListarInstituciones />} />
+              <Route path="lugares/listar" element={<ListarLugares />} />
               <Route path="usuarios/listar" element={<ListarUser />} />
               <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
               <Route path="usuarios/crear" element={<CreateUser />} />
@@ -83,4 +81,82 @@ export default function App() {
       </AuthProvider>
     </Router >
   );
-} 
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          {/* Rutas Públicas */}
+          <Route element={<HomeLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/validacionqr/:IDCertificado" element={<ValidacionQR />} />
+            <Route path="/login" element={<LoginUser />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+          </Route>
+
+          {/* Rutas Protegidas (Requieren Login) */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<MainLayout />}>
+
+              {/* -----------------------------------------------------
+                  NIVEL 1: ACCESO TOTAL (Solo Listados para Consulta)
+                 ----------------------------------------------------- */}
+              <Route path="/juntas/consultar" element={<ConsultarJunta />} />
+              <Route path="/juntas/listar" element={<ListarJuntas />} />
+              <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
+              <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
+              <Route path="cargos/listar" element={<ListarCargos />} />
+              <Route path="comisiones/listar" element={<ListarComisiones />} />
+              <Route path="instituciones/listar" element={<ListarInstituciones />} />
+              <Route path="lugares/listar" element={<ListarLugares />} />
+              <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
+
+
+              {/* -----------------------------------------------------
+                  NIVEL 2: OPERATIVO (Admin y Auxiliar)
+                  Pueden Crear, Editar, Actualizar cosas de negocio
+                 ----------------------------------------------------- */}
+              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR]} />}>
+                <Route path="/juntas/crear" element={<CrearJunta />} />
+                <Route path="/juntas/:id/mandatario/crear" element={<CrearMandatario />} />
+                <Route path="/juntas/mandatario/editar/:id/:documento" element={<EditarMandatario />} />
+                <Route path="/juntas/:id/mandatario/buscar" element={<BuscarMandatario />} />
+                <Route path="/juntas/:idJunta/mandatario/editar-datos/:idUsuario" element={<EditarMandatarioExistente />} />
+                <Route path="/cargos/update/:id" element={<EditarCargo />} />
+                <Route path="cargos/create" element={<CrearCargo />} />
+                <Route path="comisiones/create" element={<CrearComision />} />
+                <Route path="comisiones/update/:id" element={<EditarComision />} />
+                <Route path="instituciones/create" element={<CrearInstitucion />} />
+                <Route path="instituciones/update/:id" element={<EditarInstitucion />} />
+              </Route>
+
+
+              {/* -----------------------------------------------------
+                  NIVEL 3: SOLO ADMIN (Configuración crítica)
+                 ----------------------------------------------------- */}
+              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN]} />}>
+                <Route path="usuarios/listar" element={<ListarUser />} />
+                <Route path="usuarios/crear" element={<CreateUser />} />
+                <Route path="usuarios/update/:id" element={<UpdateUser />} />
+                <Route path="configuracion" element={<Configuracion />} />
+                <Route path="logs" element={<Logs />} />
+              </Route>
+
+              {/* -----------------------------------------------------
+                  NIVEL 4: INFORMES (Admin, Auxiliar, Descarga, Consulta)
+                 ----------------------------------------------------- */}
+              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR, ROLES.DESCARGA, ROLES.CONSULTA]} />}>
+                {/* Si tienes una página específica de reportes/descargas, va aquí */}
+                {/* <Route path="/reportes" element={<ReportesPage />} /> */}
+              </Route>
+
+            </Route>
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </Router >
+  );
+}

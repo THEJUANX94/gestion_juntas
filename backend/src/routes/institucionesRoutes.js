@@ -1,13 +1,12 @@
 import { Router } from "express";
-import { verificarAuth } from "../utils/authMiddleware.js";
+import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import { crearInstitucion, eliminarInstitucion, obtenerInstituciones, obtenerInstitucionPorId, actualizarInstitucion} from '../controllers/institucionesController.js';
 
 const router = Router();
 
-router.get("/", verificarAuth, obtenerInstituciones);
-router.get("/:idinstitucion",  verificarAuth, obtenerInstitucionPorId);
-router.put("/:idinstitucion",  verificarAuth, actualizarInstitucion);
-router.delete("/:idinstitucion",  verificarAuth, eliminarInstitucion);
-router.post("/crearinstitucion", verificarAuth, crearInstitucion);
-
+router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerInstituciones);
+router.get("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerInstitucionPorId);
+router.put("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarInstitucion);
+router.delete("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN]), eliminarInstitucion);
+router.post("/crearinstitucion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), crearInstitucion);
 export default router;

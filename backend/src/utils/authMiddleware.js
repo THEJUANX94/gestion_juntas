@@ -19,16 +19,15 @@ export const verificarAuth = (req, res, next) => {
     }
 };
 
-const ID_ROL_ADMINISTRADOR = "43eaceea-ec3a-487f-92f5-82b4c3ae7507";
-
-export const verificarAdmin = (req, res, next) => {
+export const verificarRol = (rolesPermitidos) => {
+  return (req, res, next) => {
     if (!req.usuario) {
-        return res.status(401).json({ error: 'Debe estar autenticado para esta operación.' }); 
+      return res.status(401).json({ error: 'No autenticado.' });
     }
-    
-    if (req.usuario.rol !== ID_ROL_ADMINISTRADOR) {
-        return res.status(403).json({ error: 'Acceso prohibido. Se requiere rol de Administrador.' });
+    if (!rolesPermitidos.includes(req.usuario.rol)) {
+       return res.status(403).json({ error: 'No tienes permisos para realizar esta acción.' });
     }
-    
+
     next();
+  };
 };

@@ -8,9 +8,10 @@ export const AuthProviderContent = ({ children, navigate }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  const login = () => {
+  const login = (userData) => {
     setIsAuthenticated(true);
-    navigate("/asistencia", { replace: true });
+    setUser(userData);
+    navigate("/", { replace: true });
   };
 
   const logout = async () => {
@@ -34,7 +35,7 @@ export const AuthProviderContent = ({ children, navigate }) => {
       try {
         const res = await fetch(import.meta.env.VITE_PATH + "/auth/verify", {
           method: "GET",
-          credentials: "include", 
+          credentials: "include",
         });
 
         if (!res.ok) {
@@ -58,7 +59,7 @@ export const AuthProviderContent = ({ children, navigate }) => {
 
         if (data.valid) {
           setIsAuthenticated(true);
-          setUser(data.user); 
+          setUser(data.user);
         } else {
           setIsAuthenticated(false);
           setUser(null);

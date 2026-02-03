@@ -3,13 +3,17 @@ import { Search, Filter, User, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import useAuth from "../hooks/useAuth";
 
 export default function ListarComisiones() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [comisiones, setComisiones] = useState([]);
   const [showFilter, setShowFilter] = useState({ nombre: false });
   const [filtros, setFiltros] = useState({ nombre: "" });
+
+  const puedeEditar = user && PERMISOS.PUEDE_EDITAR.includes(user.rol);
 
   useEffect(() => {
     const fetchComisiones = async () => {
@@ -75,7 +79,11 @@ export default function ListarComisiones() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl" style={{ color: "var(--color-text-color-page)" }}>Listar Comisiones</h1>
         <div className="flex gap-2">
-          <button className="px-4 py-2 rounded bg-green-600 text-white" onClick={() => navigate('/comisiones/create')}>Crear Comisión</button>
+          {puedeEditar && (
+            <button className="px-4 py-2 rounded bg-green-600 text-white" onClick={() => navigate('/comisiones/create')}>
+              Crear Comisión
+            </button>
+          )}
         </div>
       </div>
 
@@ -121,8 +129,19 @@ export default function ListarComisiones() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      <button className="p-2 rounded hover:bg-gray-100" onClick={() => handleEdit(u)} title="Editar comisión"><Edit className="h-4 w-4 text-blue-600"/></button>
-                      <button className="p-2 rounded hover:bg-gray-100" onClick={() => handleDelete(u)} title="Eliminar comisión"><Trash2 className="h-4 w-4 text-red-600"/></button>
+                      {puedeEditar ? (
+                        <>
+                          <button className="..." onClick={() => handleEdit(u)} title="Editar comisión">
+                            <Edit className="h-4 w-4 text-blue-600" />
+                          </button>
+                          <button className="..." onClick={() => handleDelete(u)} title="Eliminar comisión">
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </button>
+                        </>
+                      ) : (
+                        // Opcional: Mostrar un candado o texto "Solo lectura"
+                        <span className="text-xs text-gray-400 italic">Solo lectura</span>
+                      )}
                     </div>
                   </td>
                 </tr>

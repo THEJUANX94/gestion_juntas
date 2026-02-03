@@ -7,14 +7,15 @@ import {
     eliminarPoblacionPorPersona,
     eliminarPoblacionesPorDocumento,
 } from "../controllers/poblacionesporpersonaController.js";
+import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 
 const router = Router();
 
-router.get("/", obtenerPoblacionesPorPersona);
-router.get("/:documento", obtenerPoblacionesPorDocumento);
-router.post("/", crearPoblacionPorPersona);
-router.put("/:documento/:idgrupo", actualizarPoblacionPorPersona);
-router.delete("/:documento/:idgrupo", eliminarPoblacionPorPersona);
-router.delete("/documento/:documento", eliminarPoblacionesPorDocumento);
+router.get("/",verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerPoblacionesPorPersona);
+router.get("/:documento", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerPoblacionesPorDocumento);
+router.post("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), crearPoblacionPorPersona);
+router.put("/:documento/:idgrupo", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarPoblacionPorPersona);
+router.delete("/:documento/:idgrupo", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarPoblacionPorPersona);
+router.delete("/documento/:documento", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarPoblacionesPorDocumento);
 
 export default router;
