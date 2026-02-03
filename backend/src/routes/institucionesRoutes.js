@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import { crearInstitucion, eliminarInstitucion, obtenerInstituciones, obtenerInstitucionPorId, actualizarInstitucion} from '../controllers/institucionesController.js';
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 

@@ -3,6 +3,7 @@ import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import {
   obtenerTipoDocumento
 } from "../controllers/tipoDocumentoController.js";
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 

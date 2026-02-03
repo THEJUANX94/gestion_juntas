@@ -14,6 +14,7 @@ import {
   actualizarEstadoFirma
 } from "../controllers/usuarioController.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 

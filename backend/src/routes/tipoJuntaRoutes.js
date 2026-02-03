@@ -6,6 +6,7 @@ import {
   eliminarTipoJunta,
   crearTipoJunta
 } from "../controllers/tipoJuntaController.js";
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 

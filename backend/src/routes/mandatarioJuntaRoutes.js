@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {getMiembrosJunta, crearMandatario, buscarMandatarios, agregarMandatarioExistente, validarMandatarioEnJunta, eliminarMandatario, actualizarMandatario, obtenerMandatario } from "../controllers/mandatarioJuntaController.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 

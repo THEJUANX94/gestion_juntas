@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { crearJunta, obtenerJuntas, obtenerJuntaPorId, actualizarJunta, eliminarJunta, obtenerTodasLasJuntas, exportarJuntasExcel, cambiarPeriodoJunta} from "../controllers/juntasController.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 

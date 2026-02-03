@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import { obtenerComisiones, obtenerComisionPorId, crearComision, actualizarComision, eliminarComision } from "../controllers/comisionesController.js";
+import { ROLES } from "../config/roles.js";
 const router = Router();
 
 router.get("/",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerComisiones);

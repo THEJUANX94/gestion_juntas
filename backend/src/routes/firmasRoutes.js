@@ -5,6 +5,7 @@ import {
   eliminarFirma,
 } from "../controllers/firmasController.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 

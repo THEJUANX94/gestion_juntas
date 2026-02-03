@@ -8,6 +8,7 @@ import {
     eliminarPoblacionesPorDocumento,
 } from "../controllers/poblacionesporpersonaController.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 

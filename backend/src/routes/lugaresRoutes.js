@@ -8,6 +8,7 @@ import {
   cambiarEstadoLugar,
   obtenerMunicipiosPorDepartamento,
 } from "../controllers/lugaresController.js";
+import { ROLES } from "../config/roles.js";
 
 const router = Router();
 
