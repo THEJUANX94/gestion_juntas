@@ -10,49 +10,58 @@ export default function ListarLugares() {
   const [filtros, setFiltros] = useState({ nombre: "", tipo: "", estado: "" });
 
   useEffect(() => {
-  const fetchLugares = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_PATH}/lugares/municipios?departamento=Boyacá`,
-        {
-          method: "GET",
-          credentials: "include",
+    const fetchLugares = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_PATH}/lugares/municipios?departamento=Boyacá`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
         }
-      );
-      
-      if (!res.ok) {
-        throw new Error(`Error ${res.status}: ${res.statusText}`);
+
+        const data = await res.json();
+
+        // Verifica que data sea un array
+        if (!Array.isArray(data)) {
+          console.error("La respuesta no es un array:", data);
+          AlertMessage.error("Error", "Formato de respuesta inválido.");
+          return;
+        }
+        // Filtrar municipios que pertenecen a Boyacá
+        const provinciasBoyacaIds = data
+          .filter(l => l.TipoLugar === "Provincia")
+          .map(p => p.IDLugar);
+        const soloMunicipiosBoyaca = data.filter(
+          l => l.TipoLugar === "Municipio" && provinciasBoyacaIds.includes(l.idotrolugar)
+        );
+
+        setMunicipiosFiltrados(soloMunicipiosBoyaca);
+
+        const transformados = soloMunicipiosBoyaca.map((l) => ({
+          IDLugar: l.IDLugar,
+          nombre: l.NombreLugar,
+          tipo: l.TipoLugar,
+          activo: l.Activo,
+        }));
+
+        setLugares(
+          transformados.sort((a, b) =>
+            a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
+          )
+        );
+      } catch (error) {
+        console.error("Error al cargar lugares:", error);
+        AlertMessage.error("Error", "No se pudieron cargar los lugares.");
+        setLugares([]);
       }
-      
-      const data = await res.json();
-      
-      // Verifica que data sea un array
-      if (!Array.isArray(data)) {
-        console.error("La respuesta no es un array:", data);
-        AlertMessage.error("Error", "Formato de respuesta inválido.");
-        return;
-      }
-      
-      const transformados = data.map((l) => ({
-        IDLugar: l.IDLugar,
-        nombre: l.NombreLugar,
-        tipo: l.TipoLugar,
-        activo: l.Activo,
-      }));
-      
-      setLugares(
-        transformados.sort((a, b) =>
-          a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
-        )
-      );
-    } catch (error) {
-      console.error("Error al cargar lugares:", error);
-      AlertMessage.error("Error", "No se pudieron cargar los lugares.");
-      setLugares([]);
-    }
-  };
-  fetchLugares();
-}, []);
+    };
+    fetchLugares();
+  }, []);
 
   const generalFiltered = lugares.filter((l) => {
     const texto = search.toLowerCase();
@@ -291,11 +300,10 @@ export default function ListarLugares() {
                   <td className="px-4 py-3">{lugar.tipo}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        lugar.activo
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${lugar.activo
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                        }`}
                     >
                       {lugar.activo ? "ACTIVO" : "INACTIVO"}
                     </span>
@@ -348,9 +356,8 @@ export default function ListarLugares() {
             {Array.from({ length: totalPages }).map((_, idx) => (
               <button
                 key={idx}
-                className={`px-3 py-1 rounded ${
-                  page === idx + 1 ? "bg-green-600 text-white" : "border"
-                }`}
+                className={`px-3 py-1 rounded ${page === idx + 1 ? "bg-green-600 text-white" : "border"
+                  }`}
                 onClick={() => setPage(idx + 1)}
               >
                 {idx + 1}
