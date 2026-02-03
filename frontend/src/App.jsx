@@ -44,50 +44,6 @@ export default function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          <Route element={<HomeLayout />}>
-
-          </Route>
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MainLayout />}>
-              <Route path="/juntas/crear" element={<CrearJunta />} />
-              <Route path="/juntas/consultar" element={<ConsultarJunta />} />
-              <Route path="/juntas/listar" element={<ListarJuntas />} />
-              <Route path="/juntas/:id/mandatario/crear" element={<CrearMandatario />} />
-              <Route path="/juntas/mandatario/editar/:id/:documento" element={<EditarMandatario />} />
-              <Route path="/juntas/:id/mandatario/buscar" element={<BuscarMandatario />} />
-              <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
-              <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
-              <Route path="/juntas/:idJunta/mandatario/editar-datos/:idUsuario" element={<EditarMandatarioExistente />} />
-              <Route path="cargos/listar" element={<ListarCargos />} />
-              <Route path="/cargos/update/:id" element={<EditarCargo />} />
-              <Route path="comisiones/listar" element={<ListarComisiones />} />
-              <Route path="comisiones/create" element={<CrearComision />} />
-              <Route path="comisiones/update/:id" element={<EditarComision />} />
-              <Route path="cargos/create" element={<CrearCargo />} />
-              <Route path="instituciones/listar" element={<ListarInstituciones />} />
-              <Route path="instituciones/create" element={<CrearInstitucion />} />
-              <Route path="instituciones/update/:id" element={<EditarInstitucion />} />
-              <Route path="instituciones/listar" element={<ListarInstituciones />} />
-              <Route path="lugares/listar" element={<ListarLugares />} />
-              <Route path="usuarios/listar" element={<ListarUser />} />
-              <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
-              <Route path="usuarios/crear" element={<CreateUser />} />
-              <Route path="usuarios/update/:id" element={<UpdateUser />} />
-              <Route path="configuracion" element={<Configuracion />} />
-              <Route path="logs" element={<Logs />} />
-            </Route>
-          </Route>
-        </Routes>
-      </AuthProvider>
-    </Router >
-  );
-}
-
-export default function App() {
-  return (
-    <Router>
-      <AuthProvider>
-        <Routes>
           {/* Rutas Públicas */}
           <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
