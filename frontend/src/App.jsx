@@ -70,7 +70,7 @@ export default function App() {
               <Route path="instituciones/listar" element={<ListarInstituciones />} />
               <Route path="lugares/listar" element={<ListarLugares />} />
               <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
-              <Route path="/cambio-contraseña" element={<ChangePassword />} />
+              <Route path="/changePassword" element={<ChangePassword />} />
 
               {/* -----------------------------------------------------
                   NIVEL 2: OPERATIVO (Admin y Auxiliar)
