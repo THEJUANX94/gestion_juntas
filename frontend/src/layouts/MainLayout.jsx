@@ -18,6 +18,13 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { PERMISOS, ROLES } from "../config/roles";
 
+const NOMBRE_ROLES = {
+  [ROLES.ADMIN]: "Administrador",
+  [ROLES.AUXILIAR]: "Auxiliar",
+  [ROLES.DESCARGA]: "Descarga",
+  [ROLES.CONSULTA]: "Consulta",
+};
+
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -140,7 +147,7 @@ export default function MainLayout() {
                       {user?.correo || ""}
                     </p>
                     <p className="text-xs text-blue-600 font-bold mt-1">
-                      {ROLES[user?.rol] || ""}
+                      {NOMBRE_ROLES[userRole] || "Rol no reconocido"}
                     </p>
                   </div>
                   <button
