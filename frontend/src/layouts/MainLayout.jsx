@@ -160,16 +160,9 @@ export default function MainLayout() {
                   >
                     <KeyRound className="h-4 w-4" /> Cambiar contraseña
                   </button>
-
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition border-t"
-                  >
-                    <LogOut className="h-4 w-4" /> Cerrar sesión
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition"
                   >
                     <LogOut className="h-4 w-4" /> Cerrar sesión
                   </button>
