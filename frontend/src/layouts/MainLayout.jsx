@@ -26,6 +26,7 @@ export default function MainLayout() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
+  console.log("Usuario en MainLayout:", user);
   const userRole =  user?.rol; 
 
   const hasPermission = (allowedRoles) => {
@@ -139,7 +140,7 @@ export default function MainLayout() {
                       {user?.correo || ""}
                     </p>
                     <p className="text-xs text-blue-600 font-bold mt-1">
-                      {userRole}
+                      {user?.rol || ""}
                     </p>
                   </div>
                   <button
