@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { PERMISOS } from "../config/roles";
+import { PERMISOS, ROLES } from "../config/roles";
 
 export default function MainLayout() {
   const location = useLocation();
@@ -27,7 +27,6 @@ export default function MainLayout() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
-  console.log("Usuario en MainLayout:", user);
   const userRole =  user?.rol; 
 
   const hasPermission = (permiso) => {
@@ -141,7 +140,7 @@ export default function MainLayout() {
                       {user?.correo || ""}
                     </p>
                     <p className="text-xs text-blue-600 font-bold mt-1">
-                      {user?.rol || ""}
+                      {ROLES[user?.rol] || ""}
                     </p>
                   </div>
                   <button
