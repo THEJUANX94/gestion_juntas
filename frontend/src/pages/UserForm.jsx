@@ -232,7 +232,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
       return false;
     }
 
-    if (form.NombreRol === "Administrador" && (!form.Usuario || !form.Contrasena)) {
+    if (["Administrador", "Consulta", "Auxiliar", "Descarga"].includes(form.NombreRol) && (!form.Usuario || !form.Contrasena)) {
       return false;
     }
 
@@ -299,7 +299,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
 
       await onSubmit(formData);
 
-      if (form.NombreRol === "Administrador") {
+      if (["Administrador", "Consulta", "Auxiliar", "Descarga"].includes(form.NombreRol)) {
         const credencialesData = {
           Usuario: form.Usuario,
           Contrasena: form.Contrasena,

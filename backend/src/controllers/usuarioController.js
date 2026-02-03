@@ -105,6 +105,7 @@ export const crearUsuario = async (req, res) => {
       });
     }
 
+    // 1. Crear el Usuario base
     const newUser = await Usuario.create({
       IDTipoDocumento: tipoDocumento.IDTipoDocumento,
       NumeroIdentificacion,
@@ -120,6 +121,7 @@ export const crearUsuario = async (req, res) => {
       Celular
     });
 
+    // 2. Lógica específica para Mandatario (Firma)
     if (isMandatario && firmaFile) {
       try {
         if (!fs.existsSync(firmasDir)) {
@@ -133,7 +135,6 @@ export const crearUsuario = async (req, res) => {
         fs.copyFileSync(firmaFile.path, destino);
         fs.unlinkSync(firmaFile.path); // Borra el archivo temporal original
 
-        // 3. Calcular ubicación relativa para la DB
         const ubicacionFirma = path.relative(process.cwd(), destino);
 
         await Firma.create({
@@ -151,10 +152,21 @@ export const crearUsuario = async (req, res) => {
       }
     }
 
-    if (NombreRol === "Administrador") {
+    // 3. Lógica para Credenciales (Administrador, Descarga, Consulta, Auxiliar)
+    // -----------------------------------------------------------------------
+    const rolesConCredenciales = ["Administrador", "Descarga", "Consulta", "Auxiliar"];
+
+    if (rolesConCredenciales.includes(NombreRol)) {
       try {
         const loginFinal = Login || Correo || NumeroIdentificacion;
         const passwordPlano = Contrasena || Contraseña;
+
+        // Validación extra: Si el rol requiere credenciales, debe haber contraseña
+        if (!passwordPlano) {
+             return res.status(400).json({ 
+                 message: `El rol ${NombreRol} requiere una contraseña obligatoria.` 
+             });
+        }
 
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(passwordPlano, saltRounds);
@@ -165,15 +177,18 @@ export const crearUsuario = async (req, res) => {
           Contraseña: hashedPassword
         });
 
-        console.log(`Credenciales creadas para Administrador (${loginFinal})`);
+        console.log(`Credenciales creadas para ${NombreRol} (${loginFinal})`);
       } catch (credError) {
         console.error("Error al crear credenciales:", credError);
+        // Opcional: Podrías querer borrar el usuario creado si fallan las credenciales
+        // await newUser.destroy(); 
         return res.status(500).json({
           message: "Usuario creado, pero error al crear credenciales",
           error: credError.message
         });
       }
     }
+    // -----------------------------------------------------------------------
 
     const userWithRole = await Usuario.findByPk(newUser.NumeroIdentificacion, {
       include: [{
