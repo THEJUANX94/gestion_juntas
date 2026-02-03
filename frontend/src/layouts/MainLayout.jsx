@@ -34,11 +34,11 @@ export default function MainLayout() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const userRole =  user?.rol; 
+  const userRole = user?.rol;
 
   const hasPermission = (permiso) => {
-  return permiso.includes(userRole);
-};
+    return permiso.includes(userRole);
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -151,11 +151,28 @@ export default function MainLayout() {
                     </p>
                   </div>
                   <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      navigate("/cambiar-password");
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                  >
+                    <KeyRound className="h-4 w-4" /> Cambiar contraseña
+                  </button>
+
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition border-t"
+                  >
+                    <LogOut className="h-4 w-4" /> Cerrar sesión
+                  </button>
+                  <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition"
                   >
                     <LogOut className="h-4 w-4" /> Cerrar sesión
                   </button>
+
                 </div>
               )}
             </div>
@@ -167,12 +184,11 @@ export default function MainLayout() {
       <div className="flex flex-1">
         {/* SIDEBAR */}
         <aside
-          className={`${
-            collapsed ? "w-20" : "w-64"
-          } transition-all duration-300 border-r shadow-sm bg-white`}
+          className={`${collapsed ? "w-20" : "w-64"
+            } transition-all duration-300 border-r shadow-sm bg-white`}
         >
           <nav className="p-4 space-y-6">
-            
+
             {/* Sección: Gestión de Juntas (Admin y Auxiliar) */}
             {hasPermission(PERMISOS.PUEDE_EDITAR) && (
               <div>
@@ -261,7 +277,7 @@ export default function MainLayout() {
                       {!collapsed && "Listar Comisiones"}
                     </Link>
                   </li>
-                   <li>
+                  <li>
                     <Link
                       to="/lugares/listar"
                       className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
