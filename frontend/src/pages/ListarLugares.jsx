@@ -8,6 +8,7 @@ export default function ListarLugares() {
   const [lugares, setLugares] = useState([]);
   const [showFilter, setShowFilter] = useState({ nombre: false, tipo: false, estado: false });
   const [filtros, setFiltros] = useState({ nombre: "", tipo: "", estado: "" });
+  const [municipiosFiltrados, setMunicipiosFiltrados] = useState([]);
 
   useEffect(() => {
     const fetchLugares = async () => {
