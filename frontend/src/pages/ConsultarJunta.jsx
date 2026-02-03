@@ -189,11 +189,11 @@ export default function ConsultarJunta() {
                             </label>
                             <Select
                                 options={opcionesMunicipios}
-                                value={opcionesMunicipios.find(o => o.value === formData.idMunicipio)}
+                                value={opcionesMunicipios.find(o => o.value === filtros.municipio)}
                                 onChange={(selected) =>
-                                    setFormData(prev => ({ ...prev, idMunicipio: selected?.value }))
+                                    setFiltros(prev => ({ ...prev, municipio: selected.value }))
                                 }
-                                placeholder="Selecciona un municipio de Boyacá..."
+                                placeholder="Selecciona un municipio..."
                                 isSearchable={true}
                                 className="text-black"
                             />
