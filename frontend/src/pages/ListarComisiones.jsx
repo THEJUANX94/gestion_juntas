@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import useAuth from "../hooks/useAuth";
+import { ROLES } from "../config/roles";
 
 export default function ListarComisiones() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function ListarComisiones() {
   const [showFilter, setShowFilter] = useState({ nombre: false });
   const [filtros, setFiltros] = useState({ nombre: "" });
 
-  const puedeEditar = user && PERMISOS.PUEDE_EDITAR.includes(user.rol);
+  const puedeEditar = user && ROLES.PUEDE_EDITAR.includes(user.rol);
 
   useEffect(() => {
     const fetchComisiones = async () => {
