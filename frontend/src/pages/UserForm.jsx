@@ -506,7 +506,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
                 )}
               </div>
             )}
-            {form.NombreRol === "Administrador" && (
+            {["Administrador", "Consulta", "Auxiliar", "Descarga"].includes(form.NombreRol) && (
               <div>
                 <label className="text-sm font-medium block mb-1">
                   Usuario <span className="text-red-500">*</span>
