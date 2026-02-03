@@ -8,18 +8,14 @@ export default function ListarLugares() {
   const [lugares, setLugares] = useState([]);
   const [showFilter, setShowFilter] = useState({ nombre: false, tipo: false, estado: false });
   const [filtros, setFiltros] = useState({ nombre: "", tipo: "", estado: "" });
-  const [municipiosFiltrados, setMunicipiosFiltrados] = useState([]);
 
   useEffect(() => {
     const fetchLugares = async () => {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_PATH}/lugares/municipios?departamento=Boyacá`,
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
+        const res = await fetch(`${import.meta.env.VITE_PATH}/lugares`, {
+          method: "GET",
+          credentials: "include",
+        });
 
         if (!res.ok) {
           throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -27,40 +23,47 @@ export default function ListarLugares() {
 
         const data = await res.json();
 
-        // Verifica que data sea un array
         if (!Array.isArray(data)) {
           console.error("La respuesta no es un array:", data);
-          AlertMessage.error("Error", "Formato de respuesta inválido.");
           return;
         }
-        // Filtrar municipios que pertenecen a Boyacá
-        const provinciasBoyacaIds = data
-          .filter(l => l.TipoLugar === "Provincia")
-          .map(p => p.IDLugar);
-        const soloMunicipiosBoyaca = data.filter(
-          l => l.TipoLugar === "Municipio" && provinciasBoyacaIds.includes(l.idotrolugar)
+
+        const deptoBoyaca = data.find(
+          (l) => l.NombreLugar.toUpperCase() === "BOYACA" || l.NombreLugar.toUpperCase() === "BOYACÁ"
         );
 
-        setMunicipiosFiltrados(soloMunicipiosBoyaca);
+        if (!deptoBoyaca) {
+          console.warn("No se encontró el departamento de Boyacá en la base de datos");
+          setLugares([]);
+          return;
+        }
 
-        const transformados = soloMunicipiosBoyaca.map((l) => ({
-          IDLugar: l.IDLugar,
-          nombre: l.NombreLugar,
-          tipo: l.TipoLugar,
-          activo: l.Activo,
-        }));
+        const provinciasIds = data
+          .filter((l) => l.TipoLugar === "Provincia" && l.idotrolugar === deptoBoyaca.IDLugar)
+          .map((p) => p.IDLugar);
 
-        setLugares(
-          transformados.sort((a, b) =>
-            a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
-          )
+        const municipiosBoyaca = data
+          .filter((l) => l.TipoLugar === "Municipio" && provinciasIds.includes(l.idotrolugar))
+          .map((m) => ({
+            IDLugar: m.IDLugar,
+            nombre: m.NombreLugar,
+            tipo: m.TipoLugar,
+            activo: m.Activo,
+          }));
+
+        const ordenados = municipiosBoyaca.sort((a, b) =>
+          a.nombre.localeCompare(b.nombre, "es", { sensitivity: "base" })
         );
+
+        setLugares(ordenados);
+
       } catch (error) {
         console.error("Error al cargar lugares:", error);
-        AlertMessage.error("Error", "No se pudieron cargar los lugares.");
+        AlertMessage.error("Error", "No se pudieron cargar los lugares de Boyacá.");
         setLugares([]);
       }
     };
+
     fetchLugares();
   }, []);
 
@@ -302,8 +305,8 @@ export default function ListarLugares() {
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${lugar.activo
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
                         }`}
                     >
                       {lugar.activo ? "ACTIVO" : "INACTIVO"}
