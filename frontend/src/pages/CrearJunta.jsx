@@ -63,10 +63,12 @@ export default function CrearJunta() {
     fetchData();
   }, []);
 
-  const opcionesMunicipios = municipiosFiltrados.map(m => ({
-    value: m.IDLugar,
-    label: m.NombreLugar,
-  }));
+  const opcionesMunicipios = municipiosFiltrados
+    .map(m => ({
+      value: m.IDLugar,
+      label: m.NombreLugar,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 
   // ==========================
   // Manejo de inputs
