@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
+import { PERMISOS } from "../config/roles";
 
 export default function MainLayout() {
   const location = useLocation();
@@ -29,9 +30,9 @@ export default function MainLayout() {
   console.log("Usuario en MainLayout:", user);
   const userRole =  user?.rol; 
 
-  const hasPermission = (allowedRoles) => {
-    return allowedRoles.includes(userRole);
-  };
+  const hasPermission = (permiso) => {
+  return permiso.includes(userRole);
+};
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -110,7 +111,7 @@ export default function MainLayout() {
             </a>
 
             {/* Configuración en Header: Solo Admin */}
-            {hasPermission(["Administrador"]) && (
+            {hasPermission(PERMISOS.SOLO_ADMIN) && (
               <button
                 onClick={() => navigate("/configuracion")}
                 className="p-2 rounded-full hover:bg-[var(--color-hover-bg)] text-[var(--color-text-color-upper)]"
@@ -167,7 +168,7 @@ export default function MainLayout() {
           <nav className="p-4 space-y-6">
             
             {/* Sección: Gestión de Juntas (Admin y Auxiliar) */}
-            {hasPermission(["Administrador", "Auxiliar"]) && (
+            {hasPermission(PERMISOS.PUEDE_EDITAR) && (
               <div>
                 {!collapsed && (
                   <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
@@ -213,7 +214,7 @@ export default function MainLayout() {
             )}
 
             {/* Sección: Consultas Generales */}
-            {hasPermission(["Administrador", "Auxiliar", "Consulta"]) && (
+            {hasPermission(PERMISOS.PUEDE_CONSULTAR) && (
               <div>
                 {!collapsed && (
                   <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
@@ -281,7 +282,7 @@ export default function MainLayout() {
             )}
 
             {/* Sección: Gestión de Usuarios (Solo Admin) */}
-            {hasPermission(["Administrador"]) && (
+            {hasPermission(PERMISOS.SOLO_ADMIN) && (
               <div>
                 {!collapsed && (
                   <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
@@ -316,7 +317,7 @@ export default function MainLayout() {
             )}
 
             {/* Sección: Configuración (Solo Admin) */}
-            {hasPermission(["Administrador"]) && (
+            {hasPermission(PERMISOS.SOLO_ADMIN) && (
               <div>
                 {!collapsed && (
                   <h2 className="font-semibold mb-2 text-gray-600 uppercase text-sm tracking-wide">
