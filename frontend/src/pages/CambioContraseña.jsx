@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { KeyRound, Save, ArrowLeft, Eye, EyeOff } from 'lucide-react';
-import Swal from 'sweetalert2'; // Opcional para alertas bonitas
+import Swal from 'sweetalert2';
 
 export default function ChangePassword() {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export default function ChangePassword() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_PATH}/usuarios/cambiar-password`, {
+      const response = await fetch(`${import.meta.env.VITE_PATH}/login/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,8 +65,8 @@ export default function ChangePassword() {
 
       <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <KeyRound className="h-6 w-6 text-blue-600" />
+          <div className="p-2 bg-green-50 rounded-lg">
+            <KeyRound className="h-6 w-6 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-800">Cambiar Contraseña</h2>
         </div>
@@ -123,7 +123,7 @@ export default function ChangePassword() {
             type="submit"
             disabled={loading}
             className={`w-full flex justify-center items-center gap-2 py-3 px-4 rounded-lg font-semibold text-white transition ${
-              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200'
+              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200'
             }`}
           >
             <Save className="h-5 w-5" />

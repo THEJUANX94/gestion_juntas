@@ -287,3 +287,69 @@ export const resetPassword = async (req, res) => {
         });
     }
 };
+
+export const ChangePassword = async (req, res) => {
+    // El frontend ahora envía estos datos en el cuerpo de la solicitud (req.body)
+    const { numeroIdentificacion, newPassword } = req.body;
+
+    console.log(`[RESET] Solicitud de restablecimiento directa para ID: ${numeroIdentificacion}`);
+
+    // 1. Validaciones de entrada
+    if (!numeroIdentificacion) {
+        return res.status(400).json({ message: 'El número de identificación es requerido.' });
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+        console.error("[RESET] Error: Contraseña no cumple el mínimo de 8 caracteres.");
+        return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres.' });
+    }
+
+    try {
+        // 2. Buscar la credencial por numeroIdentificacion
+        const credencial = await Credenciales.findOne({
+            where: { numeroIdentificacion: numeroIdentificacion }
+        });
+
+        if (!credencial) {
+            console.error(`[RESET] Error: Credencial no encontrada para IDUsuario: ${numeroIdentificacion}`);
+            return res.status(404).json({ message: 'Usuario no encontrado en el sistema.' });
+        }
+
+        console.log(`[RESET] Credencial encontrada. Hasheando nueva contraseña...`);
+
+        // 3. Hashear la nueva contraseña
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // 4. Actualizar y guardar
+        credencial.Contraseña = hashedPassword;
+        await credencial.save();
+
+        console.log(`[RESET] ÉXITO: Contraseña actualizada para IDUsuario: ${numeroIdentificacion}`);
+
+        // 5. Registrar la operación
+        logOperation(
+            "RESET_PASSWORD_SUCCESS",
+            { numeroIdentificacion: numeroIdentificacion },
+            { message: `Contraseña restablecida exitosamente para usuario ID: ${numeroIdentificacion}` },
+            "info"
+        );
+
+        res.status(200).json({ message: 'Contraseña restablecida con éxito.' });
+
+    } catch (error) {
+        console.error(`[RESET] ERROR CRÍTICO en resetPassword: ${error.message}`);
+
+        logOperation(
+            "RESET_PASSWORD_ERROR",
+            { numeroIdentificacion: numeroIdentificacion || 'N/A' },
+            { error: error.message },
+            "error"
+        );
+
+        res.status(500).json({
+            message: 'Ocurrió un error interno al intentar restablecer la contraseña.',
+            error: error.message
+        });
+    }
+};
