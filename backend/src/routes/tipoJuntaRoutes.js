@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verificarAuth } from "../utils/authMiddleware.js";
+import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import {
   obtenerTiposJunta,
   obtenerTipoJuntaPorId,
