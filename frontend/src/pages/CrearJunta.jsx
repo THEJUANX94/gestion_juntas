@@ -37,7 +37,7 @@ export default function CrearJunta() {
 
         const lugaresData = await resLugares.json();
         const deptoBoyaca = lugaresData.find(
-          l => l.NombreLugar.toUpperCase() === "BOYACA" && l.TipoLugar === "Departamento"
+          l => l.NombreLugar === "Boyacá" && l.TipoLugar === "Departamento"
         );
 
         if (deptoBoyaca) {
