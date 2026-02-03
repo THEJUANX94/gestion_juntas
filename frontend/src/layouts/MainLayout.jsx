@@ -154,7 +154,7 @@ export default function MainLayout() {
                   <button
                     onClick={() => {
                       setShowUserMenu(false);
-                      navigate("/cambiar-password");
+                      navigate("/cambiar-contraseña");
                     }}
                     className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
                   >
