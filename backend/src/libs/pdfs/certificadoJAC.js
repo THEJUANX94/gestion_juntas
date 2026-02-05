@@ -108,23 +108,23 @@ const generarResolucionJAC = async (datosCertificado) => {
   // Artículos
   const articulos = [
     {
-      titulo: "ARTÍCULO .-",
+      titulo: "ARTÍCULO PRIMERO.-",
       cuerpo: `Reconocer PERSONERÍA JURÍDICA A LA ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ.`
     },
     {
-      titulo: "ARTÍCULO .-",
+      titulo: "ARTÍCULO SEGUNDO.-",
       cuerpo: `Inscribir los Estatutos de la ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ.`
     },
     {
-      titulo: "ARTÍCULO .-",
+      titulo: "ARTÍCULO TERCERO.-",
       cuerpo: "Efectuar la inscripción de dicha PERSONERÍA JURÍDICA en los libros que para este fin se llevan en la Dirección de Participación y Acción Comunal de la Secretaría de Gobierno y Acción Comunal de la Gobernación de Boyacá."
     },
     {
-      titulo: "ARTÍCULO .-",
+      titulo: "ARTÍCULO CUARTO.-",
       cuerpo: `Registrar como Representante Legal de la ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ, a ${genero} ${nombrePresidente}, ${identificado} con cédula de ciudadanía No. ${cedulaPresidente} de ${municipio}, Presidente de la misma.`
     },
     {
-      titulo: "ARTÍCULO .-",
+      titulo: "ARTÍCULO QUINTO.-",
       cuerpo: "La presente Resolución rige a partir de la fecha de su expedición."
     }
   ];
@@ -144,9 +144,9 @@ const generarResolucionJAC = async (datosCertificado) => {
     doc.setFont('helvetica', 'normal');
     doc.text(linesCompleto, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
     
-    // 2. Luego dibujamos SOLO el título en negrita ENCIMA
+    /*// 2. Luego dibujamos SOLO el título en negrita ENCIMA
     doc.setFont('helvetica', 'bold');
-    doc.text(art.titulo, margenIzq, yPos);
+    doc.text(art.titulo, margenIzq, yPos);*/
     
     // Avanzar posición
     yPos += (linesCompleto.length * 5) + 6;
