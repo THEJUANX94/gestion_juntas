@@ -1,183 +1,174 @@
 import {
   createDoc,
   addPDFHeader,
-  addPDFFooer, // Nota: Mantengo el nombre tal cual está en tu import (Fooer)
+  addPDFFooer,
   centerText,
   checkPageBreak,
-  DEFAULTS,
-  loadResources
+  DEFAULTS
 } from '../pdfBase.js';
 
-const generarCertificadoJAC = async (datosCertificado) => {
+const generarResolucionJAC = async (datosCertificado) => {
   const doc = createDoc();
 
-  // --- MAPEO DE DATOS CON VALORES POR DEFECTO ---
-  // Extraemos datos basándonos en el contenido de JAC.pdf [cite: 6, 7]
+  // --- 1. PREPARACIÓN DE VARIABLES ---
   const municipio = (datosCertificado.NombreMunicipio).toUpperCase();
   const nombreOrganizacion = (datosCertificado.nombreOrganizacion).toUpperCase();
-  const personeriaNumero = datosCertificado.personeriaNumero;
-  const personeriaFecha = datosCertificado.personeriaFecha;
-  const entidadExpidePersoneria = datosCertificado.entidadExpide;
-  const tipodocumento = datosCertificado.TipoCertificado
+  const tipoOrganismo = (datosCertificado.tipoOrganismo).toUpperCase();
   
-  // Datos de fechas y validez [cite: 9, 11]
-  const fechaVencimiento = datosCertificado.periodoFin || "2026-06-30";
-  const fechaActual = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  // Datos del Presidente (Nuevos campos requeridos) 
+  const nombrePresidente = (datosCertificado.nombrePresidente).toUpperCase();
+  const cedulaPresidente = datosCertificado.cedulaPresidente;
+  
+  // Configuración de Fechas y Año
+  const anioResolucion = "2026";
   const ciudadExpedicion = "Tunja";
-
+  
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
-  const anchoUtil = 210 - margenIzq - margenDer; 
+  const anchoUtil = 210 - margenIzq - margenDer;
+  
+  let yPos = 50; // Posición inicial tras el header
 
-  let yPos = 50; // Posición vertical inicial
-
-  // --- CARGAR RECURSOS Y AGREGAR HEADER ---
-  // Se asume que usa el mismo header institucional [cite: 1, 2, 3]
+  // --- 2. HEADER Y LOGOS ---
   const resources = await addPDFHeader(doc, datosCertificado);
 
-  // --- PREÁMBULO LEGAL ---
-  // Texto extraído de [cite: 4]
-  const preambulo = "El(A) Director(a) de Participación y Accion Comunal en uso de sus facultades legales y en especial las que le confiere la ley 52 de 1990, la ley 2166 del 18 de diciembre de 2021 y el Decreto 1066 del 2015 y Decreto Departamental 076 de 30 de Enero de 2019.";
+  // --- 3. TÍTULO DE LA RESOLUCIÓN ---
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  centerText(doc, `RESOLUCIÓN NÚMERO                      DE ${anioResolucion}`, yPos);
+  yPos += 6;
   
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  const linesPreambulo = doc.splitTextToSize(preambulo, anchoUtil);
-  
-  // Verificación de salto de página
-  let result = checkPageBreak(doc, yPos, (linesPreambulo.length * 5) + 5);
-  yPos = result.yPos;
-  
-  doc.text(linesPreambulo, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-  yPos += (linesPreambulo.length * 5) + 10;
-
-  // --- TÍTULO ---
-  // [cite: 5]
-  centerText(doc, "CERTIFICA:", yPos, 12, 'bold');
+  centerText(doc, "(                                               )", yPos);
   yPos += 10;
 
-  // --- CUERPO DE LA CERTIFICACIÓN ---
-  // Texto extraído de [cite: 6]
-  const textoCertifica = `Que la ${tipodocumento} del municipio de ${municipio}, Departamento de Boyacá, cuenta con Personería Juridica otorgada mediante resolución No.${personeriaNumero} de fecha ${personeriaFecha}, expedida por ${entidadExpidePersoneria}.`;
+  // Objeto de la Resolución [cite: 6]
+  const tituloObjeto = `POR LA CUAL SE RECONOCE PERSONERÍA JURÍDICA A LA ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio} DEPARTAMENTO DE BOYACÁ`;
+  const linesTitulo = doc.splitTextToSize(tituloObjeto, anchoUtil);
+  
+  linesTitulo.forEach(line => {
+    centerText(doc, line, yPos);
+    yPos += 5;
+  });
+  yPos += 5;
+
+  // --- 4. AUTORIDAD COMPETENTE ---
+  // [cite: 7, 8]
+  centerText(doc, "EL DIRECTOR DE PARTICIPACIÓN Y ACCIÓN COMUNAL", yPos);
+  yPos += 8;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  const linesCertifica = doc.splitTextToSize(textoCertifica, anchoUtil);
+  const textoFacultades = "En uso de sus facultades legales y en especial las que confiere la Ley 52 de 1990, Ley 2166 de 18 de diciembre de 2021, Decreto 1501 del 13 de septiembre de 2023, Decreto 1066 del 26 de mayo de 2015, Decreto Departamental 076 de 30 de enero de 2019 y";
   
-  result = checkPageBreak(doc, yPos, (linesCertifica.length * 5) + 5);
-  yPos = result.yPos;
+  const linesFacultades = doc.splitTextToSize(textoFacultades, anchoUtil);
+  doc.text(linesFacultades, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
+  yPos += (linesFacultades.length * 5) + 5;
 
-  doc.text(linesCertifica, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-  yPos += (linesCertifica.length * 5) + 10;
-
-  // --- TABLA DE DIGNATARIOS ---
-  // Replicando la estructura de tabla de [cite: 7] pero iterando como en tu ejemplo
-  
-  // Encabezados de tabla simulada
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  
-  // Definición de columnas (X coordinates)
-  const colCargo = margenIzq;
-  const colNombre = margenIzq + 50;
-  const colDoc = margenIzq + 110;
-  const colExp = margenIzq + 140;
-
-  // Dibujar encabezados
-  result = checkPageBreak(doc, yPos, 10);
-  yPos = result.yPos;
-  
-  doc.text("CARGO", colCargo, yPos);
-  doc.text("NOMBRE Y APELLIDO", colNombre, yPos);
-  doc.text("DOCUMENTO", colDoc, yPos);
-  doc.text("EXPEDIDO EN", colExp, yPos);
-  
-  yPos += 2;
-  doc.line(margenIzq, yPos, 210 - margenDer, yPos); // Línea separadora
-  yPos += 5;
-
+  // --- 5. CONSIDERANDOS (CONSIDERANDO) ---
+  // [cite: 9]
+  centerText(doc, "CONSIDERANDO:", yPos, 10, 'bold');
+  yPos += 8;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
 
-  // Iteración de datos (Dignatarios) [cite: 7, 8]
-  if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
-    datosCertificado.dignatarios.forEach(d => {
-      // Calculamos altura necesaria (el nombre o cargo pueden ser largos)
-      const cargoLines = doc.splitTextToSize(d.cargo || '', 45);
-      const nombreLines = doc.splitTextToSize(d.nombre || '', 55);
-      const alturaFila = Math.max(cargoLines.length, nombreLines.length) * 5;
+  // Párrafo 1: Solicitud del Presidente
+  const txtConsiderando1 = `Que la señora ${nombrePresidente}, identificada con cédula de ciudadanía No. ${cedulaPresidente} de ${municipio}, en calidad de PRESIDENTE DE LA ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ solicitó a esta Dependencia se le reconozca PERSONERÍA JURÍDICA, comprometiéndose a cumplir con todas las normas vigentes que reglamentan a los Organismos Comunales.`;
 
-      result = checkPageBreak(doc, yPos, alturaFila + 2);
-      yPos = result.yPos;
-
-      doc.text(cargoLines, colCargo, yPos);
-      doc.text(nombreLines, colNombre, yPos);
-      doc.text(d.cedula || '', colDoc, yPos); // Mapeado de "DOCUMENTO"
-      doc.text(d.expedidoEn || '', colExp, yPos); // Mapeado de "EXPEDIDO EN"
-
-      yPos += alturaFila + 2;
-    });
-  } else {
-    doc.text('[SIN REGISTRO DE DIGNATARIOS ACTIVOS]', margenIzq, yPos);
-    yPos += 10;
-  }
+  // Párrafo 2: Anexos [cite: 11]
+  const txtConsiderando2 = "Que igualmente anexa a esta solicitud Acta No.01 de fecha 29 de septiembre de 2024 de constitución y aprobación de estatutos y Acta No. 02 de fecha 31 de octubre de 2024 de elección de Dignatarios;";
   
-  yPos += 5;
+  // Párrafo 3: Listados [cite: 12]
+  const txtConsiderando3 = "Listado de afiliados y Certificación del Secretario de Planeación del Municipio de Santana Boyacá.";
 
-  // --- CIERRE DEL TEXTO ---
-  // Textos finales extraídos de [cite: 8, 9, 10, 11]
-  const parrafosFinales = [
-    "Que fueron inscritos como dignatarios de dicha organización:",
-    `Que el periodo de los actuales dignatarios vence ${fechaVencimiento}`,
-    "Esta constancia es valida por el termino de 6 (seis) meses.",
-    "Se expide con el fin de adelantar tramites de la junta."
-  ];
+  // Párrafo 4: Estudio Jurídico [cite: 13]
+  const txtConsiderando4 = "Que estudiada la documentación se encontró acorde con lo preceptuado en la Ley 52 del 28 de Diciembre de 1990, 2166 de 18 de diciembre de 2021, Decreto 1501 del 13 de septiembre de 2023, Decreto 1066 del 26 de mayo de 2015 y demás normas vigentes que reglamentan a las Organizaciones Comunales.";
 
-  doc.setFontSize(10);
-  
-  parrafosFinales.forEach(parrafo => {
-    const lines = doc.splitTextToSize(parrafo, anchoUtil);
-    result = checkPageBreak(doc, yPos, (lines.length * 5) + 3);
+  // Párrafo 5: Mérito [cite: 14]
+  const txtConsiderando5 = "Que en mérito de lo expuesto, el Director de Participación y Acción Comunal de la Secretaría de Gobierno y Acción Comunal de la Gobernación de Boyacá,";
+
+  const considerandos = [txtConsiderando1, txtConsiderando2, txtConsiderando3, txtConsiderando4, txtConsiderando5];
+
+  considerandos.forEach((texto) => {
+    const lines = doc.splitTextToSize(texto, anchoUtil);
+    let result = checkPageBreak(doc, yPos, (lines.length * 5) + 5);
     yPos = result.yPos;
-    doc.text(lines, margenIzq, yPos);
-    yPos += (lines.length * 5) + 2;
+    doc.text(lines, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
+    yPos += (lines.length * 5) + 5;
   });
 
-  yPos += 5;
-  
-  // Fecha y Lugar [cite: 11]
-  const textoFecha = `Dada en ${ciudadExpedicion} el dia: ${datosCertificado.fechaExpedicion || fechaActual}`;
-  result = checkPageBreak(doc, yPos, 10);
-  yPos = result.yPos;
-  doc.text(textoFecha, margenIzq, yPos);
-  yPos += 10;
+  // --- 6. PARTE RESOLUTIVA (RESUELVE) ---
+  centerText(doc, "RESUELVE:", yPos, 10, 'bold');
+  yPos += 8;
 
-  // --- FIRMA (Footer principal) ---
-  // [cite: 12]
+  // Artículos [cite: 16, 17, 18, 19, 20]
+  const articulos = [
+    {
+      titulo: "ARTÍCULO PRIMERO.-",
+      cuerpo: `Reconocer PERSONERÍA JURÍDICA A LA ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ`
+    },
+    {
+      titulo: "ARTICULO SEGUNDO.-",
+      cuerpo: `Inscribir los Estatutos de la ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ.`
+    },
+    {
+      titulo: "ARTÍCULO TERCERO.-",
+      cuerpo: "Efectuar la inscripción de dicha PERSONERÍA JURÍDICA en los libros que para este fin se llevan en la Dirección de Participación y Acción Comunal de la Secretaría de Gobierno y Acción Comunal de la Gobernación de Boyacá."
+    },
+    {
+      titulo: "ARTICULO CUARTO.-", // Aquí va el Representante Legal (Presidente) [cite: 19]
+      cuerpo: `Registrar como Representante Legal de la ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ, a la señora ${nombrePresidente}, identificada con cédula de ciudadanía No. ${cedulaPresidente} de ${municipio}, Presidente de la misma.`
+    },
+    {
+      titulo: "ARTÍCULO QUINTO.-",
+      cuerpo: "La presente Resolución rige a partir de la fecha de su expedición."
+    }
+  ];
+
+  articulos.forEach((art) => {
+    doc.setFont('helvetica', 'bold');
+    const titleWidth = doc.getTextWidth(art.titulo);
+    
+    // Verificamos si todo el bloque cabe, si no, salto de página
+    const cuerpoLines = doc.splitTextToSize(art.cuerpo, anchoUtil);
+    const alturaBloque = (cuerpoLines.length * 5) + 5;
+    
+    let result = checkPageBreak(doc, yPos, alturaBloque);
+    yPos = result.yPos;
+
+    // Dibujamos título en Negrita
+    doc.text(art.titulo, margenIzq, yPos);
+    
+    // Dibujamos cuerpo en Normal, a continuación del título (o debajo si es muy largo, pero usualmente sigue)
+    doc.setFont('helvetica', 'normal');
+    // Para que quede seguido: "ARTICULO X.- Texto..."
+    // Calculamos dónde empieza el texto normal
+    const indent = margenIzq + titleWidth + 2; 
+    
+    
+    // Simplificación para visualización limpia: Título y texto seguido.
+    const textoCompleto = `${art.titulo}  ${art.cuerpo}`;
+    const linesCompleto = doc.splitTextToSize(textoCompleto, anchoUtil);
+    
+    doc.text(linesCompleto, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
+    
+    // Re-dibujamos solo el título en Bold encima para que resalte
+    doc.setFont('helvetica', 'bold');
+    doc.text(art.titulo, margenIzq, yPos);
+    
+    yPos += (linesCompleto.length * 5) + 5;
+  });
+
+  // --- 7. NOTIFICACIÓN Y FIRMA ---
+  // [cite: 21]
+  yPos += 5;
+  centerText(doc, "NOTIFIQUESE Y CUMPLASE", yPos, 10, 'bold');
+  yPos += 15;
+
   addPDFFooer(
     doc,
-    resources.nombreFirmante || "OLGA LUCIA SOTO GONZALEZ",
-    resources.cargoFirmante || "DIRECTORA DE PARTICIPACION Y ACCION COMUNAL",
+    resources.nombreFirmante,
+    resources.cargoFirmante,
     resources.base64Firma,
-    altoPagina - margenInf - 40
+    yPos
   );
-
-  // --- METADATA DE ELABORACIÓN (Pie de página inferior) ---
-  // Replica la sección inferior izquierda del PDF [cite: 13, 14, 15, 16]
-  const yMeta = altoPagina - margenInf + 5;
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  
-  const usuarioElaboro = datosCertificado.usuarioElaboro || "SISTEMA";
-  const fechaHora = new Date();
-  
-  doc.text(`Realizó: SISTEMA`, margenIzq, yMeta);
-  doc.text(`Elaboro: ${usuarioElaboro}`, margenIzq, yMeta + 3);
-  doc.text(`Fecha: ${fechaHora.toLocaleDateString('es-CO')}`, margenIzq, yMeta + 6);
-  doc.text(`Hora: ${fechaHora.toLocaleTimeString('es-CO')}`, margenIzq, yMeta + 9);
-  
-  // Footer Institucional extra [cite: 17]
-  centerText(doc, "GOBERNACIÓN DE BOYACÁ", yMeta + 15, 8, 'bold');
-
-  return doc.output('arraybuffer');
 };
 
-export default generarCertificadoJAC;
+export default generarResolucionJAC;
