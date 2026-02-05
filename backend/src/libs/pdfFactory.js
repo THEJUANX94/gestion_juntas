@@ -11,7 +11,7 @@ const generators = {
 };
 
 export const generatePdf = async (tipo, datos) => {
-  const key = (tipo || 'autoresolutorio').toString();
+  const key = (tipo).toString();
   const gen = generators[key];
   if (!gen) throw new Error(`Tipo de PDF desconocido: ${tipo}`);
   return gen(datos);

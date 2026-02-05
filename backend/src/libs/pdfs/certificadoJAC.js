@@ -13,7 +13,7 @@ const generarResolucionJAC = async (datosCertificado) => {
   // --- 1. PREPARACIÓN DE VARIABLES ---
   const municipio = (datosCertificado.NombreMunicipio).toUpperCase();
   const nombreOrganizacion = (datosCertificado.nombreOrganizacion).toUpperCase();
-  const tipoOrganismo = (datosCertificado.tipoOrganismo).toUpperCase();
+  const tipoOrganismo = (datosCertificado.TipoCertificado).toUpperCase();
   
   // Datos del Presidente (Nuevos campos requeridos) 
   const nombrePresidente = (datosCertificado.nombrePresidente).toUpperCase();
