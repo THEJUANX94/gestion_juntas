@@ -300,7 +300,7 @@ export default function MainLayout() {
                         "/organismos/listar"
                       )}`}
                     >
-                      <ScanEye className="h-5 w-5" />
+                      <Landmark className="h-5 w-5" />
                       {!collapsed && "Listar Organismos"}
                     </Link>
                   </li>
