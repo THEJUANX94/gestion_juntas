@@ -4,7 +4,8 @@ import {
   obtenerTiposJunta,
   obtenerTipoJuntaPorId,
   eliminarTipoJunta,
-  crearTipoJunta
+  crearTipoJunta,
+  actualizarTipoJunta
 } from "../controllers/tipoJuntaController.js";
 import { ROLES } from "../config/roles.js";
 
@@ -14,5 +15,6 @@ router.get("/",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES
 router.get("/:idtipojunta",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerTipoJuntaPorId);
 router.delete("/:idtipojunta", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarTipoJunta);
 router.post("/creartipojunta", verificarAuth, verificarRol([ROLES.ADMIN]), crearTipoJunta);
+router.put("/:idtipojunta", verificarAuth, verificarRol([ROLES.ADMIN]), actualizarTipoJunta);
 
 export default router;

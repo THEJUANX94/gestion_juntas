@@ -293,6 +293,17 @@ export default function MainLayout() {
                       {!collapsed && "Listar Mandatarios"}
                     </Link>
                   </li>
+                  <li>
+                    <Link
+                      to="/organismos/listar"
+                      className={`flex items-center gap-3 px-3 py-2 rounded ${isActive(
+                        "/organismos/listar"
+                      )}`}
+                    >
+                      <ScanEye className="h-5 w-5" />
+                      {!collapsed && "Listar Organismos"}
+                    </Link>
+                  </li>
                 </ul>
               </div>
             )}

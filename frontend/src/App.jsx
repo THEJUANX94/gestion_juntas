@@ -39,6 +39,7 @@ import EditarComision from "./pages/EditarComision";
 import ValidacionQR from "./pages/ValidacionQR";
 import ListarMandatarios from "./pages/ListarMandatarios";
 import ChangePassword from "./pages/CambioContraseña";
+import ListarOrganismos from "./pages/ListarOrganismos";
 
 export default function App() {
   return (
@@ -69,6 +70,7 @@ export default function App() {
               <Route path="comisiones/listar" element={<ListarComisiones />} />
               <Route path="instituciones/listar" element={<ListarInstituciones />} />
               <Route path="lugares/listar" element={<ListarLugares />} />
+              <Route path="organismos/listar" element={<ListarOrganismos />} />
               <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
               <Route path="/changePassword" element={<ChangePassword />} />
 
