@@ -11,6 +11,10 @@ const generarResolucionJAC = async (datosCertificado) => {
   const doc = createDoc();
 
   // --- 1. PREPARACIÓN DE VARIABLES ---
+  console.log("=== DATOS RECIBIDOS PARA PDF ===");
+  console.log(datosCertificado.NombreMunicipio);
+  console.log(datosCertificado.nombreOrganizacion);
+  console.log(datosCertificado.TipoCertificado);
   const municipio = (datosCertificado.NombreMunicipio).toUpperCase();
   const nombreOrganizacion = (datosCertificado.nombreOrganizacion).toUpperCase();
   const tipoOrganismo = (datosCertificado.TipoCertificado).toUpperCase();
