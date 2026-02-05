@@ -7,21 +7,25 @@ import {
   DEFAULTS
 } from '../pdfBase.js';
 
+const buscarDignatarioPorCargo = (dignatarios, cargoBuscado) => {
+  if (!dignatarios || !Array.isArray(dignatarios)) return null;
+  return dignatarios.find(d => 
+    d.cargo && d.cargo.toUpperCase().includes(cargoBuscado.toUpperCase())
+  ) || null;
+};
+
 const generarResolucionJAC = async (datosCertificado) => {
   const doc = createDoc();
 
-  // --- 1. PREPARACIÓN DE VARIABLES ---
-  console.log("=== DATOS RECIBIDOS PARA PDF ===");
-  console.log(datosCertificado.NombreMunicipio);
-  console.log(datosCertificado.nombreOrganizacion);
-  console.log(datosCertificado.TipoCertificado);
+  const presidente = buscarDignatarioPorCargo(datosCertificado.dignatarios, 'PRESIDENTE');
+
   const municipio = (datosCertificado.NombreMunicipio).toUpperCase();
   const nombreOrganizacion = (datosCertificado.nombreOrganizacion).toUpperCase();
   const tipoOrganismo = (datosCertificado.TipoCertificado).toUpperCase();
   
   // Datos del Presidente (Nuevos campos requeridos) 
-  const nombrePresidente = (datosCertificado.nombrePresidente).toUpperCase();
-  const cedulaPresidente = datosCertificado.cedulaPresidente;
+  const nombrePresidente = (presidente?.nombre || "REPRESENTANTE LEGAL").toString().toUpperCase();
+  const cedulaPresidente = (presidente?.cedula || "__________").toString();
   
   // Configuración de Fechas y Año
   const anioResolucion = "2026";
