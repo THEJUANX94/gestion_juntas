@@ -181,24 +181,6 @@ const generarResolucionJAC = async (datosCertificado) => {
   centerText(doc, "NOTIFÍQUESE Y CÚMPLASE", yPos, 10, 'bold');
   yPos += 10;
 
-  // Agregar ciudad y fecha
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-
-  // Obtener fecha actual
-  const fechaActual = new Date();
-  const dia = fechaActual.getDate();
-  const meses = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-  ];
-  const mes = meses[fechaActual.getMonth()];
-  const anio = fechaActual.getFullYear();
-
-  const textoFecha = `Dada en Tunja, a los ${dia} días del mes de ${mes} de ${anio}`;
-  centerText(doc, textoFecha, yPos);
-  yPos += 15;
-
   addPDFFooer(
     doc,
     resources.nombreFirmante,
