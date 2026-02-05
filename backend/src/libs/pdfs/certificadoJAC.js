@@ -130,28 +130,49 @@ const generarResolucionJAC = async (datosCertificado) => {
   ];
 
   articulos.forEach((art) => {
-    // Calcular altura del bloque completo
-    const textoCompleto = `${art.titulo} ${art.cuerpo}`;
-    const linesCompleto = doc.splitTextToSize(textoCompleto, anchoUtil);
-    const alturaBloque = (linesCompleto.length * 5) + 6;
+    // SOLUCIÓN CORRECTA: Dibujar título y cuerpo por separado, no superponer
+
+    // Calcular altura necesaria
+    const cuerpoLines = doc.splitTextToSize(art.cuerpo, anchoUtil);
+    const alturaBloque = (cuerpoLines.length * 5) + 6;
 
     // Verificar salto de página
     let result = checkPageBreak(doc, yPos, alturaBloque);
     yPos = result.yPos;
 
-    // 1. Título en negrita
+    // 1. Dibujar SOLO el título en negrita
     doc.setFont('helvetica', 'bold');
     doc.text(art.titulo, margenIzq, yPos);
 
-    // 2. Calcular espacio que ocupa
+    // 2. Calcular dónde termina el título para continuar el cuerpo
     const tituloWidth = doc.getTextWidth(art.titulo);
+    const espacioDisponible = anchoUtil - tituloWidth - 2; // 2mm de separación
 
-    // 3. Cuerpo en normal DESPUÉS del título
+    // 3. Dibujar el cuerpo en la misma línea si cabe, o en la siguiente
     doc.setFont('helvetica', 'normal');
-    doc.text(cuerpoEnLinea[0], margenIzq + tituloWidth + 2, yPos);
 
-    // Avanzar posición
-    yPos += (linesCompleto.length * 5) + 6;
+    // Si el cuerpo cabe en la misma línea
+    if (espacioDisponible > 30) { // Si hay suficiente espacio (más de 30mm)
+      const cuerpoEnLinea = doc.splitTextToSize(art.cuerpo, espacioDisponible);
+      doc.text(cuerpoEnLinea[0], margenIzq + tituloWidth + 2, yPos);
+
+      // Si hay más líneas del cuerpo, las dibujamos debajo
+      if (cuerpoEnLinea.length > 1) {
+        yPos += 5;
+        const restoCuerpo = cuerpoEnLinea.slice(1);
+        doc.text(restoCuerpo, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
+        yPos += (restoCuerpo.length * 5);
+      } else {
+        yPos += 5;
+      }
+    } else {
+      // Si no cabe, poner el cuerpo en la siguiente línea
+      yPos += 5;
+      doc.text(cuerpoLines, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
+      yPos += (cuerpoLines.length * 5);
+    }
+
+    yPos += 6; // Espaciado entre artículos
   });
 
   // --- NOTIFICACIÓN Y FIRMA ---
