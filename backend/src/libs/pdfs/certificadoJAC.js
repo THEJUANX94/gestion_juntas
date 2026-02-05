@@ -177,6 +177,7 @@ const generarResolucionJAC = async (datosCertificado) => {
     resources.base64Firma,
     yPos
   );
+  return doc.output('arraybuffer');
 };
 
 export default generarResolucionJAC;
