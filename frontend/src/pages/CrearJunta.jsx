@@ -236,7 +236,7 @@ export default function CrearJunta() {
               {/* Tipo de Junta */}
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
-                  Tipo de Junta <span className="text-[#E43440]">*</span>
+                  Organismo Comunal <span className="text-[#E43440]">*</span>
                 </label>
                 <select
                   name="tipoJunta"
