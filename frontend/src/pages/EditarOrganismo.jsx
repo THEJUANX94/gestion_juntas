@@ -9,17 +9,17 @@ export default function EditarOrganismo() {
   const [nombre, setNombre] = useState("");
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_PATH + `/organismos/${id}`, {
+    fetch(import.meta.env.VITE_PATH + `/tipojunta/${id}`, {
       credentials: "include",
     })
       .then(res => res.json())
-      .then(data => setNombre(data.Nombre));
+      .then(data => setNombre(data.NombreTipoJunta));
   }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const res = await fetch(import.meta.env.VITE_PATH + `/organismos/${id}`, {
+    const res = await fetch(import.meta.env.VITE_PATH + `/tipojunta/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
