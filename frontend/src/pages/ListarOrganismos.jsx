@@ -23,10 +23,9 @@ export default function ListarOrganismos() {
         const res = await fetch(import.meta.env.VITE_PATH + "/tipojunta", { credentials: 'include', method: "GET" });
         const data = await res.json();
         const transformados = data.map((c) => ({
-          IDTipoJunta: c.IDTipoJunta,
+          IDTipoJuntas: c.IDTipoJuntas,
           nombre: c.NombreTipoJunta,
         }));
-        console.log("Organismos cargados:", transformados);
         setOrganismos(transformados);
       } catch (error) {
         console.error("Error al cargar organismos:", error);
@@ -59,17 +58,17 @@ export default function ListarOrganismos() {
   const toggleFilter = (col) => setShowFilter((prev) => ({ ...prev, [col]: !prev[col] }));
   const handleFiltro = (col, value) => setFiltros((prev) => ({ ...prev, [col]: value }));
 
-  const handleEdit = (item) => navigate(`/organismos/update/${item.IDTipoJunta}`);
+  const handleEdit = (item) => navigate(`/organismos/update/${item.IDTipoJuntas}`);
 
   const handleDelete = async (item) => {
     const confirmed = await AlertMessage.confirm("Eliminar organismo", `¿Eliminar el organismo ${item.nombre}?`);
     if (!confirmed) return;
 
     try {
-      const res = await fetch(import.meta.env.VITE_PATH + `/tipojunta/${item.IDTipoJunta}`, { method: "DELETE", credentials: 'include' });
+      const res = await fetch(import.meta.env.VITE_PATH + `/tipojunta/${item.IDTipoJuntas}`, { method: "DELETE", credentials: 'include' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Error al eliminar organismo");
-      setOrganismos((prev) => prev.filter((c) => c.IDTipoJunta !== item.IDTipoJunta));
+      setOrganismos((prev) => prev.filter((c) => c.IDTipoJuntas !== item.IDTipoJuntas));
       AlertMessage.success("Eliminado", "El organismo fue eliminado correctamente.");
     } catch (err) {
       console.error(err);
