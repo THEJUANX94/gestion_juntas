@@ -26,8 +26,8 @@ export default function ListarOrganismos() {
           IDTipoJunta: c.IDTipoJunta,
           nombre: c.NombreTipoJunta,
         }));
+        console.log("Organismos cargados:", transformados);
         setOrganismos(transformados);
-        console.log("Organismos cargados:", IDTipoJunta);
       } catch (error) {
         console.error("Error al cargar organismos:", error);
       }
