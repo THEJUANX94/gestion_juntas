@@ -24,7 +24,7 @@ export default function ListarOrganismos() {
         const data = await res.json();
         const transformados = data.map((c) => ({
           IDTipoJunta: c.IDTipoJunta,
-          nombre: c.Nombre,
+          nombre: c.NombreTipoJunta,
         }));
         setOrganismos(transformados);
       } catch (error) {
