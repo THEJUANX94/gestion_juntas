@@ -7,78 +7,84 @@ export default function EditarOrganismo() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [nombre, setNombre] = useState("");
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_PATH + `/tipojunta/${id}`, {
+    fetch(import.meta.env.VITE_PATH + `/organismos/${id}`, {
       credentials: "include",
     })
       .then(res => res.json())
-      .then(data => {
-        setNombre(data.NombreTipoJunta || "");
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        AlertMessage.error("Error", "No se pudo cargar el organismo");
-        navigate("/organismos/listar");
-      });
-  }, [id, navigate]);
+      .then(data => setNombre(data.Nombre));
+  }, [id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!nombre.trim()) return AlertMessage.error("Error", "El nombre es requerido");
 
-    try {
-      const res = await fetch(import.meta.env.VITE_PATH + `/tipojunta/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ NombreTipoJunta: nombre.trim() }),
-      });
+    const res = await fetch(import.meta.env.VITE_PATH + `/organismos/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ Nombre: nombre }),
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error al actualizar organismo");
-
+    if (res.ok) {
       AlertMessage.success("Actualizado", "Organismo actualizado correctamente");
       navigate("/organismos/listar");
-    } catch (err) {
-      console.error(err);
-      AlertMessage.error("Error", err.message || "No se pudo actualizar el organismo");
+    } else {
+      AlertMessage.error("Error", "No se pudo actualizar el organismo");
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center">
-        <p>Cargando...</p>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-full">
-      <h1 className="text-2xl mb-6" style={{ color: "var(--color-text-color-page)" }}>Editar Organismo</h1>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
+      <div className="max-w-md mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              Editar Organismo
+            </h1>
+            <p className="text-gray-500">
+              Actualiza la información del organismo
+            </p>
+          </div>
 
-      <form onSubmit={handleSubmit} className="max-w-md">
-        <label className="block mb-2 text-sm font-medium">Nombre del Organismo</label>
-        <input
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          className="w-full border rounded px-3 py-2 mb-4"
-          placeholder="Ej. Junta Municipal"
-          required
-        />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label 
+                htmlFor="nombre" 
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Nombre del organismo
+              </label>
+              <input
+                id="nombre"
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition duration-200 outline-none"
+                placeholder="Ingrese el nombre del organismo"
+                required
+              />
+            </div>
 
-        <div className="flex gap-2">
-          <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">
-            Guardar cambios
-          </button>
-          <button type="button" className="px-4 py-2 bg-gray-200 rounded" onClick={() => navigate('/organismos/listar')}>Cancelar</button>
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-700 transform hover:scale-105 transition duration-200 shadow-md hover:shadow-lg"
+              >
+                Guardar cambios
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => navigate("/organismos/listar")}
+                className="flex-1 bg-gray-200 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 transform hover:scale-105 transition duration-200"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
-
+      </div>
       <Footer />
     </div>
   );
