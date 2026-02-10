@@ -14,7 +14,8 @@ export const obtenerTiposJunta = async (req, res) => {
 
 export const obtenerTipoJuntaPorId = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { idtipojunta } = req.params;
+    const id = idtipojunta;
     if (!id) return res.status(400).json({ message: "ID no proporcionado" });
 
     const tipo = await TipoJunta.findByPk(id);
@@ -48,7 +49,8 @@ export const crearTipoJunta = async (req, res) => {
 
 export const actualizarTipoJunta = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { idtipojunta } = req.params;
+    const id = idtipojunta;
     const { NombreTipoJunta } = req.body;
 
     if (!id) return res.status(400).json({ message: "ID no proporcionado" });
@@ -70,7 +72,8 @@ export const actualizarTipoJunta = async (req, res) => {
 
 export const eliminarTipoJunta = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { idtipojunta } = req.params;
+    const id = idtipojunta;
 
     if (!id) return res.status(400).json({ message: "ID no proporcionado" });
 
