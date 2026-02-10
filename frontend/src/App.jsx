@@ -40,6 +40,8 @@ import ValidacionQR from "./pages/ValidacionQR";
 import ListarMandatarios from "./pages/ListarMandatarios";
 import ChangePassword from "./pages/CambioContraseña";
 import ListarOrganismos from "./pages/ListarOrganismos";
+import CrearOrganismo from "./pages/CrearOrganismo";
+import EditarOrganismo from "./pages/EditarOrganismo";
 
 export default function App() {
   return (
@@ -90,9 +92,9 @@ export default function App() {
                 <Route path="comisiones/update/:id" element={<EditarComision />} />
                 <Route path="instituciones/create" element={<CrearInstitucion />} />
                 <Route path="instituciones/update/:id" element={<EditarInstitucion />} />
+                <Route path="organismos/create" element={<CrearOrganismo />} />
+                <Route path="organismos/update/:id" element={<EditarOrganismo />} />
               </Route>
-
-
               {/* -----------------------------------------------------
                   NIVEL 3: SOLO ADMIN (Configuración crítica)
                  ----------------------------------------------------- */}
