@@ -15,10 +15,9 @@ export const obtenerTiposJunta = async (req, res) => {
 export const obtenerTipoJuntaPorId = async (req, res) => {
   try {
     const { idtipojunta } = req.params;
-    const id = idtipojunta;
-    if (!id) return res.status(400).json({ message: "ID no proporcionado" });
+    if (!idtipojunta) return res.status(400).json({ message: "ID no proporcionado" });
 
-    const tipo = await TipoJunta.findByPk(id);
+    const tipo = await TipoJunta.findByPk(idtipojunta);
     if (!tipo) return res.status(404).json({ message: "Tipo de junta no encontrado" });
 
     return res.json(tipo);
