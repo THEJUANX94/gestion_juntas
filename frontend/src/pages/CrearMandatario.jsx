@@ -14,6 +14,7 @@ export default function AgregarMandatario() {
   const [comisiones, setComisiones] = useState([]);
   const [lugares, setLugares] = useState([]);
   const [listaGrupos, setListaGrupos] = useState([]);
+  const [junta, setJunta] = useState(null);
 
   const [formData, setFormData] = useState({
     // Datos Personales
@@ -48,12 +49,14 @@ export default function AgregarMandatario() {
       const resComisiones = await fetch(import.meta.env.VITE_PATH + "/comisiones");
       const resLugares = await fetch(import.meta.env.VITE_PATH + "/lugares");
       const resGrupos = await fetch(import.meta.env.VITE_PATH + "/grupospoblacionales");
+      const resJunta = await fetch(import.meta.env.VITE_PATH + `/juntas/${id}`);
 
       setTiposDocumento(await resTipoDoc.json());
       setCargos(await resCargos.json());
       setComisiones(await resComisiones.json());
       setLugares(await resLugares.json());
       setListaGrupos(await resGrupos.json());
+      setJunta(await resJunta.json());
     };
 
     cargarDatos();
@@ -123,25 +126,26 @@ export default function AgregarMandatario() {
 
 
     if (!/^\d{10}$/.test(formData.telefono)) {
-      AlertMessage.success("El teléfono debe tener exactamente 10 dígitos");
+      AlertMessage.warning("El teléfono debe tener exactamente 10 dígitos");
       return;
     }
 
     if (formData.email && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
-      AlertMessage.success("El correo debe tener un dominio válido, como usuario@correo.com");
+      AlertMessage.warning("El correo debe tener un dominio válido, como usuario@correo.com");
       return;
     }
 
     const camposNombre = ["primernombre", "primerapellido"];
     for (let campo of camposNombre) {
       if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(formData[campo])) {
-        AlertMessage.success(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
+        AlertMessage.warning(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
         return;
       }
     }
 
     try {
-      const payload = { ...formData, email: formData.email || null };
+      const emailFinal = formData.email || junta?.email || null;
+      const payload = { ...formData, email: emailFinal };
 
       const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/crear/${id}`, {
         method: "POST",
