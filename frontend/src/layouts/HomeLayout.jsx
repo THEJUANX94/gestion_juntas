@@ -46,7 +46,7 @@ export default function HomeLayout() {
           <nav className="flex items-center gap-8">
             <Link
               to="/certificado"
-              className={`font-semibold text-lg transition-colors duration-200 ${location.pathname === "/certificado"
+              className={`font-semibold text-lg transition-colors duration-200 ${location.pathname === "/solicitarCertificado"
                   ? "text-green-700"
                   : "text-gray-700 hover:text-green-800"
                 }`}
