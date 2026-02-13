@@ -9,6 +9,7 @@ import { Cargo } from "../model/cargoModel.js";
 import { TipoJunta } from "../model/tipoJuntaModel.js";
 import { Op } from "sequelize";
 import { Comisiones } from "../model/comisionModel.js";
+import { sendMail } from "../utils/mailer.js";
 
 export const crearCertificado = async (req, res) => {
   let Cedula = null;
