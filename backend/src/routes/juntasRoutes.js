@@ -8,7 +8,7 @@ const router = Router();
 
 router.post("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), crearJunta);
 
-router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerJuntas);
+router.get("/", obtenerJuntas);
 router.get("/all", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.DESCARGA]), obtenerTodasLasJuntas);
 router.get("/export/excel", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), exportarJuntasExcel);
 router.post("/:id/cambiar-periodo", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), cambiarPeriodoJunta);
