@@ -143,3 +143,47 @@ export const getUltimaFirmaData = async () => {
     throw new Error("Fallo al consultar los datos de la firma activa.");
   }
 };
+
+// En tu backend (controlador de usuarios/firmas)
+export const actualizarEstadoFirma = async (req, res) => {
+  const { identificacion } = req.params;
+  const { Activo } = req.body;
+
+  try {
+    // Si se está activando una firma
+    if (Activo === true) {
+      // Primero desactiva TODAS las firmas
+      await Firma.update(
+        { activa: false },
+        { where: {} }
+      );
+    }
+
+    // Luego actualiza la firma específica
+    const usuario = await Usuario.findOne({
+      where: { Identificacion: identificacion }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    const [numUpdated] = await Firma.update(
+      { activa: Activo },
+      { where: { IDUsuario: usuario.IDUsuario } }
+    );
+
+    if (numUpdated === 0) {
+      return res.status(404).json({ error: "Firma no encontrada" });
+    }
+
+    res.json({ 
+      success: true, 
+      mensaje: `Firma ${Activo ? 'activada' : 'desactivada'} correctamente` 
+    });
+
+  } catch (error) {
+    console.error("Error al actualizar firma:", error);
+    res.status(500).json({ error: "Error al actualizar el estado de la firma" });
+  }
+};

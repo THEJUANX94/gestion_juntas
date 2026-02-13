@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { Search, Filter, Users } from "lucide-react";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import useAuth from "../hooks/useAuth";
+import { PERMISOS } from "../config/roles";
 
 export default function ListarJuntas() {
     const [search, setSearch] = useState("");
     const [juntas, setJuntas] = useState([]);
+    const { user } = useAuth();
     const [showFilter, setShowFilter] = useState({
         razon: false,
         municipio: false,
@@ -20,6 +23,8 @@ export default function ListarJuntas() {
         institucion: "",
         zona: "",
     });
+
+    const puedeVerInformes = user && PERMISOS.PUEDE_VER_INFORMES.includes(user.rol);
 
     /* =========================
        CARGAR JUNTAS
@@ -208,7 +213,9 @@ export default function ListarJuntas() {
                 </div>
 
                 <div className="p-4">
-                    <button onClick={descargarExcel} className="px-4 py-2 bg-green-600 text-white rounded">📊 Exportar Excel</button>
+                    {puedeVerInformes && (
+                        <button onClick={descargarExcel} className="px-4 py-2 bg-green-600 text-white rounded">📊 Exportar Excel</button>
+                    )}
                 </div>
             </div>
 

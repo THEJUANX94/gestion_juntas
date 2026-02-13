@@ -2,14 +2,19 @@ import { useState, useEffect } from "react";
 import { Search, Edit, Trash2, User, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/ui/Footer";
+import useAuth from "../hooks/useAuth";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import { PERMISOS } from "../config/roles";
 
 export default function ListarInstituciones() {
 	const navigate = useNavigate();
+	const { user } = useAuth();
 	const [search, setSearch] = useState("");
 	const [instituciones, setInstituciones] = useState([]);
 	const [showFilter, setShowFilter] = useState({ nombre: false });
 	const [filtros, setFiltros] = useState({ nombre: "" });
+
+	const puedeEditar = user && PERMISOS.PUEDE_EDITAR.includes(user.rol);
 
 	useEffect(() => {
 		const fetchInstituciones = async () => {
@@ -73,7 +78,7 @@ export default function ListarInstituciones() {
 			<div className="flex items-center justify-between mb-6">
 				<h1 className="text-2xl" style={{ color: "var(--color-text-color-page)" }}>Listar Instituciones</h1>
 				<div className="flex gap-2">
-					<button className="px-4 py-2 rounded bg-green-600 text-white" onClick={() => navigate('/instituciones/create')}>Crear Institución</button>
+					{puedeEditar && <button className="px-4 py-2 rounded bg-green-600 text-white" onClick={() => navigate('/instituciones/create')}>Crear Institución</button>}
 				</div>
 			</div>
 
@@ -119,8 +124,12 @@ export default function ListarInstituciones() {
 									</td>
 									<td className="px-4 py-3">
 										<div className="flex items-center gap-2 whitespace-nowrap">
-											<button className="p-2 rounded hover:bg-gray-100" onClick={() => handleEdit(u)} title="Editar institución"><Edit className="h-4 w-4 text-blue-600" /></button>
-											<button className="p-2 rounded hover:bg-gray-100" onClick={() => handleDelete(u)} title="Eliminar institución"><Trash2 className="h-4 w-4 text-red-600" /></button>
+											{puedeEditar && (
+												<>
+													<button className="p-2 rounded hover:bg-gray-100" onClick={() => handleEdit(u)} title="Editar institución"><Edit className="h-4 w-4 text-blue-600" /></button>
+													<button className="p-2 rounded hover:bg-gray-100" onClick={() => handleDelete(u)} title="Eliminar institución"><Trash2 className="h-4 w-4 text-red-600" /></button>
+												</>
+											)}
 										</div>
 									</td>
 								</tr>

@@ -163,9 +163,9 @@ export const crearUsuario = async (req, res) => {
 
         // Validación extra: Si el rol requiere credenciales, debe haber contraseña
         if (!passwordPlano) {
-             return res.status(400).json({ 
-                 message: `El rol ${NombreRol} requiere una contraseña obligatoria.` 
-             });
+          return res.status(400).json({
+            message: `El rol ${NombreRol} requiere una contraseña obligatoria.`
+          });
         }
 
         const saltRounds = 10;
@@ -313,12 +313,20 @@ export const actualizarEstadoFirma = async (req, res) => {
       return res.status(404).json({ error: "No se encontró firma para este mandatario." });
     }
 
-    // Asignación explícita
+    // ✅ CLAVE: Si se está ACTIVANDO una firma, desactivar todas las demás primero
+    if (nuevoEstado === true) {
+      await Firma.update(
+        { activa: false },
+        { where: {} } // Desactiva TODAS las firmas
+      );
+    }
+
+    // Ahora actualizar la firma específica
     firma.activa = nuevoEstado;
     await firma.save();
 
     res.json({
-      message: "Estado de firma actualizado",
+      message: `Estado de firma ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`,
       FirmaActiva: firma.activa
     });
   } catch (err) {

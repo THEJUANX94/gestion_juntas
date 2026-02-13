@@ -2,12 +2,16 @@ import { useState, useEffect } from "react";
 import { Search, Filter, MapPin, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import useAuth from "../hooks/useAuth";
 
 export default function ListarLugares() {
   const [search, setSearch] = useState("");
   const [lugares, setLugares] = useState([]);
   const [showFilter, setShowFilter] = useState({ nombre: false, tipo: false, estado: false });
   const [filtros, setFiltros] = useState({ nombre: "", tipo: "", estado: "" });
+  const { user } = useAuth();
+
+  const puedeEditar = user && PERMISOS.PUEDE_EDITAR.includes(user.rol);
 
   useEffect(() => {
     const fetchLugares = async () => {
@@ -305,8 +309,8 @@ export default function ListarLugares() {
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${lugar.activo
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
                         }`}
                     >
                       {lugar.activo ? "ACTIVO" : "INACTIVO"}
@@ -314,17 +318,18 @@ export default function ListarLugares() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 whitespace-nowrap">
-                      <button
-                        className="p-2 rounded hover:bg-gray-100"
-                        onClick={() => handleToggleActivo(lugar)}
-                        title="Cambiar estado"
-                      >
-                        {lugar.activo ? (
-                          <ToggleRight className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <ToggleLeft className="h-5 w-5 text-gray-400" />
-                        )}
-                      </button>
+                      {puedeEditar && (
+                        <button
+                          className="p-2 rounded hover:bg-gray-100"
+                          onClick={() => handleToggleActivo(lugar)}
+                          title="Cambiar estado"
+                        >
+                          {lugar.activo ? (
+                            <ToggleRight className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="h-5 w-5 text-gray-400" />
+                          )}
+                        </button>)}
                     </div>
                   </td>
                 </tr>
