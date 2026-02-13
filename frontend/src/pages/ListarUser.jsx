@@ -116,7 +116,6 @@ export default function ListarPersonas() {
 
 
   const handleDelete = async (usuario) => {
-    console.log("Intentando eliminar usuario:", usuario.IDUsuario);
     const confirmed = await AlertMessage.confirm(
       "Eliminar usuario",
       `¿Estás segura(o) de eliminar a ${usuario.nombre} ? Esta acción no se puede deshacer.`
@@ -125,7 +124,6 @@ export default function ListarPersonas() {
     if (!confirmed) return;
 
     try {
-      console.log("Intentando eliminar usuario otra vez:", usuario.IDUsuario);
       const res = await fetch(import.meta.env.VITE_PATH + `/usuarios/${usuario.IDUsuario}`, {
         method: "DELETE",
         credentials: 'include'

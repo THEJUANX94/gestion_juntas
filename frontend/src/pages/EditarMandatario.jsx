@@ -278,9 +278,6 @@ export default function EditarMandatario() {
                       {listaGrupos.map((grupo) => {
                         const grupoId = grupo.IDGrupoPoblacional || grupo.id;
                         const estaSeleccionado = formData.gruposPoblacionales.includes(grupoId);
-
-                        console.log("🔍 Checkbox:", grupo.NombreGrupo, "ID:", grupoId, "Tipo:", typeof grupoId, "Seleccionado:", estaSeleccionado);
-
                         return (
                           <label key={grupoId} className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors">
                             <input

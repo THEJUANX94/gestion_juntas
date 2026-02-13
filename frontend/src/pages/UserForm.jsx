@@ -263,8 +263,6 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
     e.preventDefault();
     setEmailError("");
 
-    console.log('Submitting form...', { form, isValid: isFormValid() });
-
     if (!isFormValid()) {
       AlertMessage.error("Error de Validación", "Por favor, complete todos los campos requeridos.");
       return;
@@ -291,11 +289,6 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
           formData.append(key, form[key]);
         }
       });
-
-      console.log('FormData contents:');
-      for (let pair of formData.entries()) {
-        console.log(pair[0] + ':', pair[1]);
-      }
 
       await onSubmit(formData);
 

@@ -29,7 +29,6 @@ const handleUpdate = async (form) => {
     }
 
     const updatedUser = await response.json();
-    console.log(" Usuario actualizado:", updatedUser);
     setUser(updatedUser);
 
 

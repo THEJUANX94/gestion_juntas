@@ -7,7 +7,6 @@ export default function CreateUser() {
 
   const handleCreate = async (form) => {
     try {
-      console.log('Form data being sent:', form);
       const isFormData = typeof FormData !== 'undefined' && form instanceof FormData;
 
       const fetchOptions = {

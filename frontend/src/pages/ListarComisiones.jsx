@@ -14,7 +14,6 @@ export default function ListarComisiones() {
   const [showFilter, setShowFilter] = useState({ nombre: false });
   const [filtros, setFiltros] = useState({ nombre: "" });
 
-  console.log("Usuario actual:", user);
   const puedeEditar = user && PERMISOS.PUEDE_EDITAR.includes(user.rol);
 
   useEffect(() => {

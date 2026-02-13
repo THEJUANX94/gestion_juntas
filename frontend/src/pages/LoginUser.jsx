@@ -99,7 +99,6 @@ export default function LoginUser() {
       }
 
       const data = await response.json();
-      console.log("Login exitoso:", data);
 
       contextLogin(data.user);
 

@@ -24,7 +24,6 @@ export default function DetalleJunta() {
       try {
         const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/miembros`);
         const data = await res.json();
-        console.log("Miembros cargados:", data);
         const transformados = data.map(m => {
           const partesNombre = m.nombreCompleto?.split(" ") || [];
           const nombre = partesNombre.slice(0, 2).join(" ");
