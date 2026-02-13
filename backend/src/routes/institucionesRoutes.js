@@ -5,7 +5,7 @@ import { ROLES } from "../config/roles.js";
 
 const router = Router();
 
-router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerInstituciones);
+router.get("/", obtenerInstituciones);
 router.get("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerInstitucionPorId);
 router.put("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarInstitucion);
 router.delete("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN]), eliminarInstitucion);
