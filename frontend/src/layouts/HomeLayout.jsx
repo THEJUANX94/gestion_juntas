@@ -45,6 +45,15 @@ export default function HomeLayout() {
           {/* Navbar */}
           <nav className="flex items-center gap-8">
             <Link
+              to="/certificado"
+              className={`font-semibold text-lg transition-colors duration-200 ${location.pathname === "/certificado"
+                  ? "text-green-700"
+                  : "text-gray-700 hover:text-green-800"
+                }`}
+            >
+              Solicitar Certificado
+            </Link>
+            <Link
               to="/"
               className={`font-semibold text-lg transition-colors duration-200 ${location.pathname === "/"
                   ? "text-green-700"

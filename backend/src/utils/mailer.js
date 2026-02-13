@@ -35,3 +35,4 @@ export const sendMail = async (mailOptions) => {
         throw new Error(`Fallo en el servicio de correo: ${error.message}`);
     }
 };
+
