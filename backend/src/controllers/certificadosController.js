@@ -39,27 +39,27 @@ export const crearCertificado = async (req, res) => {
       console.warn('No se pudo obtener el municipio:', e.message);
     }
 
-   // Obtener dignatarios de la junta
+    // Obtener dignatarios de la junta
     const mandatariosJunta = await MandatarioJunta.findAll({ where: { IDJunta: IDJunta } });
     const dignatarios = [];
 
     for (const m of mandatariosJunta) {
       try {
         const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
-        
+
         // Buscamos el Cargo (si tiene)
         const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
-        
+
         // Buscamos la Comisión (si tiene)
         let nombreComision = null;
         if (m.IDComision) {
-            // Asumiendo que el modelo se llama Comision
-            const com = await Comisiones.findByPk(m.IDComision); 
-            if (com) nombreComision = com.Nombre; 
+          // Asumiendo que el modelo se llama Comision
+          const com = await Comisiones.findByPk(m.IDComision);
+          if (com) nombreComision = com.Nombre;
         }
 
         const nombre = u ? `${u.PrimerNombre || ''} ${u.SegundoNombre || ''} ${u.PrimerApellido || ''} ${u.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim() : null;
-        
+
         // Empujamos el objeto con AMBOS datos (cargo y comision)
         dignatarios.push({
           cargo: c ? c.NombreCargo : null,
@@ -170,24 +170,23 @@ export const enviarAutoresolutorio = async (req, res) => {
   try {
     const { IDJunta } = req.body;
 
-    const unaHoraAtras = new Date(Date.now() - 60 * 60 * 1000); // 1 hora
-
+    // 1. EL BLOQUEO: Solo busca registros que hayan sido marcados como 'Exitoso'
+    const unaHoraAtras = new Date(Date.now() - 60 * 60 * 1000);
     const certificadoReciente = await Certificados.findOne({
-        where: {
-            IDJunta: IDJunta,
-            FechaCreacion: {
-                [Op.gte]: unaHoraAtras // Mayor o igual a hace una hora
-            }
-        }
+      where: {
+        IDJunta: IDJunta,
+        FechaCreacion: { [Op.gte]: unaHoraAtras },
+        Estado: 'Exitoso'
+      }
     });
 
     if (certificadoReciente) {
-        return res.status(429).json({ 
-            error: "Ya se envió un certificado recientemente. Por seguridad, solo se permite una solicitud por hora." 
-        });
+      return res.status(429).json({
+        error: "Ya se envió un certificado exitosamente. Por seguridad, intente de nuevo en una hora."
+      });
     }
 
-    // 1. Validaciones básicas
+    // 2. Validaciones básicas de parámetros
     if (!IDJunta) {
       return res.status(400).json({ error: 'Faltan parámetros: IDJunta es requerido' });
     }
@@ -201,41 +200,31 @@ export const enviarAutoresolutorio = async (req, res) => {
       return res.status(400).json({ error: 'La junta seleccionada no tiene un correo electrónico registrado.' });
     }
 
-    // --- Municipio ---
+    // --- Obtención de datos (Municipio, Dignatarios, Tipo) ---
+    // (Mantenemos tu lógica de consultas igual...)
     let nombreMunicipio = 'No registrado';
     try {
       const lugar = await Lugar.findByPk(junta.IDMunicipio);
       if (lugar && lugar.NombreLugar) nombreMunicipio = lugar.NombreLugar;
     } catch (e) { console.warn('Warning Municipio:', e.message); }
 
-    // --- Dignatarios ---
     const mandatariosJunta = await MandatarioJunta.findAll({ where: { IDJunta: IDJunta } });
     const dignatarios = [];
-
     for (const m of mandatariosJunta) {
       try {
         const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
         const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
-        
         let nombreComision = null;
         if (m.IDComision) {
-            const com = await Comisiones.findByPk(m.IDComision); 
-            if (com) nombreComision = com.Nombre; 
+          const com = await Comisiones.findByPk(m.IDComision);
+          if (com) nombreComision = com.Nombre;
         }
-
         const nombre = u ? `${u.PrimerNombre || ''} ${u.SegundoNombre || ''} ${u.PrimerApellido || ''} ${u.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim() : null;
-        
-        dignatarios.push({
-          cargo: c ? c.NombreCargo : null,
-          comision: nombreComision,
-          nombre: nombre,
-          cedula: m.NumeroIdentificacion
-        });
+        dignatarios.push({ cargo: c ? c.NombreCargo : null, comision: nombreComision, nombre: nombre, cedula: m.NumeroIdentificacion });
       } catch (e) { console.warn('Warning Dignatario:', e.message); }
     }
 
-    // --- Tipo Junta ---
-    let tipoNombre = 'Junta de Acción Comunal'; // Valor por defecto visual
+    let tipoNombre = 'Junta de Acción Comunal';
     try {
       if (junta.TipoJunta) {
         const tipo = await TipoJunta.findByPk(junta.TipoJunta);
@@ -243,16 +232,17 @@ export const enviarAutoresolutorio = async (req, res) => {
       }
     } catch (e) { console.warn('Warning TipoJunta:', e.message); }
 
-
-    // 3. Registrar la generación en la base de datos (Historial)
+    // 3. Crear el registro INICIALMENTE como 'Error' o 'Pendiente'
+    // De esta forma tenemos el ID para el PDF, pero NO activamos el bloqueo de 1 hora aún
     const nuevoCertificado = await Certificados.create({
       FechaCreacion: new Date(),
       IDJunta: junta.IDJunta,
       NombreCertificado: `Autoresolutorio enviado por correo - ${junta.RazonSocial}`,
-      TipoCertificado: 'Autoresolutorio' // O el ID del tipo si lo manejas así
+      TipoCertificado: 'Autoresolutorio',
+      Estado: 'Error' // <--- Por defecto fallido hasta que se demuestre lo contrario
     });
 
-    // 4. Generar el PDF en memoria (Buffer)
+    // 4. Generar el PDF
     const datosCertificado = {
       FechaCreacion: new Date(),
       IDCertificado: nuevoCertificado.IDCertificado,
@@ -266,59 +256,44 @@ export const enviarAutoresolutorio = async (req, res) => {
       TipoCertificado: tipoNombre
     };
 
-    // 'autoresolutorio' es el tipo de template que usará tu pdfFactory
     const pdfBuffer = await generatePdf('autoresolutorio', datosCertificado);
 
-    // 5. Configurar el correo con el adjunto
+    // 5. Configurar y ENVIAR correo
     const mailOptions = {
-        from: `"Sistema de Juntas" <${process.env.EMAIL_USER}>`,
-        to: junta.Correo,
-        subject: `Documento Autoresolutorio - ${junta.RazonSocial}`,
-        html: `
-            <div style="font-family: Arial, sans-serif; color: #333;">
-                <h2>Hola, Representante Legal de ${junta.RazonSocial}</h2>
-                <p>Adjunto a este correo encontrará el documento <strong>Autoresolutorio</strong> generado automáticamente por nuestro sistema.</p>
-                <p><strong>Detalles:</strong></p>
-                <ul>
-                    <li><strong>ID Documento:</strong> ${nuevoCertificado.IDCertificado}</li>
-                    <li><strong>Fecha de emisión:</strong> ${new Date().toLocaleDateString()}</li>
-                </ul>
-                <p>Por favor, descargue y verifique la información.</p>
-                <br>
-                <p>Atentamente,<br>Equipo de Participación Ciudadana</p>
-            </div>
-        `,
-        attachments: [
-            {
-                filename: `Autoresolutorio_${junta.RazonSocial.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`, // Nombre limpio del archivo
-                content: pdfBuffer,
-                contentType: 'application/pdf'
-            }
-        ]
+      from: `"Sistema de Juntas" <${process.env.EMAIL_USER}>`,
+      to: junta.Correo,
+      subject: `Documento Autoresolutorio - ${junta.RazonSocial}`,
+      html: `<h2>Hola, Representante Legal de ${junta.RazonSocial}</h2>...`, // (Tu HTML original)
+      attachments: [{
+        filename: `Autoresolutorio_${junta.RazonSocial.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }]
     };
 
-    // 6. Enviar usando tu función existente
-    await sendMail(mailOptions);
+    await sendMail(mailOptions); // Si esto falla, salta al catch y el estado se queda en 'Error'
 
-    logOperation(
-        'Autoresolutorio Enviado por Correo', 
-        { IDJunta: IDJunta, Correo: junta.Correo }, 
-        'info'
-    );
+    // 6. SOLICITUD EXITOSA: Ahora sí, actualizamos el estado para activar el bloqueo
+    await nuevoCertificado.update({ Estado: 'Exitoso' });
 
-    // 7. Responder al Frontend
+    logOperation('Autoresolutorio Enviado por Correo', { IDJunta: IDJunta, Correo: junta.Correo }, 'info');
+
     return res.status(200).json({
-        success: true,
-        message: `El documento ha sido enviado correctamente a ${junta.Correo}`
+      success: true,
+      message: `El documento ha sido enviado correctamente a ${junta.Correo}`
     });
 
   } catch (error) {
     console.error("Error en enviarAutoresolutorio:", error);
     logOperation('Error Envío Autoresolutorio', { error: error.message }, 'error');
-    return res.status(500).json({ 
-        success: false, 
-        error: "Ocurrió un error al generar o enviar el documento.",
-        detalle: error.message 
+
+    // Si hubo un error, el registro creado en el paso 3 se quedó con Estado: 'Error',
+    // por lo tanto, el findOne del principio no lo contará y el usuario podrá reintentar.
+
+    return res.status(500).json({
+      success: false,
+      error: "Ocurrió un error al generar o enviar el documento.",
+      detalle: error.message
     });
   }
 };

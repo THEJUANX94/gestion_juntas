@@ -163,10 +163,6 @@ export default function SolicitarCertificadoJunta() {
                                                     )}
                                                     Enviar Correo
                                                 </button>
-
-                                                <button onClick={() => handleVerDetalle(junta)} className="text-[#009E76] flex items-center gap-1 font-semibold">
-                                                    Detalles <ExternalLink size={16} />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
