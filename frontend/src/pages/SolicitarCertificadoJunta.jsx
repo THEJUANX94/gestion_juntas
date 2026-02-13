@@ -59,7 +59,7 @@ export default function SolicitarCertificadoJunta() {
     const handleEnviarCorreo = async (junta) => {
         setEnviando(junta.IDJunta); // Activar loading para esta junta
         try {
-            const response = await fetch(import.meta.env.VITE_PATH + "/solicitar", {
+            const response = await fetch(import.meta.env.VITE_PATH + "/certificados/solicitar", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ IDJunta: junta.IDJunta })
