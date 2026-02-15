@@ -13,7 +13,7 @@ export const loginUsuario = async (req, res) => {
     try {
         const { login, contraseña, captcha } = req.body;
 
-        if (!login || !contraseña || !captcha) {
+        if (!login || !contraseña  || !captcha) {
             logOperation(
                 "LOGIN_FALLIDO",
                 login,
@@ -25,36 +25,36 @@ export const loginUsuario = async (req, res) => {
         }
 
         // 1. Llamar a la API de verificación de reCAPTCHA
-        // const captchaResponse = await fetch(
-        //     `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
-        //     { method: "POST" }
-        // );
+         const captchaResponse = await fetch(
+             `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
+             { method: "POST" }
+     );
 
-        // const captchaData = await captchaResponse.json();
+        const captchaData = await captchaResponse.json();
 
-        // console.log("Respuesta Completa de reCAPTCHA:", captchaData);
+         console.log("Respuesta Completa de reCAPTCHA:", captchaData);
         
-        // // 2. VERIFICACIÓN DE RECAPTCHA V3 (Score y Success)
-        // // Se verifica que sea exitoso Y que la puntuación esté por encima del umbral.
-        // const isHuman = captchaData.success && captchaData.score >= RECAPTCHA_THRESHOLD;
+         // 2. VERIFICACIÓN DE RECAPTCHA V3 (Score y Success)
+         // Se verifica que sea exitoso Y que la puntuación esté por encima del umbral.
+        const isHuman = captchaData.success && captchaData.score >= RECAPTCHA_THRESHOLD;
         
-        // // Opcional: Verificar la 'action' (si la envías desde el front-end)
-        // // const isActionCorrect = captchaData.action === 'login'; 
+        // Opcional: Verificar la 'action' (si la envías desde el front-end)
+        const isActionCorrect = captchaData.action === 'login'; 
 
-        // if (!isHuman) { // || !isActionCorrect) {
-        //     logOperation(
-        //         "LOGIN_FALLIDO",
-        //         login,
-        //         { 
-        //             motivo: `Verificación Captcha v3 fallida. Score: ${captchaData.score || 'N/A'} (Umbral: ${RECAPTCHA_THRESHOLD})`, 
-        //             ip: req.ip || 'N/A' 
-        //         },
-        //         "error"
-        //     );
+         if (!isHuman) { // || !isActionCorrect) {
+             logOperation(
+                 "LOGIN_FALLIDO",
+                 login,
+                 { 
+                     motivo: `Verificación Captcha v3 fallida. Score: ${captchaData.score || 'N/A'} (Umbral: ${RECAPTCHA_THRESHOLD})`, 
+                     ip: req.ip || 'N/A' 
+                 },
+                 "error"
+        );
 
-        //     // Se devuelve un error genérico para no dar pistas
-        //     return res.status(401).json({ error: "Verificación de seguridad fallida. Inténtalo de nuevo." });
-        // }
+        //      Se devuelve un error genérico para no dar pistas
+             return res.status(401).json({ error: "Verificación de seguridad fallida. Inténtalo de nuevo." });
+         }
         // Fin de la verificación de reCAPTCHA V3
 
         const credencial = await Credenciales.findOne({

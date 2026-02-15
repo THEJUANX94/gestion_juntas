@@ -22,35 +22,35 @@ export default function LoginUser() {
 
     // 2. Cargar el script de reCAPTCHA v3 al montar el componente
     // Google recomienda cargar el script con el parámetro render y la clave del sitio.
-    // const loadRecaptchaScript = () => {
-    //   const scriptId = 're-captcha-script';
-    //   if (document.getElementById(scriptId)) return;
+     const loadRecaptchaScript = () => {
+       const scriptId = 're-captcha-script';
+       if (document.getElementById(scriptId)) return;
 
-    //   const script = document.createElement('script');
-    //   script.id = scriptId;
-    //   script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY_V3}`;
-    //   script.async = true;
-    //   script.defer = true;
-    //   document.body.appendChild(script);
+       const script = document.createElement('script');
+       script.id = scriptId;
+       script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY_V3}`;
+       script.async = true;
+       script.defer = true;
+       document.body.appendChild(script);
 
-    //   // Esperar a que el script cargue para asignarlo al ref
-    //   script.onload = () => {
-    //     if (window.grecaptcha && window.grecaptcha.ready) {
-    //       window.grecaptcha.ready(() => {
-    //         recaptchaRef.current = window.grecaptcha;
-    //         console.log("reCAPTCHA v3 listo para ejecutar.");
-    //       });
-    //     }
-    //   };
-    // };
+    // Esperar a que el script cargue para asignarlo al ref
+       script.onload = () => {
+       if (window.grecaptcha && window.grecaptcha.ready) {
+           window.grecaptcha.ready(() => {
+             recaptchaRef.current = window.grecaptcha;
+             console.log("reCAPTCHA v3 listo para ejecutar.");
+           });
+         }
+       };
+     };
 
-    // loadRecaptchaScript();
+     loadRecaptchaScript();
 
     // Limpieza si es necesario, aunque reCAPTCHA v3 es persistente
-    // return () => { 
-    //   const script = document.getElementById('re-captcha-script');
-    //   if (script) document.body.removeChild(script);
-    // };
+     return () => { 
+       const script = document.getElementById('re-captcha-script');
+       if (script) document.body.removeChild(script);
+     };
 
   }, [isAuthenticated, navigate]);
 
@@ -60,29 +60,29 @@ export default function LoginUser() {
     let captchaToken = "";
 
     // 3. Ejecutar reCAPTCHA v3 para obtener el token
-    // if (recaptchaRef.current) {
-    //   try {
-    //     // La ejecución del token v3
-    //     captchaToken = await recaptchaRef.current.execute(RECAPTCHA_SITE_KEY_V3, { action: 'login' });
-    //   } catch (e) {
-    //     console.error("Error al ejecutar reCAPTCHA v3:", e);
-    //     AlertMessage.error("Error de verificación", "No se pudo obtener el token de reCAPTCHA.");
-    //     return;
-    //   }
-    // } else {
-    //   // Este error no debería ocurrir si el script está cargado
-    //   AlertMessage.info(
-    //     "Verificación requerida",
-    //     "El servicio reCAPTCHA aún no está cargado. Por favor, inténtalo de nuevo."
-    //   );
-    //   return;
-    // }
+     if (recaptchaRef.current) {
+       try {
+         // La ejecución del token v3
+         captchaToken = await recaptchaRef.current.execute(RECAPTCHA_SITE_KEY_V3, { action: 'login' });
+       } catch (e) {
+         console.error("Error al ejecutar reCAPTCHA v3:", e);
+       AlertMessage.error("Error de verificación", "No se pudo obtener el token de reCAPTCHA.");
+         return;
+       }
+     } else {
+       // Este error no debería ocurrir si el script está cargado
+      AlertMessage.info(
+         "Verificación requerida",
+       "El servicio reCAPTCHA aún no está cargado. Por favor, inténtalo de nuevo."
+       );
+       return;
+     }
 
     // VERIFICAR AQUÍ: ¿captchaToken tiene un valor?
-    // if (!captchaToken || captchaToken.length < 10) {
-    //   AlertMessage.error("Error de token", "El token de reCAPTCHA es inválido o vacío.");
-    //   return;
-    // }
+     if (!captchaToken || captchaToken.length < 10) {
+       AlertMessage.error("Error de token", "El token de reCAPTCHA es inválido o vacío.");
+       return;
+     }
 
     try {
       // 4. Enviar el token v3 al backend para su verificación

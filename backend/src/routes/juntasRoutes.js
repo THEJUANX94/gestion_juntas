@@ -1,10 +1,33 @@
 import { Router } from "express";
-import { crearJunta, obtenerJuntas, obtenerJuntaPorId, actualizarJunta, eliminarJunta, obtenerTodasLasJuntas, exportarJuntasExcel, cambiarPeriodoJunta} from "../controllers/juntasController.js";
+import { crearJunta, obtenerJuntas, obtenerJuntaPorId, actualizarJunta, eliminarJunta, obtenerTodasLasJuntas, exportarJuntasExcel, cambiarPeriodoJunta, reporteEdades,
+  reporteComisiones,
+  reporteJuntasActivas,
+  reporteCargos,
+  //reporteProvincias,
+  reporteGenero,
+  reporteMunicipios} from "../controllers/juntasController.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import { ROLES } from "../config/roles.js";
 
 const router = Router();
 
+const ROLES_INFORMES = [ROLES.ADMIN, ROLES.AUXILIAR, ROLES.DESCARGA, ROLES.CONSULTA];
+//Rutas para reportes
+
+router.get("/reports/edades",verificarAuth, verificarRol(ROLES_INFORMES),reporteEdades);
+
+router.get("/reports/comisiones", verificarAuth, verificarRol(ROLES_INFORMES),reporteComisiones);
+
+router.get("/reports/activas",verificarAuth,verificarRol(ROLES_INFORMES),reporteJuntasActivas);
+
+router.get("/reports/cargos",verificarAuth,verificarRol(ROLES_INFORMES),reporteCargos);
+
+router.get("/reports/genero",verificarAuth,verificarRol(ROLES_INFORMES),reporteGenero);
+
+router.get("/reports/municipios",verificarAuth, verificarRol(ROLES_INFORMES),reporteMunicipios);
+
+
+//CRUD JUNTAS
 
 router.post("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), crearJunta);
 
@@ -19,3 +42,6 @@ router.put("/:id", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), a
 router.delete("/:id", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarJunta);
 
 export default router;
+
+
+

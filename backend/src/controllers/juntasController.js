@@ -9,6 +9,12 @@ import { MandatarioJunta } from "../model/mandatarioJuntaModel.js";
 import { Op } from "sequelize";
 import { sequelize } from "../config/database.js";
 import ExcelJS from "exceljs";
+//-----------------------------------
+
+import { Usuario } from "../model/usuarioModel.js";
+import { Cargo } from "../model/cargoModel.js";
+import { Comisiones } from "../model/comisionModel.js";
+
 
 export const crearJunta = async (req, res) => {
   try {
@@ -700,6 +706,7 @@ export const eliminarJunta = async (req, res) => {
   }
 };
 
+
 export const exportarJuntasExcel = async (req, res) => {
   try {
     const juntas = await Junta.findAll({
@@ -821,6 +828,206 @@ export const exportarJuntasExcel = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error generando Excel" });
+  }
+};
+
+// ─── REPORTE POR EDADES ─────────────────────────────────────────
+export const reporteEdades = async (req, res) => {
+  try {
+    const usuarios = await Usuario.findAll({ attributes: ["FechaNacimiento"] });
+
+    const hoy = new Date();
+    const rangos = { "18-25": 0, "26-35": 0, "36-45": 0, "46-60": 0, "60+": 0 };
+
+    usuarios.forEach(u => {
+      if (!u.FechaNacimiento) return;
+      const edad = hoy.getFullYear() - new Date(u.FechaNacimiento).getFullYear();
+      if      (edad <= 25) rangos["18-25"]++;
+      else if (edad <= 35) rangos["26-35"]++;
+      else if (edad <= 45) rangos["36-45"]++;
+      else if (edad <= 60) rangos["46-60"]++;
+      else                 rangos["60+"]++;
+    });
+
+    res.json({ labels: Object.keys(rangos), series: Object.values(rangos) });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── REPORTE DE COMISIONES ──────────────────────────────────────
+// Alias confirmado: MandatarioJunta.belongsTo(Comisiones, { as: "Comision" })
+// → acceder con m.Comision?.Nombre
+export const reporteComisiones = async (req, res) => {
+  try {
+    const mandatarios = await MandatarioJunta.findAll({
+      include: [{
+        model: Comisiones,
+        as: "Comision",        // alias exacto de asociacionesBD.js
+        required: false        // LEFT JOIN: incluir mandatarios sin comisión
+      }]
+    });
+
+    const conteo = {};
+    mandatarios.forEach(m => {
+      const nombre = m.Comision?.Nombre || "Sin Comisión";
+      conteo[nombre] = (conteo[nombre] || 0) + 1;
+    });
+
+    res.json({ labels: Object.keys(conteo), series: Object.values(conteo) });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── REPORTE JUNTAS ACTIVAS / INACTIVAS ─────────────────────────
+export const reporteJuntasActivas = async (req, res) => {
+  try {
+    const activas   = await Junta.count({ where: { Activo: true  } });
+    const inactivas = await Junta.count({ where: { Activo: false } });
+    res.json({ labels: ["Activas", "Inactivas"], series: [activas, inactivas] });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── REPORTE POR CARGOS ─────────────────────────────────────────
+// MandatarioJunta.belongsTo(Cargo, { foreignKey: "idcargo" }) → sin alias → m.Cargo
+export const reporteCargos = async (req, res) => {
+  try {
+    const mandatarios = await MandatarioJunta.findAll({
+      include: [{ model: Cargo, required: false }]
+    });
+
+    const conteo = {};
+    mandatarios.forEach(m => {
+      const nombre = m.Cargo?.NombreCargo || "Sin Cargo";
+      conteo[nombre] = (conteo[nombre] || 0) + 1;
+    });
+
+    res.json({ labels: Object.keys(conteo), series: Object.values(conteo) });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── REPORTE POR GÉNERO ─────────────────────────────────────────
+export const reporteGenero = async (req, res) => {
+  try {
+    const usuarios = await Usuario.findAll({ attributes: ["Sexo"] });
+
+    const conteo = { Masculino: 0, Femenino: 0, Otro: 0 };
+    usuarios.forEach(u => {
+      if      (u.Sexo === "Masculino") conteo.Masculino++;
+      else if (u.Sexo === "Femenino")  conteo.Femenino++;
+      else                             conteo.Otro++;
+    });
+
+    res.json({ labels: Object.keys(conteo), series: Object.values(conteo) });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ─── REPORTE POR PROVINCIAS DE BOYACÁ ───────────────────────────
+// Estructura de Lugar en la BD:
+//   TipoLugar = 'Departamento' → son las provincias de Boyacá
+//   TipoLugar = 'Municipio'    → municipios, IDOtroLugar = FK a su provincia padre
+//
+// Requiere el parche en asociacionesBD.js:
+//   Lugar.belongsTo(Lugar, { foreignKey: 'idotrolugar', as: 'LugarPadre' })
+//
+// Si el alias aún no existe, el catch hace el mismo cálculo con dos queries.
+export const reporteProvincias = async (req, res) => {
+  try {
+    // Intento principal: join Junta → municipio → provincia (via alias LugarPadre)
+    const juntas = await Junta.findAll({
+      attributes: ["IDJunta"],
+      include: [{
+        model: Lugar,
+        attributes: ["IDLugar", "NombreLugar", "idotrolugar"],
+        include: [{
+          model: Lugar,
+          as: "LugarPadre",               // alias del parche de asociacionesBD.js
+          attributes: ["IDLugar", "NombreLugar"],
+          required: false
+        }],
+        required: false
+      }]
+    });
+
+    const mapa = {};
+    juntas.forEach(j => {
+      const municipio = j.Lugar?.NombreLugar             || "Sin Municipio";
+      const provincia = j.Lugar?.LugarPadre?.NombreLugar || "Sin Provincia";
+      if (!mapa[provincia]) mapa[provincia] = { count: 0, municipios: new Set() };
+      mapa[provincia].count++;
+      mapa[provincia].municipios.add(municipio);
+    });
+
+    const ordenado = Object.entries(mapa).sort((a, b) => b[1].count - a[1].count);
+    return res.json({
+      labels:     ordenado.map(([p])    => p),
+      series:     ordenado.map(([, v])  => v.count),
+      municipios: ordenado.map(([, v])  => [...v.municipios].sort())
+    });
+
+  } catch (_err) {
+    // Plan B: dos queries independientes (funciona sin el parche de asociaciones)
+    try {
+      const [todasLasJuntas, todosLosLugares] = await Promise.all([
+        Junta.findAll({ attributes: ["IDJunta", "idmunicipio"] }),
+        Lugar.findAll({ attributes: ["IDLugar", "NombreLugar", "TipoLugar", "idotrolugar"] })
+      ]);
+
+      // Índices para búsqueda O(1)
+      const porId = {};
+      todosLosLugares.forEach(l => { porId[l.IDLugar] = l; });
+
+      const mapa = {};
+      todasLasJuntas.forEach(j => {
+        const municipio = porId[j.idmunicipio];
+        const provincia = municipio?.idotrolugar ? porId[municipio.idotrolugar] : null;
+        const nomMuni   = municipio?.NombreLugar || "Sin Municipio";
+        const nomProv   = provincia?.NombreLugar || "Sin Provincia";
+
+        if (!mapa[nomProv]) mapa[nomProv] = { count: 0, municipios: new Set() };
+        mapa[nomProv].count++;
+        mapa[nomProv].municipios.add(nomMuni);
+      });
+
+      const ordenado = Object.entries(mapa).sort((a, b) => b[1].count - a[1].count);
+      return res.json({
+        labels:     ordenado.map(([p])   => p),
+        series:     ordenado.map(([, v]) => v.count),
+        municipios: ordenado.map(([, v]) => [...v.municipios].sort())
+      });
+    } catch (err2) {
+      return res.status(500).json({ message: err2.message });
+    }
+  }
+};
+
+// ─── REPORTE POR MUNICIPIO (CON FILTRO) ─────────────────────────
+export const reporteMunicipios = async (req, res) => {
+  try {
+    const { municipios } = req.query;
+    const filtro = municipios ? municipios.split(",") : [];
+
+    const juntas = await Junta.findAll({
+      include: [{ model: Lugar, attributes: ["IDLugar", "NombreLugar"], required: false }],
+      where: filtro.length > 0 ? { idmunicipio: { [Op.in]: filtro } } : {}
+    });
+
+    const conteo = {};
+    juntas.forEach(j => {
+      const nombre = j.Lugar?.NombreLugar || "Sin Municipio";
+      conteo[nombre] = (conteo[nombre] || 0) + 1;
+    });
+
+    res.json({ labels: Object.keys(conteo), series: Object.values(conteo) });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
