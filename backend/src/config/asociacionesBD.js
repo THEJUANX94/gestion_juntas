@@ -88,7 +88,11 @@ export const Asociaciones = () => {
     // ========================================
     Lugar.hasMany(Lugar, { foreignKey: 'idotrolugar' });
     Lugar.hasMany(Junta, { foreignKey: "idmunicipio" });
+    // ↓ LÍNEAS NUEVAS — necesarias para el reporte de provincias
+    Lugar.belongsTo(Lugar, { foreignKey: 'idotrolugar', as: 'LugarPadre' });
+    Lugar.hasMany(Lugar,   { foreignKey: 'idotrolugar', as: 'LugaresMunicipio' });
 
+    
     // ========================================
     // RELACIONES PARA FIRMA
     // ========================================
