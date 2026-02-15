@@ -3,7 +3,7 @@ import { crearJunta, obtenerJuntas, obtenerJuntaPorId, actualizarJunta, eliminar
   reporteComisiones,
   reporteJuntasActivas,
   reporteCargos,
-  //reporteProvincias,
+  reporteProvincias,
   reporteGenero,
   reporteMunicipios} from "../controllers/juntasController.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
@@ -23,6 +23,8 @@ router.get("/reports/activas",verificarAuth,verificarRol(ROLES_INFORMES),reporte
 router.get("/reports/cargos",verificarAuth,verificarRol(ROLES_INFORMES),reporteCargos);
 
 router.get("/reports/genero",verificarAuth,verificarRol(ROLES_INFORMES),reporteGenero);
+
+router.get("/reports/provincias",verificarAuth, verificarRol(ROLES_INFORMES), reporteProvincias);
 
 router.get("/reports/municipios",verificarAuth, verificarRol(ROLES_INFORMES),reporteMunicipios);
 
