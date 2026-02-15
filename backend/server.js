@@ -37,7 +37,8 @@ const ID_ROL_ADMINISTRADOR = "4d41852c-4ee3-4798-bbe0-ca3a65660666";
 
 const allowedOrigins = [
   'https://172.20.1.32',
-  'https://gestionjuntas.boyaca.gov.co'
+  'https://gestionjuntas.boyaca.gov.co',
+  //'http://localhost:5173',
 ];
 
 const corsOptions = {
@@ -206,19 +207,19 @@ app.use("/api/grupospoblacionales", grupospoblacionales);
 app.use("/api/poblacionesporpersona", poblacionesporpersona);
 
 // Static files (only for production with built frontend)
-const frontendPath = path.join(__dirname, '../frontend/dist');
+// const frontendPath = path.join(__dirname, '../frontend/dist');
 
-// Only serve static files if dist folder exists
-try {
-  if (fs.existsSync(frontendPath)) {
-    app.use(express.static(frontendPath));
-    app.use((req, res) => {
-      res.sendFile(path.join(frontendPath, 'index.html'));
-    });
-  }
-} catch (e) {
-  console.log("Frontend dist folder not found - API only mode");
-}
+// // Only serve static files if dist folder exists
+// try {
+//   if (fs.existsSync(frontendPath)) {
+//     app.use(express.static(frontendPath));
+//     app.use((req, res) => {
+//       res.sendFile(path.join(frontendPath, 'index.html'));
+//     });
+//   }
+// } catch (e) {
+//   console.log("Frontend dist folder not found - API only mode");
+// }
 
 const PORT = process.env.PORT || 3000;
 
