@@ -40,6 +40,7 @@ import ValidacionQR from "./pages/ValidacionQR";
 import ListarMandatarios from "./pages/ListarMandatarios";
 import ChangePassword from "./pages/CambioContraseña";
 import ListarOrganismos from "./pages/ListarOrganismos";
+import InformesJuntas from "./pages/InformesJuntas";
 
 export default function App() {
   return (
@@ -73,6 +74,7 @@ export default function App() {
               <Route path="organismos/listar" element={<ListarOrganismos />} />
               <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
               <Route path="/changePassword" element={<ChangePassword />} />
+              <Route path="/juntas/informes" element={<InformesJuntas />} />
 
               {/* -----------------------------------------------------
                   NIVEL 2: OPERATIVO (Admin y Auxiliar)

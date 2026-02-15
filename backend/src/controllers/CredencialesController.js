@@ -13,7 +13,7 @@ export const loginUsuario = async (req, res) => {
     try {
         const { login, contraseña, captcha } = req.body;
 
-        if (!login || !contraseña ) {
+        if (!login || !contraseña || !captcha) {
             logOperation(
                 "LOGIN_FALLIDO",
                 login,
