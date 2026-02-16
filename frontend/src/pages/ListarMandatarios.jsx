@@ -2,16 +2,12 @@ import { useState, useEffect } from "react";
 import { Search, Filter, User, ToggleLeft, ToggleRight, FileCheck } from "lucide-react";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
-import useAuth from "../hooks/useAuth";
 
 export default function ListarMandatarios() {
   const [search, setSearch] = useState("");
   const [usuarios, setUsuarios] = useState([]);
   const [showFilter, setShowFilter] = useState({ nombre: false, identificacion: false, firma: false });
   const [filtros, setFiltros] = useState({ nombre: "", identificacion: "", firma: "" });
-  const { user } = useAuth();
-
-  const puedeEditar = user && PERMISOS.PUEDE_EDITAR.includes(user.rol);
 
   useEffect(() => {
     const fetchMandatarios = async () => {
@@ -81,41 +77,31 @@ export default function ListarMandatarios() {
 
     const confirmed = await AlertMessage.confirm(
       "Gestionar Firma",
-      `¿Deseas ${nuevoEstadoFirma ? "ACTIVAR" : "DESACTIVAR"} la firma de "${usuario.nombre}" (ID: ${usuario.identificacion})?${nuevoEstadoFirma ? "\n\n⚠️ NOTA: Esto desactivará automáticamente cualquier otra firma activa." : ""
-      }`
+      `¿Deseas ${nuevoEstadoFirma ? "ACTIVAR" : "DESACTIVAR"} la firma de "${usuario.nombre}" (ID: ${usuario.identificacion})?`
     );
     if (!confirmed) return;
 
+    // Actualización optimista
+    setUsuarios((prev) =>
+      prev.map((u) =>
+        u.IDUsuario === usuario.IDUsuario ? { ...u, firmaActiva: nuevoEstadoFirma } : u
+      )
+    );
+
     try {
+      // Endpoint ajustado para la firma del usuario
+      // ... dentro de handleToggleFirma
       const res = await fetch(
-        import.meta.env.VITE_PATH + `/usuarios/${usuario.identificacion}/firma/estado`,
+        import.meta.env.VITE_PATH + `/usuarios/${usuario.identificacion}/firma/estado`, // Usa identificación si eso espera el backend
         {
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ Activo: nuevoEstadoFirma }),
+          body: JSON.stringify({ Activo: nuevoEstadoFirma }), // Cambiado a 'Activo' para coincidir con el backend
         }
       );
 
       if (!res.ok) throw new Error("Error al cambiar estado de la firma");
-
-      // ✅ Actualizar el estado local correctamente
-      if (nuevoEstadoFirma) {
-        // Si se ACTIVÓ esta firma, desactivar todas las demás en el frontend
-        setUsuarios((prev) =>
-          prev.map((u) => ({
-            ...u,
-            firmaActiva: u.IDUsuario === usuario.IDUsuario,
-          }))
-        );
-      } else {
-        // Si se DESACTIVÓ, solo actualizar esta firma
-        setUsuarios((prev) =>
-          prev.map((u) =>
-            u.IDUsuario === usuario.IDUsuario ? { ...u, firmaActiva: false } : u
-          )
-        );
-      }
 
       AlertMessage.success(
         "Firma actualizada",
@@ -123,6 +109,12 @@ export default function ListarMandatarios() {
       );
     } catch (error) {
       console.error(error);
+      // Revertir en caso de error
+      setUsuarios((prev) =>
+        prev.map((u) =>
+          u.IDUsuario === usuario.IDUsuario ? { ...u, firmaActiva: !nuevoEstadoFirma } : u
+        )
+      );
       AlertMessage.error("Error", "No se pudo actualizar el estado de la firma.");
     }
   };
@@ -191,9 +183,7 @@ export default function ListarMandatarios() {
               <th className="px-4 py-2">
                 <div className="flex items-center justify-between">
                   Estado Firma
-                  {puedeEditar && (
-                    <button onClick={() => toggleFilter("firma")}><Filter className="h-4 w-4" /></button>
-                  )}
+                  <button onClick={() => toggleFilter("firma")}><Filter className="h-4 w-4" /></button>
                 </div>
                 {showFilter.firma && (
                   <input
