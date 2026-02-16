@@ -12,9 +12,8 @@ const VITE_PATH =
 if (!VITE_PATH)
   console.warn("VITE_PATH no está definida en el .env del frontend");
 
-// Todas las peticiones pasan por aquí → agrega /api/ automáticamente
 const apiFetch = (path, opts = {}) =>
-  fetch(`${VITE_PATH}/api${path}`, { credentials: "include", ...opts });
+  fetch(`${VITE_PATH}${path}`, { credentials: "include", ...opts });
 
 export default function InformesJuntas() {
   const [selectedReport, setSelectedReport] = useState("ages");
@@ -156,7 +155,7 @@ export default function InformesJuntas() {
       const params     = new URLSearchParams({ format });
       if (extra.municipios?.length) params.set("municipios", extra.municipios.join(","));
 
-      const url = `${VITE_PATH}/api/juntas/reports/${backendKey}/export?${params}`;
+      const url = `${VITE_PATH}/juntas/reports/${backendKey}/export?${params}`;
       const res = await fetch(url, { credentials: "include" });
 
       if (res.status === 404) {
