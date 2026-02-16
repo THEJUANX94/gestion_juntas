@@ -206,20 +206,18 @@ app.use("/api/certificados", certificadosRoutes);
 app.use("/api/grupospoblacionales", grupospoblacionales);
 app.use("/api/poblacionesporpersona", poblacionesporpersona);
 
-// Static files (only for production with built frontend)
-// const frontendPath = path.join(__dirname, '../frontend/dist');
+const frontendPath = path.join(__dirname, '../frontend/dist');
 
-// // Only serve static files if dist folder exists
-// try {
-//   if (fs.existsSync(frontendPath)) {
-//     app.use(express.static(frontendPath));
-//     app.use((req, res) => {
-//       res.sendFile(path.join(frontendPath, 'index.html'));
-//     });
-//   }
-// } catch (e) {
-//   console.log("Frontend dist folder not found - API only mode");
-// }
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+} else {
+  console.log("Frontend dist folder not found - API only mode");
+}
+
 
 const PORT = process.env.PORT || 3000;
 
