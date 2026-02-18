@@ -111,7 +111,7 @@ export default function ListarPersonas() {
   };
 
   const handleEdit = (usuario) => {
-    navigate(`/usuarios/update/${usuario.NumeroIdentificacion}`);
+    navigate(`/usuarios/update/${usuario.identificacion}`);
   };
 
 
@@ -124,7 +124,7 @@ export default function ListarPersonas() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(import.meta.env.VITE_PATH + `/usuarios/${usuario.NumeroIdentificacion}`, {
+      const res = await fetch(import.meta.env.VITE_PATH + `/usuarios/${usuario.identificacion}`, {
         method: "DELETE",
         credentials: 'include'
       });
@@ -132,7 +132,7 @@ export default function ListarPersonas() {
       if (!res.ok) throw new Error("Error al eliminar el usuario");
 
 
-      setUsuarios((prev) => prev.filter((u) => u.NumeroIdentificacion !== usuario.NumeroIdentificacion));
+      setUsuarios((prev) => prev.filter((u) => u.identificacion !== usuario.identificacion));
 
       AlertMessage.success("Eliminado", "El usuario fue eliminado correctamente.");
     } catch (err) {
