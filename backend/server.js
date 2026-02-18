@@ -37,7 +37,8 @@ const ID_ROL_ADMINISTRADOR = "4d41852c-4ee3-4798-bbe0-ca3a65660666";
 
 const allowedOrigins = [
   'https://172.20.1.32',
-  'https://gestionjuntas.boyaca.gov.co'
+  'https://gestionjuntas.boyaca.gov.co',
+  'http://localhost:5173',
 ];
 
 const corsOptions = {
