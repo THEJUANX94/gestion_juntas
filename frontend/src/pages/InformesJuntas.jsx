@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import { PieChart, pieArcLabelClasses } from '@mui/x-charts/PieChart';
 
 // VITE_PATH apunta al backend (ej: http://mi-servidor.com:3000)
 
@@ -33,6 +34,7 @@ export default function InformesJuntas() {
   const [municipios,             setMunicipios]             = useState([]);
   const [selectedMunicipalities, setSelectedMunicipalities] = useState([]);
   const [municipalityData,       setMunicipalityData]       = useState(null);
+  const [modalProvince, setModalProvince] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
@@ -53,12 +55,13 @@ export default function InformesJuntas() {
             .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar))
         );
 
-        // 'Municipio' = municipios; IDOtroLugar apunta a su provincia padre
-        setMunicipios(
-          lista
-            .filter((l) => l.TipoLugar === "Municipio")
-            .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar))
-        );
+        // ✅ ESTO FILTRA SOLO LOS DE BOYACÁ
+        const idsBoyaca = new Set(lista.filter(l => l.TipoLugar === "Departamento").map(d => d.IDLugar));
+          setMunicipios( lista
+          .filter((l) => l.TipoLugar === "Municipio" && idsBoyaca.has(l.IDOtroLugar))
+          .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar))
+);
+
       })
       .catch((e) => {
         console.error(e);
@@ -234,6 +237,51 @@ export default function InformesJuntas() {
     </div>
   );
 
+  // ── Modal para detalle de provincia ─────────────────────────────
+const ProvinceModal = ({ province, onClose }) => {
+  if (!province) return null;
+  const idx = provinceData.labels.indexOf(province);
+  if (idx === -1) return null;
+
+  const municipios = provinceData.municipios?.[idx] || [];
+  const totalJuntas = provinceData.series?.[idx] || 0;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-gray-800">
+            Provincia: {province}
+          </h3>
+          <button onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl leading-none">
+            ×
+          </button>
+        </div>
+        <div className="p-6">
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded">
+            <p className="text-sm text-green-700">
+              <strong className="text-2xl">{totalJuntas}</strong> juntas de acción comunal
+            </p>
+          </div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">
+            Municipios incluidos ({municipios.length}):
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {municipios.map((m, i) => (
+              <div key={i} className="text-sm text-gray-600 p-2 bg-gray-50 rounded border">
+                {m}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
   const tabs = [
     { key: "ages",         label: " Por Edades"  },
     { key: "commissions",  label: " Comisiones"  },
@@ -304,12 +352,12 @@ export default function InformesJuntas() {
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Comisiones con mayor participación</p>
                     <BarChart labels={commissionsData?.labels ?? []} series={commissionsData?.series ?? []} color="bg-blue-500" />
-                    {(commissionsData?.labels?.length ?? 0) > 0 && (
+                    {(commissionsData?.labels?.length ?? 0)/* > 0 && (
                       <SimpleTable
                         headers={["Comisión", "Participantes"]}
                         rows={commissionsData.labels.map((l, i) => [l, commissionsData.series?.[i]])}
                       />
-                    )}
+                    )*/}
                     <DownloadButtons reportKey="commissions" />
                   </div>
                 )}
@@ -330,11 +378,11 @@ export default function InformesJuntas() {
                             <p className="text-3xl font-bold text-red-800">{activeData.inactivas}</p>
                           </div>
                         </div>
-                        <BarChart
+                        {/*<BarChart
                           labels={["Activas", "Inactivas"]}
                           series={[activeData.activas, activeData.inactivas]}
                           color="bg-teal-500"
-                        />
+                        />*/}
                       </>
                     ) : <p className="text-sm text-gray-400">Sin datos</p>}
                     <DownloadButtons reportKey="active" />
@@ -346,12 +394,13 @@ export default function InformesJuntas() {
                   <div>
                     <p className="text-sm text-gray-500 mb-2">Distribución de personas por cargo</p>
                     <BarChart labels={positionsData?.labels ?? []} series={positionsData?.series ?? []} color="bg-purple-500" />
-                    {(positionsData?.labels?.length ?? 0) > 0 && (
+                    {(positionsData?.labels?.length ?? 0) /*> 0 && (
+                      
                       <SimpleTable
                         headers={["Cargo", "Personas"]}
                         rows={positionsData.labels.map((l, i) => [l, positionsData.series?.[i]])}
                       />
-                    )}
+                    )*/}
                     <DownloadButtons reportKey="positions" />
                   </div>
                 )}
@@ -359,19 +408,42 @@ export default function InformesJuntas() {
                 {/* ══ GÉNERO ══ */}
                 {selectedReport === "gender" && (
                   <div>
-                    <p className="text-sm text-gray-500 mb-2">Distribución de miembros por género</p>
-                    <BarChart labels={genderData?.labels ?? []} series={genderData?.series ?? []} color="bg-pink-500" />
-                    {(genderData?.labels?.length ?? 0) > 0 && (
-                      <SimpleTable
-                        headers={["Género", "Cantidad"]}
-                        rows={genderData.labels.map((l, i) => [l, genderData.series?.[i]])}
-                      />
+                    <p className="text-sm text-gray-500 mb-3">Distribución de miembros por género</p>
+                    {genderData && genderData.labels?.length > 0 ? (
+                      <div className="flex flex-col items-center">
+                        <PieChart
+                          series={[{
+                            data: genderData.labels.map((label, i) => ({
+                              id: i,
+                              value: genderData.series[i],
+                              label: label
+                            })),
+                            arcLabel: (item) => `${item.value}`,
+                            arcLabelMinAngle: 35,
+                            arcLabelRadius: '60%',
+                          }]}
+                          sx={{
+                            [`& .${pieArcLabelClasses.root}`]: {
+                              fontWeight: 'bold',
+                              fill: 'white',
+                            },
+                          }}
+                          width={400}
+                          height={300}
+                        />
+                        <SimpleTable
+                          headers={["Género", "Cantidad"]}
+                          rows={genderData.labels.map((l, i) => [l, genderData.series?.[i]])}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400">Sin datos</p>
                     )}
                     <DownloadButtons reportKey="gender" />
                   </div>
                 )}
 
-                {/* ══ PROVINCIAS DE BOYACÁ ══ */}
+                      {/* ══ PROVINCIAS DE BOYACÁ ══ */}
                 {selectedReport === "province" && (
                   <div>
                     <p className="text-sm text-gray-500 mb-3">
@@ -389,27 +461,31 @@ export default function InformesJuntas() {
                           series={provinceData.series ?? []}
                           color="bg-amber-500"
                         />
-                        <div className="mt-4 overflow-auto max-h-72">
-                          <table className="min-w-full text-sm border-collapse">
-                            <thead>
-                              <tr className="bg-gray-50 text-left">
-                                <th className="p-2 border font-medium">Provincia</th>
-                                <th className="p-2 border font-medium">N° Juntas</th>
-                                <th className="p-2 border font-medium">Municipios</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {provinceData.labels?.map((label, i) => (
-                                <tr key={i} className="border-t hover:bg-gray-50">
-                                  <td className="p-2 border font-medium">{label}</td>
-                                  <td className="p-2 border">{provinceData.series?.[i]}</td>
-                                  <td className="p-2 border text-xs text-gray-500">
-                                    {(provinceData.municipios?.[i] || []).join(", ")}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                        {/* Tarjetas interactivas en lugar de tabla */}
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {provinceData.labels?.map((label, i) => (
+                            <div key={i}
+                              onClick={() => setModalProvince(label)}
+                              className="p-4 border rounded-lg hover:shadow-md hover:border-green-500 cursor-pointer transition-all bg-white">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-semibold text-gray-800">{label}</h4>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {(provinceData.municipios?.[i] || []).length} municipios
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-2xl font-bold text-green-600">
+                                    {provinceData.series?.[i]}
+                                  </p>
+                                  <p className="text-xs text-gray-500">juntas</p>
+                                </div>
+                              </div>
+                              <p className="text-xs text-green-600 mt-2">
+                                Click para ver municipios →
+                              </p>
+                            </div>
+                          ))}
                         </div>
                       </>
                     ) : (
@@ -466,7 +542,7 @@ export default function InformesJuntas() {
                       </div>
                     )}
 
-                    {/* Lista de municipios con checkbox */}
+                     {/* Lista de municipios */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-52 overflow-auto border rounded p-2 mb-2 bg-gray-50 text-sm">
                       {municipios.length === 0 ? (
                         <p className="text-gray-400 col-span-3">Cargando municipios...</p>
@@ -547,19 +623,19 @@ export default function InformesJuntas() {
             <div className="flex flex-col gap-2">
               <button onClick={() => downloadReport(selectedReport, "excel")}
                 className="px-3 py-2 bg-green-700 hover:bg-green-800 text-white rounded text-sm">
-                ⬇ Descargar Excel
+                Descargar Excel
               </button>
               <button onClick={() => downloadReport(selectedReport, "word")}
                 className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
-                ⬇ Descargar Word
+                Descargar Word
               </button>
               <button onClick={() => downloadReport(selectedReport, "pdf")}
                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm">
-                ⬇ Descargar PDF
+                Descargar PDF
               </button>
             </div>
           </div>
-
+      {/*
           <div className="bg-white rounded-xl border shadow-sm p-4">
             <h3 className="font-semibold mb-2">Reportes disponibles</h3>
             <ul className="text-sm text-gray-600 space-y-1.5 mt-2">
@@ -571,9 +647,15 @@ export default function InformesJuntas() {
               <li><strong>Provincias</strong> — Por provincia de Boyacá</li>
               <li><strong>Municipio</strong> — Filtrado por municipio</li>
             </ul>
-          </div>
+          </div>*/}
         </div>
       </div>
+{/* Modal de detalle de provincia */}
+      {modalProvince && provinceData && (
+        <ProvinceModal province={modalProvince} onClose={() => setModalProvince(null)} />
+      )}
+  
+  
 
       <div className="mt-6">
         <Footer />
