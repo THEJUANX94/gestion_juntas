@@ -12,6 +12,7 @@ export default function LoginUser() {
   const { login: contextLogin, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
+  
   // 1. Usar useRef para almacenar el objeto reCAPTCHA
   const recaptchaRef = useRef(null);
 
@@ -57,7 +58,7 @@ export default function LoginUser() {
   const handleLogin = async (form) => {
     const { login, contraseña } = form;
 
-    let captchaToken = "";
+   let captchaToken = "";
 
     // 3. Ejecutar reCAPTCHA v3 para obtener el token
      if (recaptchaRef.current) {
@@ -82,8 +83,10 @@ export default function LoginUser() {
      if (!captchaToken || captchaToken.length < 10) {
        AlertMessage.error("Error de token", "El token de reCAPTCHA es inválido o vacío.");
        return;
-     }
 
+       }
+
+       
     try {
       // 4. Enviar el token v3 al backend para su verificación
       const response = await fetch(import.meta.env.VITE_PATH + "/login", {
@@ -112,6 +115,7 @@ export default function LoginUser() {
        // Si la puntuación es baja, debe rechazar el login.
       AlertMessage.error("Error de autenticación", "Usuario, contraseña o verificación incorrectos.");
      }
+     
   };
 
   return (
