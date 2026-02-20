@@ -6,6 +6,7 @@ import { crearJunta, obtenerJuntas, obtenerJuntaPorId, actualizarJunta, eliminar
   reporteProvincias,
   reporteGenero,
   reporteMunicipios} from "../controllers/juntasController.js";
+import { exportarReporte } from "../controllers/juntasControllerReportes.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import { ROLES } from "../config/roles.js";
 
