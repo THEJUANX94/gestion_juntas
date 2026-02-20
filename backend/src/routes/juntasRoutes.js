@@ -28,6 +28,7 @@ router.get("/reports/provincias",verificarAuth, verificarRol(ROLES_INFORMES), re
 
 router.get("/reports/municipios",verificarAuth, verificarRol(ROLES_INFORMES),reporteMunicipios);
 
+router.get('/juntas/reports/:tipo/export', verificarAuth, verificarRol(ROLES_INFORMES),exportarReporte); // Nueva ruta para exportar reportes en diferentes formatos
 
 //CRUD JUNTAS
 

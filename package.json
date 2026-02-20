@@ -3,6 +3,9 @@
     "baseline-browser-mapping": "^2.9.17"
   },
   "dependencies": {
-    "@mui/x-charts": "^8.27.0"
+    "@mui/x-charts": "^8.27.0",
+    "docx": "^9.5.3",
+    "exceljs": "^4.4.0",
+    "pdfkit": "^0.17.2"
   }
 }

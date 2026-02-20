@@ -3,7 +3,6 @@ import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import { PieChart, pieArcLabelClasses } from '@mui/x-charts/PieChart';
 import { Filter, Download, FileSpreadsheet, FileText, FileType, RotateCcw } from "lucide-react";
-import Select from "react-select";
 
 const VITE_PATH =
   typeof import.meta !== "undefined" && import.meta.env?.VITE_PATH
@@ -34,45 +33,74 @@ export default function InformesJuntas() {
   const [municipalityData,       setMunicipalityData]       = useState(null);
   const [modalProvince,          setModalProvince]          = useState(null);
 
-  // Estados de filtro adicional por rango de edad
-  const [selectedAgeRange, setSelectedAgeRange] = useState("");
+  // Estados de filtros específicos por reporte
+  const [selectedAgeRange,    setSelectedAgeRange]    = useState("");
+  const [selectedCommission,  setSelectedCommission]  = useState("");
+  const [selectedActiveState, setSelectedActiveState] = useState("");
+  const [selectedPosition,    setSelectedPosition]    = useState("");
+  const [selectedGender,      setSelectedGender]      = useState("");
   
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
 
-// En el useEffect que carga lugares (línea ~46)
-useEffect(() => {
-  apiFetch("/lugares")
-    .then((r) => (r.ok ? r.json() : Promise.reject("Error cargando lugares")))
-    .then((data) => {
-      const lista = Array.isArray(data) ? data : [];
-      
-      // Las PROVINCIAS son los que tienen TipoLugar = "Departamento"
-      // (en tu BD las llaman "Departamento" pero son las provincias de Boyacá)
-      const provincias = lista
-        .filter((l) => l.TipoLugar === "Departamento")
-        .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar));
-      
-      setProvincias(provincias);
-      
-      // Los MUNICIPIOS de Boyacá: su IDOtroLugar debe estar en la lista de provincias
-      const idsProvincias = new Set(provincias.map(p => p.IDLugar));
-      const municipiosBoyaca = lista
-        .filter((l) => l.TipoLugar === "Municipio" && idsProvincias.has(l.IDOtroLugar))
-        .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar));
-      
-      setMunicipios(municipiosBoyaca);
-      
-      console.log("Provincias:", provincias.length);
-      console.log("Municipios de Boyacá:", municipiosBoyaca.length);
-    })
-    .catch((e) => {
-      console.error(e);
-      setProvincias([]);
-      setMunicipios([]);
-    });
-}, []);
+  /**
+   * Carga inicial de lugares desde el backend
+   * Separa provincias (TipoLugar="Departamento") de municipios (TipoLugar="Municipio")
+   * Solo incluye municipios cuyo IDOtroLugar corresponde a una provincia cargada
+   */
+  useEffect(() => {
+    apiFetch("/lugares")
+      .then((r) => (r.ok ? r.json() : Promise.reject("Error cargando lugares")))
+      .then((data) => {
+        const lista = Array.isArray(data) ? data : [];
+        
+        // Filtrar provincias de Boyacá (TipoLugar = "Departamento")
+        // Usar Set para eliminar duplicados por IDLugar
+        const provinciasUnicas = new Map();
+        lista
+          .filter((l) => l.TipoLugar === "Departamento")
+          .forEach((p) => {
+            if (!provinciasUnicas.has(p.IDLugar)) {
+              provinciasUnicas.set(p.IDLugar, p);
+            }
+          });
+        
+        const provincias = Array.from(provinciasUnicas.values())
+          .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar));
+        
+        setProvincias(provincias);
+        
+        // Filtrar municipios que pertenecen a alguna de las provincias cargadas
+        // IDOtroLugar del municipio debe coincidir con IDLugar de una provincia
+        const idsProvincias = new Set(provincias.map(p => p.IDLugar));
+        const municipiosUnicos = new Map();
+        lista
+          .filter((l) => l.TipoLugar === "Municipio" && idsProvincias.has(l.IDOtroLugar))
+          .forEach((m) => {
+            if (!municipiosUnicos.has(m.IDLugar)) {
+              municipiosUnicos.set(m.IDLugar, m);
+            }
+          });
+        
+        const municipiosBoyaca = Array.from(municipiosUnicos.values())
+          .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar));
+        
+        setMunicipios(municipiosBoyaca);
+        
+        console.log("Provincias cargadas:", provincias.length);
+        console.log("Municipios de Boyacá:", municipiosBoyaca.length);
+      })
+      .catch((e) => {
+        console.error(e);
+        setProvincias([]);
+        setMunicipios([]);
+      });
+  }, []);
 
+  /**
+   * Carga automática de datos cuando cambia el reporte seleccionado
+   * No aplica para municipios y provincias que requieren acción manual
+   */
   useEffect(() => {
     if (selectedReport === "municipality" || selectedReport === "province") return;
 
@@ -145,6 +173,14 @@ useEffect(() => {
     }
   };
 
+  /**
+   * Descarga de reportes en diferentes formatos
+   * NOTA: Esta función llama al endpoint de export que debe estar implementado en el backend
+   * El backend debe generar los archivos usando librerías apropiadas:
+   * - Excel: exceljs o xlsx
+   * - Word: docx
+   * - PDF: pdfkit o puppeteer
+   */
   const downloadReport = async (reportKey, format = "excel", extra = {}) => {
     try {
       const routeMap = {
@@ -180,26 +216,33 @@ useEffect(() => {
     }
   };
 
-  // Función para filtrar datos según criterios
-  const getFilteredData = (data) => {
-    if (!data || !data.labels) return data;
+  /**
+   * Aplica filtros sobre los datos según el reporte y filtro seleccionado
+   * Retorna un subconjunto de los datos originales si hay filtro activo
+   */
+  const getFilteredData = (data, filterValue) => {
+    if (!data || !data.labels || !filterValue) return data;
     
-    // Para el reporte de edades, aplicar filtro si está seleccionado
-    if (selectedReport === "ages" && selectedAgeRange) {
-      const idx = data.labels.indexOf(selectedAgeRange);
-      if (idx !== -1) {
-        return {
-          labels: [data.labels[idx]],
-          series: [data.series[idx]]
-        };
-      }
+    const idx = data.labels.indexOf(filterValue);
+    if (idx !== -1) {
+      return {
+        labels: [data.labels[idx]],
+        series: [data.series[idx]]
+      };
     }
     
     return data;
   };
 
+  /**
+   * Limpia todos los filtros activos y resetea los estados relacionados
+   */
   const limpiarFiltros = () => {
     setSelectedAgeRange("");
+    setSelectedCommission("");
+    setSelectedActiveState("");
+    setSelectedPosition("");
+    setSelectedGender("");
     setSelectedMunicipalities([]);
     setMunicipalityData(null);
   };
@@ -278,7 +321,7 @@ useEffect(() => {
           onClick={(e) => e.stopPropagation()}>
           <div className="sticky top-0 bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white p-5 flex justify-between items-center">
             <h3 className="text-xl font-bold">
-              📍 Provincia: {province}
+              Provincia: {province}
             </h3>
             <button onClick={onClose}
               className="text-white hover:text-gray-200 text-3xl leading-none transition-colors">
@@ -307,6 +350,41 @@ useEffect(() => {
     );
   };
 
+  /**
+   * Componente de filtro reutilizable para diferentes reportes
+   * Muestra un dropdown con opciones y botón de limpiar si hay filtro activo
+   */
+  const FilterSection = ({ label, options, value, onChange, onClear }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Filter className="text-[#009E76]" size={20} />
+        <h3 className="text-lg font-semibold text-gray-800">Filtros</h3>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div>
+          <label className="block text-sm font-semibold mb-2 text-gray-700">{label}</label>
+          <select
+            value={value}
+            onChange={onChange}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2.5">
+            <option value="">Todas las opciones</option>
+            {options.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+        {value && (
+          <button
+            onClick={onClear}
+            className="inline-flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-4 py-2.5 rounded-lg transition-all">
+            <RotateCcw size={16} />
+            Limpiar Filtros
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   const tabs = [
     { key: "ages",         label: "Por Edades"  },
     { key: "commissions",  label: "Comisiones"  },
@@ -317,11 +395,16 @@ useEffect(() => {
     { key: "municipality", label: "Municipio"    },
   ];
 
-  const filteredAgesData = getFilteredData(agesData);
+  // Aplicar filtros a cada reporte
+  const filteredAgesData = getFilteredData(agesData, selectedAgeRange);
+  const filteredCommissionsData = getFilteredData(commissionsData, selectedCommission);
+  const filteredPositionsData = getFilteredData(positionsData, selectedPosition);
+  const filteredGenderData = getFilteredData(genderData, selectedGender);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
+        
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center gap-3">
@@ -349,36 +432,55 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Filtros específicos por reporte */}
-        {(selectedReport === "ages" && agesData) && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter className="text-[#009E76]" size={20} />
-              <h3 className="text-lg font-semibold text-gray-800">Filtros</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">Rango de Edad</label>
-                <select
-                  value={selectedAgeRange}
-                  onChange={(e) => setSelectedAgeRange(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5">
-                  <option value="">Todos los rangos</option>
-                  {agesData.labels.map((label) => (
-                    <option key={label} value={label}>{label}</option>
-                  ))}
-                </select>
-              </div>
-              {selectedAgeRange && (
-                <button
-                  onClick={limpiarFiltros}
-                  className="inline-flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-4 py-2.5 rounded-lg transition-all">
-                  <RotateCcw size={16} />
-                  Limpiar Filtros
-                </button>
-              )}
-            </div>
-          </div>
+        {/* Filtros dinámicos según reporte */}
+        {selectedReport === "ages" && agesData && (
+          <FilterSection
+            label="Rango de Edad"
+            options={agesData.labels}
+            value={selectedAgeRange}
+            onChange={(e) => setSelectedAgeRange(e.target.value)}
+            onClear={limpiarFiltros}
+          />
+        )}
+
+        {selectedReport === "commissions" && commissionsData && (
+          <FilterSection
+            label="Comisión"
+            options={commissionsData.labels}
+            value={selectedCommission}
+            onChange={(e) => setSelectedCommission(e.target.value)}
+            onClear={limpiarFiltros}
+          />
+        )}
+
+        {selectedReport === "active" && activeData && (
+          <FilterSection
+            label="Estado"
+            options={["Activas", "Inactivas"]}
+            value={selectedActiveState}
+            onChange={(e) => setSelectedActiveState(e.target.value)}
+            onClear={limpiarFiltros}
+          />
+        )}
+
+        {selectedReport === "positions" && positionsData && (
+          <FilterSection
+            label="Cargo"
+            options={positionsData.labels}
+            value={selectedPosition}
+            onChange={(e) => setSelectedPosition(e.target.value)}
+            onClear={limpiarFiltros}
+          />
+        )}
+
+        {selectedReport === "gender" && genderData && (
+          <FilterSection
+            label="Género"
+            options={genderData.labels}
+            value={selectedGender}
+            onChange={(e) => setSelectedGender(e.target.value)}
+            onClear={limpiarFiltros}
+          />
         )}
 
         {/* Panel principal */}
@@ -399,7 +501,7 @@ useEffect(() => {
 
           {error && !loading && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-              <strong>⚠ Error:</strong> {error}
+              <strong>Error:</strong> {error}
             </div>
           )}
 
@@ -418,7 +520,7 @@ useEffect(() => {
               {selectedReport === "commissions" && (
                 <div>
                   <p className="text-gray-600 mb-4">Comisiones con mayor participación</p>
-                  <BarChart labels={commissionsData?.labels ?? []} series={commissionsData?.series ?? []} color="bg-blue-500" />
+                  <BarChart labels={filteredCommissionsData?.labels ?? []} series={filteredCommissionsData?.series ?? []} color="bg-blue-500" />
                   <DownloadButtons reportKey="commissions" />
                 </div>
               )}
@@ -429,16 +531,30 @@ useEffect(() => {
                   <p className="text-gray-600 mb-6">Estado actual de las juntas registradas</p>
                   {activeData ? (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div className="p-6 bg-green-50 border-2 border-green-300 rounded-xl text-center shadow-sm">
+                      {selectedActiveState === "" && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                          <div className="p-6 bg-green-50 border-2 border-green-300 rounded-xl text-center shadow-sm">
+                            <p className="text-lg text-green-700 font-semibold mb-2">Activas</p>
+                            <p className="text-5xl font-bold text-green-800">{activeData.activas}</p>
+                          </div>
+                          <div className="p-6 bg-red-50 border-2 border-red-300 rounded-xl text-center shadow-sm">
+                            <p className="text-lg text-red-700 font-semibold mb-2">Inactivas</p>
+                            <p className="text-5xl font-bold text-red-800">{activeData.inactivas}</p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedActiveState === "Activas" && (
+                        <div className="p-6 bg-green-50 border-2 border-green-300 rounded-xl text-center shadow-sm max-w-md mx-auto">
                           <p className="text-lg text-green-700 font-semibold mb-2">Activas</p>
                           <p className="text-5xl font-bold text-green-800">{activeData.activas}</p>
                         </div>
-                        <div className="p-6 bg-red-50 border-2 border-red-300 rounded-xl text-center shadow-sm">
+                      )}
+                      {selectedActiveState === "Inactivas" && (
+                        <div className="p-6 bg-red-50 border-2 border-red-300 rounded-xl text-center shadow-sm max-w-md mx-auto">
                           <p className="text-lg text-red-700 font-semibold mb-2">Inactivas</p>
                           <p className="text-5xl font-bold text-red-800">{activeData.inactivas}</p>
                         </div>
-                      </div>
+                      )}
                     </>
                   ) : <p className="text-gray-400">Sin datos</p>}
                   <DownloadButtons reportKey="active" />
@@ -449,41 +565,45 @@ useEffect(() => {
               {selectedReport === "positions" && (
                 <div>
                   <p className="text-gray-600 mb-4">Distribución de personas por cargo</p>
-                  <BarChart labels={positionsData?.labels ?? []} series={positionsData?.series ?? []} color="bg-purple-500" />
+                  <BarChart labels={filteredPositionsData?.labels ?? []} series={filteredPositionsData?.series ?? []} color="bg-purple-500" />
                   <DownloadButtons reportKey="positions" />
                 </div>
               )}
 
-              {/* GÉNERO */}
+              {/* GÉNERO - Layout mejorado */}
               {selectedReport === "gender" && (
                 <div>
                   <p className="text-gray-600 mb-6">Distribución de miembros por género</p>
-                  {genderData && genderData.labels?.length > 0 ? (
-                    <div className="flex flex-col items-center">
-                      <PieChart
-                        series={[{
-                          data: genderData.labels.map((label, i) => ({
-                            id: i,
-                            value: genderData.series[i],
-                            label: label
-                          })),
-                          arcLabel: (item) => `${item.value}`,
-                          arcLabelMinAngle: 35,
-                          arcLabelRadius: '60%',
-                        }]}
-                        sx={{
-                          [`& .${pieArcLabelClasses.root}`]: {
-                            fontWeight: 'bold',
-                            fill: 'white',
-                          },
-                        }}
-                        width={450}
-                        height={320}
-                      />
-                      <SimpleTable
-                        headers={["Género", "Cantidad"]}
-                        rows={genderData.labels.map((l, i) => [l, genderData.series?.[i]])}
-                      />
+                  {filteredGenderData && filteredGenderData.labels?.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                      <div className="flex justify-center">
+                        <PieChart
+                          series={[{
+                            data: filteredGenderData.labels.map((label, i) => ({
+                              id: i,
+                              value: filteredGenderData.series[i],
+                              label: label
+                            })),
+                            arcLabel: (item) => `${item.value}`,
+                            arcLabelMinAngle: 35,
+                            arcLabelRadius: '60%',
+                          }]}
+                          sx={{
+                            [`& .${pieArcLabelClasses.root}`]: {
+                              fontWeight: 'bold',
+                              fill: 'white',
+                            },
+                          }}
+                          width={400}
+                          height={300}
+                        />
+                      </div>
+                      <div className="flex items-center">
+                        <SimpleTable
+                          headers={["Género", "Cantidad"]}
+                          rows={filteredGenderData.labels.map((l, i) => [l, filteredGenderData.series?.[i]])}
+                        />
+                      </div>
                     </div>
                   ) : (
                     <p className="text-gray-400">Sin datos</p>
@@ -531,7 +651,7 @@ useEffect(() => {
                               </div>
                             </div>
                             <p className="text-sm text-[#009E76] font-medium">
-                              Click para ver municipios →
+                              Click para ver municipios
                             </p>
                           </div>
                         ))}
@@ -551,7 +671,6 @@ useEffect(() => {
                     Selecciona municipios de Boyacá para ver sus juntas
                   </p>
 
-                  {/* Filtros de selección */}
                   <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 mb-6">
                     <div className="flex items-center gap-2 mb-4">
                       <Filter className="text-[#009E76]" size={20} />
@@ -657,7 +776,7 @@ useEffect(() => {
                   ) : (
                     !loading && (
                       <p className="text-gray-400 text-center py-8">
-                        Selecciona municipios y presiona "Ver juntas"
+                        Selecciona municipios y presiona Ver juntas
                       </p>
                     )
                   )}
@@ -667,7 +786,6 @@ useEffect(() => {
           )}
         </div>
 
-        {/* Modal */}
         {modalProvince && provinceData && (
           <ProvinceModal province={modalProvince} onClose={() => setModalProvince(null)} />
         )}
