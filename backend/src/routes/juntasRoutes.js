@@ -3,11 +3,15 @@ import { crearJunta, obtenerJuntas, obtenerJuntaPorId, actualizarJunta, eliminar
   reporteComisiones,
   reporteJuntasActivas,
   reporteCargos,
-  reporteProvincias,
   reporteGenero,
-  reporteMunicipios} from "../controllers/juntasController.js";
+} from "../controllers/juntasController.js";
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
 import { ROLES } from "../config/roles.js";
+import {
+  exportarReporte,
+  reporteMunicipios,
+  reporteProvincias
+} from "../controllers/juntasControllerReportes.js";
 
 const router = Router();
 
@@ -28,7 +32,7 @@ router.get("/reports/provincias",verificarAuth, verificarRol(ROLES_INFORMES), re
 
 router.get("/reports/municipios",verificarAuth, verificarRol(ROLES_INFORMES),reporteMunicipios);
 
-router.get('/juntas/reports/:tipo/export', verificarAuth, verificarRol(ROLES_INFORMES),exportarReporte); // Nueva ruta para exportar reportes en diferentes formatos
+router.get("/reports/:tipo/export", verificarAuth, verificarRol(ROLES_INFORMES), exportarReporte);
 
 //CRUD JUNTAS
 
