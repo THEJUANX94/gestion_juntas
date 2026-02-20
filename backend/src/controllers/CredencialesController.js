@@ -11,7 +11,7 @@ const RECAPTCHA_THRESHOLD = 0.2;
 
 export const loginUsuario = async (req, res) => {
     try {
-        const { login, contraseña, captcha } = req.body;
+        const { login, contraseña , captcha } = req.body;
 
         if (!login || !contraseña  || !captcha) {
             logOperation(

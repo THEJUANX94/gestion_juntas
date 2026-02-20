@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import { PieChart, pieArcLabelClasses } from '@mui/x-charts/PieChart';
-
-// VITE_PATH apunta al backend (ej: http://mi-servidor.com:3000)
+import { Filter, Download, FileSpreadsheet, FileText, FileType, RotateCcw } from "lucide-react";
+import Select from "react-select";
 
 const VITE_PATH =
   typeof import.meta !== "undefined" && import.meta.env?.VITE_PATH
@@ -19,7 +19,7 @@ const apiFetch = (path, opts = {}) =>
 export default function InformesJuntas() {
   const [selectedReport, setSelectedReport] = useState("ages");
 
-  // ── Estado por reporte ──────────────────────────────────────────
+  // Estados de datos
   const [agesData,        setAgesData]        = useState(null);
   const [commissionsData, setCommissionsData] = useState(null);
   const [activeData,      setActiveData]      = useState(null);
@@ -27,50 +27,52 @@ export default function InformesJuntas() {
   const [genderData,      setGenderData]      = useState(null);
   const [provinceData,    setProvinceData]    = useState(null);
 
-  // ── Estado para el selector de municipios ──────────────────────
-  // provincias = registros con TipoLugar='Departamento'
-  // municipios = registros con TipoLugar='Municipio'
+  // Estados de filtros
   const [provincias,             setProvincias]             = useState([]);
   const [municipios,             setMunicipios]             = useState([]);
   const [selectedMunicipalities, setSelectedMunicipalities] = useState([]);
   const [municipalityData,       setMunicipalityData]       = useState(null);
-  const [modalProvince, setModalProvince] = useState(null);
+  const [modalProvince,          setModalProvince]          = useState(null);
 
+  // Estados de filtro adicional por rango de edad
+  const [selectedAgeRange, setSelectedAgeRange] = useState("");
+  
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState(null);
 
-  // ── Cargar lugares al montar ────────────────────────────────────
-  // /api/lugares devuelve TODOS los Lugar (departamentos y municipios)
-  // Los separamos por TipoLugar para usarlos en el selector
-  useEffect(() => {
-    apiFetch("/lugares")
-      .then((r) => (r.ok ? r.json() : Promise.reject("Error cargando lugares")))
-      .then((data) => {
-        const lista = Array.isArray(data) ? data : [];
+// En el useEffect que carga lugares (línea ~46)
+useEffect(() => {
+  apiFetch("/lugares")
+    .then((r) => (r.ok ? r.json() : Promise.reject("Error cargando lugares")))
+    .then((data) => {
+      const lista = Array.isArray(data) ? data : [];
+      
+      // Las PROVINCIAS son los que tienen TipoLugar = "Departamento"
+      // (en tu BD las llaman "Departamento" pero son las provincias de Boyacá)
+      const provincias = lista
+        .filter((l) => l.TipoLugar === "Departamento")
+        .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar));
+      
+      setProvincias(provincias);
+      
+      // Los MUNICIPIOS de Boyacá: su IDOtroLugar debe estar en la lista de provincias
+      const idsProvincias = new Set(provincias.map(p => p.IDLugar));
+      const municipiosBoyaca = lista
+        .filter((l) => l.TipoLugar === "Municipio" && idsProvincias.has(l.IDOtroLugar))
+        .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar));
+      
+      setMunicipios(municipiosBoyaca);
+      
+      console.log("Provincias:", provincias.length);
+      console.log("Municipios de Boyacá:", municipiosBoyaca.length);
+    })
+    .catch((e) => {
+      console.error(e);
+      setProvincias([]);
+      setMunicipios([]);
+    });
+}, []);
 
-        // 'Departamento' en esta BD = provincias de Boyacá
-        setProvincias(
-          lista
-            .filter((l) => l.TipoLugar === "Departamento")
-            .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar))
-        );
-
-        // ✅ ESTO FILTRA SOLO LOS DE BOYACÁ
-        const idsBoyaca = new Set(lista.filter(l => l.TipoLugar === "Departamento").map(d => d.IDLugar));
-          setMunicipios( lista
-          .filter((l) => l.TipoLugar === "Municipio" && idsBoyaca.has(l.IDOtroLugar))
-          .sort((a, b) => a.NombreLugar.localeCompare(b.NombreLugar))
-);
-
-      })
-      .catch((e) => {
-        console.error(e);
-        setProvincias([]);
-        setMunicipios([]);
-      });
-  }, []);
-
-  // ── Carga automática al cambiar de reporte ──────────────────────
   useEffect(() => {
     if (selectedReport === "municipality" || selectedReport === "province") return;
 
@@ -98,7 +100,6 @@ export default function InformesJuntas() {
         if (selectedReport === "positions")   setPositionsData(data);
         if (selectedReport === "gender")      setGenderData(data);
         if (selectedReport === "active") {
-          // Backend devuelve { labels:["Activas","Inactivas"], series:[n,n] }
           setActiveData({ activas: data.series?.[0] ?? 0, inactivas: data.series?.[1] ?? 0 });
         }
       } catch (e) {
@@ -112,7 +113,6 @@ export default function InformesJuntas() {
     load();
   }, [selectedReport]);
 
-  // ── Cargar reporte de provincias ────────────────────────────────
   const cargarProvincias = async () => {
     setLoading(true);
     setError(null);
@@ -128,7 +128,6 @@ export default function InformesJuntas() {
     }
   };
 
-  // ── Cargar reporte de municipios filtrado ───────────────────────
   const cargarMunicipios = async () => {
     if (selectedMunicipalities.length === 0) return;
     setLoading(true);
@@ -146,7 +145,6 @@ export default function InformesJuntas() {
     }
   };
 
-  // ── Descarga ────────────────────────────────────────────────────
   const downloadReport = async (reportKey, format = "excel", extra = {}) => {
     try {
       const routeMap = {
@@ -174,13 +172,38 @@ export default function InformesJuntas() {
       a.href     = URL.createObjectURL(blob);
       a.download = `${backendKey}-${new Date().toISOString().slice(0, 10)}.${ext}`;
       document.body.appendChild(a); a.click(); a.remove();
+      
+      AlertMessage.success("Descarga iniciada", `El archivo ${ext.toUpperCase()} se está descargando`);
     } catch (e) {
       console.error(e);
       AlertMessage.error("Error", "No se pudo descargar el informe");
     }
   };
 
-  // ── Sub-componentes ─────────────────────────────────────────────
+  // Función para filtrar datos según criterios
+  const getFilteredData = (data) => {
+    if (!data || !data.labels) return data;
+    
+    // Para el reporte de edades, aplicar filtro si está seleccionado
+    if (selectedReport === "ages" && selectedAgeRange) {
+      const idx = data.labels.indexOf(selectedAgeRange);
+      if (idx !== -1) {
+        return {
+          labels: [data.labels[idx]],
+          series: [data.series[idx]]
+        };
+      }
+    }
+    
+    return data;
+  };
+
+  const limpiarFiltros = () => {
+    setSelectedAgeRange("");
+    setSelectedMunicipalities([]);
+    setMunicipalityData(null);
+  };
+
   const BarChart = ({ labels = [], series = [], color = "bg-green-600" }) => {
     if (!labels.length)
       return <p className="text-sm text-gray-400 mt-2">Sin datos para mostrar</p>;
@@ -189,12 +212,12 @@ export default function InformesJuntas() {
       <div className="space-y-2 mt-2">
         {labels.map((label, i) => (
           <div key={i} className="flex items-center gap-3">
-            <div className="w-44 text-sm text-gray-700 truncate" title={label}>{label}</div>
+            <div className="w-48 text-sm text-gray-700 truncate" title={label}>{label}</div>
             <div className="flex-1 bg-gray-100 rounded h-6 overflow-hidden">
               <div style={{ width: `${(series[i] / max) * 100}%` }}
                 className={`h-6 ${color} transition-all duration-500`} />
             </div>
-            <div className="w-10 text-right text-sm font-semibold">{series[i]}</div>
+            <div className="w-12 text-right text-sm font-semibold">{series[i]}</div>
           </div>
         ))}
       </div>
@@ -202,34 +225,37 @@ export default function InformesJuntas() {
   };
 
   const DownloadButtons = ({ reportKey, extra = {} }) => (
-    <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t">
+    <div className="mt-6 pt-4 border-t flex flex-wrap gap-3 justify-center">
       <button onClick={() => downloadReport(reportKey, "excel", extra)}
-        className="px-4 py-1.5 bg-green-700 hover:bg-green-800 text-white rounded text-sm font-medium">
-        ⬇ Excel
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-700 hover:bg-green-800 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg">
+        <FileSpreadsheet size={18} />
+        Descargar Excel
       </button>
       <button onClick={() => downloadReport(reportKey, "word", extra)}
-        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium">
-        ⬇ Word
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg">
+        <FileText size={18} />
+        Descargar Word
       </button>
       <button onClick={() => downloadReport(reportKey, "pdf", extra)}
-        className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium">
-        ⬇ PDF
+        className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg">
+        <FileType size={18} />
+        Descargar PDF
       </button>
     </div>
   );
 
   const SimpleTable = ({ headers, rows }) => (
-    <div className="mt-4 overflow-auto max-h-60">
+    <div className="mt-4 overflow-auto max-h-72">
       <table className="min-w-full text-sm border-collapse">
         <thead>
-          <tr className="bg-gray-50 text-left">
-            {headers.map((h, i) => <th key={i} className="p-2 border font-medium">{h}</th>)}
+          <tr className="bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white">
+            {headers.map((h, i) => <th key={i} className="px-4 py-3 text-left font-semibold">{h}</th>)}
           </tr>
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-t hover:bg-gray-50">
-              {row.map((cell, j) => <td key={j} className="p-2 border">{cell}</td>)}
+            <tr key={i} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} border-t hover:bg-blue-50 transition-colors`}>
+              {row.map((cell, j) => <td key={j} className="px-4 py-3 border">{cell}</td>)}
             </tr>
           ))}
         </tbody>
@@ -237,304 +263,327 @@ export default function InformesJuntas() {
     </div>
   );
 
-  // ── Modal para detalle de provincia ─────────────────────────────
-const ProvinceModal = ({ province, onClose }) => {
-  if (!province) return null;
-  const idx = provinceData.labels.indexOf(province);
-  if (idx === -1) return null;
+  const ProvinceModal = ({ province, onClose }) => {
+    if (!province) return null;
+    const idx = provinceData.labels.indexOf(province);
+    if (idx === -1) return null;
 
-  const municipios = provinceData.municipios?.[idx] || [];
-  const totalJuntas = provinceData.series?.[idx] || 0;
+    const municipios = provinceData.municipios?.[idx] || [];
+    const totalJuntas = provinceData.series?.[idx] || 0;
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        onClick={onClose}>
+        <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-auto"
+          onClick={(e) => e.stopPropagation()}>
+          <div className="sticky top-0 bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white p-5 flex justify-between items-center">
+            <h3 className="text-xl font-bold">
+              📍 Provincia: {province}
+            </h3>
+            <button onClick={onClose}
+              className="text-white hover:text-gray-200 text-3xl leading-none transition-colors">
+              ×
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="mb-6 p-5 bg-green-50 border-2 border-green-200 rounded-lg">
+              <p className="text-green-700">
+                <strong className="text-4xl font-bold">{totalJuntas}</strong> juntas de acción comunal
+              </p>
+            </div>
+            <h4 className="text-base font-semibold text-gray-700 mb-3">
+              Municipios incluidos ({municipios.length}):
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {municipios.map((m, i) => (
+                <div key={i} className="text-sm text-gray-700 p-3 bg-gray-50 rounded-lg border-2 hover:border-green-400 transition-colors">
+                  {m}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const tabs = [
+    { key: "ages",         label: "Por Edades"  },
+    { key: "commissions",  label: "Comisiones"  },
+    { key: "active",       label: "Activas"      },
+    { key: "positions",    label: "Cargos"       },
+    { key: "gender",       label: "Género"        },
+    { key: "province",     label: "Provincias"   },
+    { key: "municipality", label: "Municipio"    },
+  ];
+
+  const filteredAgesData = getFilteredData(agesData);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto"
-        onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Provincia: {province}
-          </h3>
-          <button onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none">
-            ×
-          </button>
-        </div>
-        <div className="p-6">
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded">
-            <p className="text-sm text-green-700">
-              <strong className="text-2xl">{totalJuntas}</strong> juntas de acción comunal
-            </p>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center gap-3">
+            <Download className="text-[#009E76]" size={32} />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800">Informes de Juntas</h1>
+              <p className="text-gray-600 mt-1">Consulta y descarga los informes estadísticos</p>
+            </div>
           </div>
-          <h4 className="text-sm font-semibold text-gray-700 mb-2">
-            Municipios incluidos ({municipios.length}):
-          </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {municipios.map((m, i) => (
-              <div key={i} className="text-sm text-gray-600 p-2 bg-gray-50 rounded border">
-                {m}
-              </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+          <div className="flex flex-wrap gap-2">
+            {tabs.map((t) => (
+              <button key={t.key} onClick={() => setSelectedReport(t.key)}
+                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  selectedReport === t.key
+                    ? "bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white shadow-md scale-105"
+                    : "bg-gray-100 border border-gray-300 text-gray-700 hover:border-[#009E76] hover:text-[#009E76] hover:shadow-sm"
+                }`}>
+                {t.label}
+              </button>
             ))}
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
 
-  const tabs = [
-    { key: "ages",         label: " Por Edades"  },
-    { key: "commissions",  label: " Comisiones"  },
-    { key: "active",       label: " Activas"      },
-    { key: "positions",    label: " Cargos"       },
-    { key: "gender",       label: " Género"        },
-    { key: "province",     label: " Provincias"   },
-    { key: "municipality", label: " Municipio"    },
-  ];
+        {/* Filtros específicos por reporte */}
+        {(selectedReport === "ages" && agesData) && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="text-[#009E76]" size={20} />
+              <h3 className="text-lg font-semibold text-gray-800">Filtros</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Rango de Edad</label>
+                <select
+                  value={selectedAgeRange}
+                  onChange={(e) => setSelectedAgeRange(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5">
+                  <option value="">Todos los rangos</option>
+                  {agesData.labels.map((label) => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              {selectedAgeRange && (
+                <button
+                  onClick={limpiarFiltros}
+                  className="inline-flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-4 py-2.5 rounded-lg transition-all">
+                  <RotateCcw size={16} />
+                  Limpiar Filtros
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
-  return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold">Informes de Juntas</h1>
-        <p className="text-sm text-gray-500 mt-1">Consulta y descarga los informes estadísticos</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {tabs.map((t) => (
-          <button key={t.key} onClick={() => setSelectedReport(t.key)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              selectedReport === t.key
-                ? "bg-green-600 text-white shadow"
-                : "border border-gray-300 hover:border-green-500 hover:text-green-700"
-            }`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Panel principal */}
-        <div className="md:col-span-2">
-          <div className="bg-white rounded-xl border shadow-sm p-5 min-h-72">
-            <h2 className="text-lg font-semibold mb-1">
-              {tabs.find((t) => t.key === selectedReport)?.label}
-            </h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            {tabs.find((t) => t.key === selectedReport)?.label}
+          </h2>
 
-            {loading && (
-              <div className="flex items-center gap-2 text-sm text-gray-500 mt-4">
-                <svg className="animate-spin h-4 w-4 text-green-600" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-                </svg>
-                Cargando datos...
-              </div>
-            )}
-            {error && !loading && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                ⚠ {error}
-              </div>
-            )}
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <svg className="animate-spin h-10 w-10 text-[#009E76] mb-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+              <p className="text-gray-600">Cargando datos...</p>
+            </div>
+          )}
 
-            {!loading && !error && (
-              <>
-                {/* ══ EDADES ══ */}
-                {selectedReport === "ages" && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-2">Distribución de miembros por rango de edad</p>
-                    <BarChart labels={agesData?.labels ?? []} series={agesData?.series ?? []} />
-                    <DownloadButtons reportKey="ages" />
-                  </div>
-                )}
+          {error && !loading && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <strong>⚠ Error:</strong> {error}
+            </div>
+          )}
 
-                {/* ══ COMISIONES ══ */}
-                {selectedReport === "commissions" && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-2">Comisiones con mayor participación</p>
-                    <BarChart labels={commissionsData?.labels ?? []} series={commissionsData?.series ?? []} color="bg-blue-500" />
-                    {(commissionsData?.labels?.length ?? 0)/* > 0 && (
-                      <SimpleTable
-                        headers={["Comisión", "Participantes"]}
-                        rows={commissionsData.labels.map((l, i) => [l, commissionsData.series?.[i]])}
-                      />
-                    )*/}
-                    <DownloadButtons reportKey="commissions" />
-                  </div>
-                )}
+          {!loading && !error && (
+            <>
+              {/* EDADES */}
+              {selectedReport === "ages" && (
+                <div>
+                  <p className="text-gray-600 mb-4">Distribución de miembros por rango de edad</p>
+                  <BarChart labels={filteredAgesData?.labels ?? []} series={filteredAgesData?.series ?? []} />
+                  <DownloadButtons reportKey="ages" />
+                </div>
+              )}
 
-                {/* ══ ACTIVAS ══ */}
-                {selectedReport === "active" && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-3">Estado actual de las juntas registradas</p>
-                    {activeData ? (
-                      <>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-center">
-                            <p className="text-sm text-green-700 font-medium">Activas</p>
-                            <p className="text-3xl font-bold text-green-800">{activeData.activas}</p>
-                          </div>
-                          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center">
-                            <p className="text-sm text-red-700 font-medium">Inactivas</p>
-                            <p className="text-3xl font-bold text-red-800">{activeData.inactivas}</p>
-                          </div>
+              {/* COMISIONES */}
+              {selectedReport === "commissions" && (
+                <div>
+                  <p className="text-gray-600 mb-4">Comisiones con mayor participación</p>
+                  <BarChart labels={commissionsData?.labels ?? []} series={commissionsData?.series ?? []} color="bg-blue-500" />
+                  <DownloadButtons reportKey="commissions" />
+                </div>
+              )}
+
+              {/* ACTIVAS */}
+              {selectedReport === "active" && (
+                <div>
+                  <p className="text-gray-600 mb-6">Estado actual de las juntas registradas</p>
+                  {activeData ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="p-6 bg-green-50 border-2 border-green-300 rounded-xl text-center shadow-sm">
+                          <p className="text-lg text-green-700 font-semibold mb-2">Activas</p>
+                          <p className="text-5xl font-bold text-green-800">{activeData.activas}</p>
                         </div>
-                        {/*<BarChart
-                          labels={["Activas", "Inactivas"]}
-                          series={[activeData.activas, activeData.inactivas]}
-                          color="bg-teal-500"
-                        />*/}
-                      </>
-                    ) : <p className="text-sm text-gray-400">Sin datos</p>}
-                    <DownloadButtons reportKey="active" />
-                  </div>
-                )}
-
-                {/* ══ CARGOS ══ */}
-                {selectedReport === "positions" && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-2">Distribución de personas por cargo</p>
-                    <BarChart labels={positionsData?.labels ?? []} series={positionsData?.series ?? []} color="bg-purple-500" />
-                    {(positionsData?.labels?.length ?? 0) /*> 0 && (
-                      
-                      <SimpleTable
-                        headers={["Cargo", "Personas"]}
-                        rows={positionsData.labels.map((l, i) => [l, positionsData.series?.[i]])}
-                      />
-                    )*/}
-                    <DownloadButtons reportKey="positions" />
-                  </div>
-                )}
-
-                {/* ══ GÉNERO ══ */}
-                {selectedReport === "gender" && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-3">Distribución de miembros por género</p>
-                    {genderData && genderData.labels?.length > 0 ? (
-                      <div className="flex flex-col items-center">
-                        <PieChart
-                          series={[{
-                            data: genderData.labels.map((label, i) => ({
-                              id: i,
-                              value: genderData.series[i],
-                              label: label
-                            })),
-                            arcLabel: (item) => `${item.value}`,
-                            arcLabelMinAngle: 35,
-                            arcLabelRadius: '60%',
-                          }]}
-                          sx={{
-                            [`& .${pieArcLabelClasses.root}`]: {
-                              fontWeight: 'bold',
-                              fill: 'white',
-                            },
-                          }}
-                          width={400}
-                          height={300}
-                        />
-                        <SimpleTable
-                          headers={["Género", "Cantidad"]}
-                          rows={genderData.labels.map((l, i) => [l, genderData.series?.[i]])}
-                        />
+                        <div className="p-6 bg-red-50 border-2 border-red-300 rounded-xl text-center shadow-sm">
+                          <p className="text-lg text-red-700 font-semibold mb-2">Inactivas</p>
+                          <p className="text-5xl font-bold text-red-800">{activeData.inactivas}</p>
+                        </div>
                       </div>
-                    ) : (
-                      <p className="text-sm text-gray-400">Sin datos</p>
-                    )}
-                    <DownloadButtons reportKey="gender" />
-                  </div>
-                )}
+                    </>
+                  ) : <p className="text-gray-400">Sin datos</p>}
+                  <DownloadButtons reportKey="active" />
+                </div>
+              )}
 
-                      {/* ══ PROVINCIAS DE BOYACÁ ══ */}
-                {selectedReport === "province" && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-3">
-                      Juntas de Acción Comunal por provincia de Boyacá
-                    </p>
-                    <button onClick={cargarProvincias} disabled={loading}
-                      className="mb-4 px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm disabled:opacity-50">
-                      {loading ? "Cargando..." : "Cargar informe"}
-                    </button>
+              {/* CARGOS */}
+              {selectedReport === "positions" && (
+                <div>
+                  <p className="text-gray-600 mb-4">Distribución de personas por cargo</p>
+                  <BarChart labels={positionsData?.labels ?? []} series={positionsData?.series ?? []} color="bg-purple-500" />
+                  <DownloadButtons reportKey="positions" />
+                </div>
+              )}
 
-                    {provinceData ? (
-                      <>
-                        <BarChart
-                          labels={provinceData.labels ?? []}
-                          series={provinceData.series ?? []}
-                          color="bg-amber-500"
-                        />
-                        {/* Tarjetas interactivas en lugar de tabla */}
-                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {provinceData.labels?.map((label, i) => (
-                            <div key={i}
-                              onClick={() => setModalProvince(label)}
-                              className="p-4 border rounded-lg hover:shadow-md hover:border-green-500 cursor-pointer transition-all bg-white">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h4 className="font-semibold text-gray-800">{label}</h4>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {(provinceData.municipios?.[i] || []).length} municipios
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-2xl font-bold text-green-600">
-                                    {provinceData.series?.[i]}
-                                  </p>
-                                  <p className="text-xs text-gray-500">juntas</p>
-                                </div>
+              {/* GÉNERO */}
+              {selectedReport === "gender" && (
+                <div>
+                  <p className="text-gray-600 mb-6">Distribución de miembros por género</p>
+                  {genderData && genderData.labels?.length > 0 ? (
+                    <div className="flex flex-col items-center">
+                      <PieChart
+                        series={[{
+                          data: genderData.labels.map((label, i) => ({
+                            id: i,
+                            value: genderData.series[i],
+                            label: label
+                          })),
+                          arcLabel: (item) => `${item.value}`,
+                          arcLabelMinAngle: 35,
+                          arcLabelRadius: '60%',
+                        }]}
+                        sx={{
+                          [`& .${pieArcLabelClasses.root}`]: {
+                            fontWeight: 'bold',
+                            fill: 'white',
+                          },
+                        }}
+                        width={450}
+                        height={320}
+                      />
+                      <SimpleTable
+                        headers={["Género", "Cantidad"]}
+                        rows={genderData.labels.map((l, i) => [l, genderData.series?.[i]])}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">Sin datos</p>
+                  )}
+                  <DownloadButtons reportKey="gender" />
+                </div>
+              )}
+
+              {/* PROVINCIAS */}
+              {selectedReport === "province" && (
+                <div>
+                  <p className="text-gray-600 mb-4">
+                    Juntas de Acción Comunal por provincia de Boyacá
+                  </p>
+                  <button onClick={cargarProvincias} disabled={loading}
+                    className="mb-6 inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white rounded-lg font-semibold disabled:opacity-50 transition-all shadow-md">
+                    <Download size={18} />
+                    {loading ? "Cargando..." : "Cargar informe"}
+                  </button>
+
+                  {provinceData ? (
+                    <>
+                      <BarChart
+                        labels={provinceData.labels ?? []}
+                        series={provinceData.series ?? []}
+                        color="bg-amber-500"
+                      />
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {provinceData.labels?.map((label, i) => (
+                          <div key={i}
+                            onClick={() => setModalProvince(label)}
+                            className="p-5 border-2 rounded-xl hover:shadow-lg hover:border-[#009E76] cursor-pointer transition-all bg-white">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <h4 className="font-bold text-lg text-gray-800">{label}</h4>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {(provinceData.municipios?.[i] || []).length} municipios
+                                </p>
                               </div>
-                              <p className="text-xs text-green-600 mt-2">
-                                Click para ver municipios →
-                              </p>
+                              <div className="text-right">
+                                <p className="text-3xl font-bold text-[#009E76]">
+                                  {provinceData.series?.[i]}
+                                </p>
+                                <p className="text-xs text-gray-500">juntas</p>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      !loading && (
-                        <p className="text-sm text-gray-400">
-                          Presiona el botón para cargar el informe
-                        </p>
-                      )
-                    )}
-                    <DownloadButtons reportKey="province" />
-                  </div>
-                )}
+                            <p className="text-sm text-[#009E76] font-medium">
+                              Click para ver municipios →
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    !loading && <p className="text-gray-400">Presiona el botón para cargar el informe</p>
+                  )}
+                  <DownloadButtons reportKey="province" />
+                </div>
+              )}
 
-                {/* ══ MUNICIPIOS ══ */}
-                {selectedReport === "municipality" && (
-                  <div>
-                    <p className="text-sm text-gray-500 mb-3">
-                      Selecciona municipios de Boyacá para ver sus juntas
-                    </p>
+              {/* MUNICIPIOS */}
+              {selectedReport === "municipality" && (
+                <div>
+                  <p className="text-gray-600 mb-4">
+                    Selecciona municipios de Boyacá para ver sus juntas
+                  </p>
 
-                    {/* Botones de provincia → selección rápida por provincia */}
-                    {/* Usa IDOtroLugar para filtrar los municipios de cada provincia */}
+                  {/* Filtros de selección */}
+                  <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 mb-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Filter className="text-[#009E76]" size={20} />
+                      <h3 className="text-lg font-semibold text-gray-800">Selección de Municipios</h3>
+                    </div>
+
                     {provincias.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs font-medium text-gray-600 mb-1">
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">
                           Seleccionar por provincia:
                         </p>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-2">
                           <button
                             onClick={() => setSelectedMunicipalities(municipios.map((m) => m.IDLugar))}
-                            className="px-2 py-0.5 text-xs border rounded hover:bg-gray-100">
+                            className="px-3 py-1.5 text-sm bg-white border-2 border-gray-300 rounded-lg hover:border-[#009E76] hover:bg-gray-50 transition-all font-medium">
                             Todos
                           </button>
                           <button
                             onClick={() => { setSelectedMunicipalities([]); setMunicipalityData(null); }}
-                            className="px-2 py-0.5 text-xs border rounded hover:bg-red-50 hover:border-red-300">
+                            className="px-3 py-1.5 text-sm bg-white border-2 border-red-300 rounded-lg hover:bg-red-50 transition-all font-medium">
                             Ninguno
                           </button>
                           {provincias.map((prov) => (
                             <button key={prov.IDLugar}
                               title={`Seleccionar municipios de ${prov.NombreLugar}`}
                               onClick={() => {
-                                // IDOtroLugar del municipio = IDLugar de su provincia padre
                                 const ids = municipios
                                   .filter((m) => m.IDOtroLugar === prov.IDLugar)
                                   .map((m) => m.IDLugar);
                                 setSelectedMunicipalities(ids);
                               }}
-                              className="px-2 py-0.5 text-xs border rounded hover:bg-green-50 hover:border-green-400">
+                              className="px-3 py-1.5 text-sm bg-white border-2 border-gray-300 rounded-lg hover:border-[#009E76] hover:bg-green-50 transition-all font-medium">
                               {prov.NombreLugar}
                             </button>
                           ))}
@@ -542,14 +591,13 @@ const ProvinceModal = ({ province, onClose }) => {
                       </div>
                     )}
 
-                     {/* Lista de municipios */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-52 overflow-auto border rounded p-2 mb-2 bg-gray-50 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-auto border-2 rounded-lg p-3 bg-white">
                       {municipios.length === 0 ? (
-                        <p className="text-gray-400 col-span-3">Cargando municipios...</p>
+                        <p className="text-gray-400 col-span-full text-center py-4">Cargando municipios...</p>
                       ) : (
                         municipios.map((m) => (
                           <label key={m.IDLugar}
-                            className="flex items-center gap-1.5 cursor-pointer hover:text-green-700">
+                            className="flex items-center gap-2 cursor-pointer hover:text-[#009E76] transition-colors p-2 rounded hover:bg-gray-50">
                             <input
                               type="checkbox"
                               checked={selectedMunicipalities.includes(m.IDLugar)}
@@ -559,106 +607,74 @@ const ProvinceModal = ({ province, onClose }) => {
                                   e.target.checked ? [...prev, id] : prev.filter((x) => x !== id)
                                 );
                               }}
-                              className="accent-green-600"
+                              className="accent-[#009E76] w-4 h-4"
                             />
-                            {m.NombreLugar}
+                            <span className="text-sm">{m.NombreLugar}</span>
                           </label>
                         ))
                       )}
                     </div>
 
-                    <p className="text-xs text-gray-400 mb-3">
-                      {selectedMunicipalities.length} de {municipios.length} municipio(s) seleccionado(s)
-                    </p>
-
-                    <div className="flex gap-2 mb-4">
-                      <button
-                        onClick={() => { setSelectedMunicipalities([]); setMunicipalityData(null); }}
-                        className="px-3 py-1.5 border rounded text-sm hover:bg-gray-50">
-                        Limpiar
-                      </button>
-                      <button onClick={cargarMunicipios}
-                        disabled={selectedMunicipalities.length === 0 || loading}
-                        className="px-3 py-1.5 bg-green-600 text-white rounded text-sm disabled:opacity-50">
-                        {loading ? "Cargando..." : "Ver juntas"}
-                      </button>
+                    <div className="mt-4 flex items-center justify-between">
+                      <p className="text-sm text-gray-600">
+                        <strong className="text-[#009E76]">{selectedMunicipalities.length}</strong> de <strong>{municipios.length}</strong> municipio(s) seleccionado(s)
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => { setSelectedMunicipalities([]); setMunicipalityData(null); }}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-all">
+                          <RotateCcw size={16} />
+                          Limpiar
+                        </button>
+                        <button onClick={cargarMunicipios}
+                          disabled={selectedMunicipalities.length === 0 || loading}
+                          className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white rounded-lg font-semibold disabled:opacity-50 transition-all shadow-md">
+                          <Download size={18} />
+                          {loading ? "Cargando..." : "Ver juntas"}
+                        </button>
+                      </div>
                     </div>
-
-                    {municipalityData ? (
-                      <>
-                        <BarChart
-                          labels={municipalityData.labels ?? []}
-                          series={municipalityData.series ?? []}
-                          color="bg-orange-500"
-                        />
-                        <SimpleTable
-                          headers={["Municipio", "Juntas"]}
-                          rows={(municipalityData.labels ?? []).map((l, i) => [
-                            l, municipalityData.series?.[i]
-                          ])}
-                        />
-                        <DownloadButtons
-                          reportKey="municipality"
-                          extra={{ municipios: selectedMunicipalities }}
-                        />
-                      </>
-                    ) : (
-                      !loading && (
-                        <p className="text-sm text-gray-400">
-                          Selecciona municipios y presiona "Ver juntas"
-                        </p>
-                      )
-                    )}
                   </div>
-                )}
-              </>
-            )}
-          </div>
+
+                  {municipalityData ? (
+                    <>
+                      <BarChart
+                        labels={municipalityData.labels ?? []}
+                        series={municipalityData.series ?? []}
+                        color="bg-orange-500"
+                      />
+                      <SimpleTable
+                        headers={["Municipio", "Juntas"]}
+                        rows={(municipalityData.labels ?? []).map((l, i) => [
+                          l, municipalityData.series?.[i]
+                        ])}
+                      />
+                      <DownloadButtons
+                        reportKey="municipality"
+                        extra={{ municipios: selectedMunicipalities }}
+                      />
+                    </>
+                  ) : (
+                    !loading && (
+                      <p className="text-gray-400 text-center py-8">
+                        Selecciona municipios y presiona "Ver juntas"
+                      </p>
+                    )
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Panel lateral */}
-        <div className="md:col-span-1 flex flex-col gap-4">
-          <div className="bg-white rounded-xl border shadow-sm p-4">
-            <h3 className="font-semibold mb-3">Descargar reporte actual</h3>
-            <div className="flex flex-col gap-2">
-              <button onClick={() => downloadReport(selectedReport, "excel")}
-                className="px-3 py-2 bg-green-700 hover:bg-green-800 text-white rounded text-sm">
-                Descargar Excel
-              </button>
-              <button onClick={() => downloadReport(selectedReport, "word")}
-                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
-                Descargar Word
-              </button>
-              <button onClick={() => downloadReport(selectedReport, "pdf")}
-                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm">
-                Descargar PDF
-              </button>
-            </div>
-          </div>
-      {/*
-          <div className="bg-white rounded-xl border shadow-sm p-4">
-            <h3 className="font-semibold mb-2">Reportes disponibles</h3>
-            <ul className="text-sm text-gray-600 space-y-1.5 mt-2">
-              <li><strong>Edades</strong> — Rangos etarios</li>
-              <li><strong>Comisiones</strong> — Participación</li>
-              <li><strong>Activas</strong> — Estado de juntas</li>
-              <li><strong>Cargos</strong> — Distribución</li>
-              <li><strong>Género</strong> — Por género</li>
-              <li><strong>Provincias</strong> — Por provincia de Boyacá</li>
-              <li><strong>Municipio</strong> — Filtrado por municipio</li>
-            </ul>
-          </div>*/}
-        </div>
-      </div>
-{/* Modal de detalle de provincia */}
-      {modalProvince && provinceData && (
-        <ProvinceModal province={modalProvince} onClose={() => setModalProvince(null)} />
-      )}
-  
-  
+        {/* Modal */}
+        {modalProvince && provinceData && (
+          <ProvinceModal province={modalProvince} onClose={() => setModalProvince(null)} />
+        )}
 
-      <div className="mt-6">
-        <Footer />
+        <div className="mt-8">
+          <Footer />
+        </div>
       </div>
     </div>
   );
