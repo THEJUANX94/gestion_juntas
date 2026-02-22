@@ -570,83 +570,18 @@ const buildFilterSubtitle = (prefix, values, fallback) =>
   `${prefix}: ${values.length ? values.join(", ") : fallback}`;
 
 const buildEdadesExportDataset = async ({ filtro = [] } = {}) => {
-  const selected = new Set(filtro.map(normalizeText));
-  const hasFilter = selected.size > 0;
-
-  const registros = await MandatarioJunta.findAll({
-    attributes: ["NumeroIdentificacion", "IDJunta"],
-    include: [
-      {
-        model: Usuario,
-        attributes: [
-          "NumeroIdentificacion",
-          "PrimerNombre",
-          "SegundoNombre",
-          "PrimerApellido",
-          "SegundoApellido",
-          "FechaNacimiento"
-        ],
-        required: false
-      },
-      {
-        model: Junta,
-        required: false,
-        include: JUNTA_EXPORT_INCLUDE
-      }
-    ]
+  const data = await getEdadesData({ filtro });
+  const total = (data.series || []).reduce((acc, value) => acc + Number(value || 0), 0);
+  const rows = (data.labels || []).map((label, index) => {
+    const cantidad = Number(data.series?.[index] || 0);
+    const porcentaje = total > 0 ? `${((cantidad / total) * 100).toFixed(2)}%` : "0.00%";
+    return [label, cantidad, porcentaje];
   });
-
-  const grouped = new Map();
-
-  registros.forEach((registro) => {
-    const rango = getAgeRangeFromDate(registro.Usuario?.FechaNacimiento);
-    if (!rango || !registro.Junta) return;
-    if (hasFilter && !selected.has(normalizeText(rango))) return;
-
-    const idJunta = registro.Junta?.IDJunta ?? registro.Junta?.idjunta;
-    if (!idJunta) return;
-
-    if (!grouped.has(idJunta)) {
-      grouped.set(idJunta, { junta: registro.Junta, rangos: new Map(), total: 0 });
-    }
-
-    const current = grouped.get(idJunta);
-    current.total += 1;
-    current.rangos.set(rango, (current.rangos.get(rango) || 0) + 1);
-  });
-
-  const rows = Array.from(grouped.values())
-    .sort(sortByJuntaLocation)
-    .map((item) => {
-      const info = getJuntaInfo(item.junta);
-      const resumenRangos = Array.from(item.rangos.entries())
-        .sort((a, b) => compareText(a[0], b[0]))
-        .map(([label, count]) => `${label} (${count})`)
-        .join(", ");
-
-      return [
-        resumenRangos || "Sin rango",
-        item.total,
-        info.razonSocial,
-        info.municipio || "Sin Municipio",
-        info.provincia || "Sin Provincia",
-        info.tipoJunta,
-        info.estado
-      ];
-    });
 
   return {
     title: getReportTitle("edades"),
     subtitle: buildFilterSubtitle("Filtro aplicado", filtro, "Todos los rangos"),
-    headers: [
-      "Rango(s) de Edad",
-      "Personas en Rango",
-      "Junta",
-      "Municipio",
-      "Provincia",
-      "Tipo de Junta",
-      "Estado"
-    ],
+    headers: ["Rango de Edad", "Cantidad", "Porcentaje"],
     rows
   };
 };
@@ -686,39 +621,61 @@ const buildComisionesExportDataset = async ({ filtro = [] } = {}) => {
       if (registro.Comision && !selected.has(normalizedComision)) return;
     }
 
-    const idJunta = registro.Junta.IDJunta ?? registro.Junta.idjunta;
-    if (!idJunta) return;
+    const info = getJuntaInfo(registro.Junta);
+    const municipio = info.municipio || "Sin Municipio";
+    const provincia = info.provincia || "Sin Provincia";
+    const key = `${comisionNombre}|||${provincia}|||${municipio}`;
 
-    if (!grouped.has(idJunta)) {
-      grouped.set(idJunta, {
-        junta: registro.Junta,
-        comisiones: new Set(),
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        comision: comisionNombre,
+        provincia,
+        municipio,
+        juntas: new Set(),
         personas: 0
       });
     }
 
-    const current = grouped.get(idJunta);
-    current.comisiones.add(comisionNombre);
+    const current = grouped.get(key);
+    const juntaId = registro.Junta.IDJunta ?? registro.Junta.idjunta;
+    if (juntaId) current.juntas.add(juntaId);
     current.personas += 1;
   });
 
-  const rows = Array.from(grouped.values())
-    .sort(sortByJuntaLocation)
+  const totalsByComision = new Map();
+  Array.from(grouped.values()).forEach((item) => {
+    totalsByComision.set(
+      item.comision,
+      (totalsByComision.get(item.comision) || 0) + item.personas
+    );
+  });
+
+  const ordered = Array.from(grouped.values()).sort((a, b) => {
+    if (b.personas !== a.personas) return b.personas - a.personas;
+    const juntasA = a.juntas.size;
+    const juntasB = b.juntas.size;
+    if (juntasB !== juntasA) return juntasB - juntasA;
+    return (
+      compareText(a.comision, b.comision) ||
+      compareText(a.provincia, b.provincia) ||
+      compareText(a.municipio, b.municipio)
+    );
+  });
+
+  const seenComisiones = new Set();
+  const rows = ordered
     .map((item) => {
-      const info = getJuntaInfo(item.junta);
-      const comisionesTexto = Array.from(item.comisiones).sort(compareText).join(", ");
+      const totalComision = totalsByComision.get(item.comision) || 0;
+      const showTotalComision = seenComisiones.has(item.comision) ? "" : totalComision;
+      seenComisiones.add(item.comision);
 
       return [
-        comisionesTexto || "Sin Comision",
+        item.comision || "Sin Comision",
+        showTotalComision,
         item.personas,
-        info.razonSocial,
-        info.municipio || "Sin Municipio",
-        info.provincia || "Sin Provincia",
-        info.tipoJunta,
-        info.institucion,
-        info.estado,
-        info.fechaInicioPeriodo,
-        info.fechaFinPeriodo
+        item.juntas.size,
+        item.provincia,
+        item.municipio
       ];
     });
 
@@ -726,16 +683,12 @@ const buildComisionesExportDataset = async ({ filtro = [] } = {}) => {
     title: getReportTitle("comisiones"),
     subtitle: buildFilterSubtitle("Filtro aplicado", filtro, "Todas las comisiones"),
     headers: [
-      "Comision(es)",
-      "Personas",
-      "Junta",
-      "Municipio",
+      "Comision",
+      "Total Participantes Comision",
+      "Participantes en Ubicacion",
+      "Juntas en Ubicacion",
       "Provincia",
-      "Tipo de Junta",
-      "Institucion",
-      "Estado",
-      "Inicio Periodo",
-      "Fin Periodo"
+      "Municipio"
     ],
     rows
   };
@@ -838,63 +791,9 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
     ]
   });
 
-  if (!hasFilter) {
-    const grouped = new Map();
-
-    registros.forEach((registro) => {
-      if (!registro.Junta) return;
-
-      const idJunta = registro.Junta.IDJunta ?? registro.Junta.idjunta;
-      if (!idJunta) return;
-
-      if (!grouped.has(idJunta)) {
-        grouped.set(idJunta, {
-          junta: registro.Junta,
-          cargos: new Set(),
-          personas: 0
-        });
-      }
-
-      const current = grouped.get(idJunta);
-      current.cargos.add(registro.Cargo?.NombreCargo || "Sin Cargo");
-      current.personas += 1;
-    });
-
-    const rows = Array.from(grouped.values())
-      .sort(sortByJuntaLocation)
-      .map((item) => {
-        const info = getJuntaInfo(item.junta);
-        const cargosTexto = Array.from(item.cargos).sort(compareText).join(", ");
-        return [
-          info.razonSocial,
-          info.municipio || "Sin Municipio",
-          info.provincia || "Sin Provincia",
-          cargosTexto || "Sin Cargo",
-          item.personas,
-          info.estado,
-          info.fechaInicioPeriodo,
-          info.fechaFinPeriodo
-        ];
-      });
-
-    return {
-      title: getReportTitle("cargos"),
-      subtitle: "Filtro aplicado: Todos los cargos (sin detalle de personas)",
-      headers: [
-        "Junta",
-        "Municipio",
-        "Provincia",
-        "Cargos Presentes",
-        "Personas en Cargos",
-        "Estado",
-        "Inicio Periodo",
-        "Fin Periodo"
-      ],
-      rows
-    };
-  }
-
   const filtered = registros.filter((registro) => {
+    if (!registro.Junta) return false;
+    if (!hasFilter) return true;
     const cargoNombre = registro.Cargo?.NombreCargo || "Sin Cargo";
     const normalizedCargo = normalizeText(cargoNombre);
     if (!registro.Cargo) return wantsSinCargo;
@@ -902,13 +801,20 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
   });
 
   const rows = filtered
-    .filter((registro) => Boolean(registro.Junta))
     .sort((a, b) => {
       const cargoA = a.Cargo?.NombreCargo || "Sin Cargo";
       const cargoB = b.Cargo?.NombreCargo || "Sin Cargo";
+      const infoA = getJuntaInfo(a.Junta);
+      const infoB = getJuntaInfo(b.Junta);
       const nombreA = getNombrePersona(a.Usuario) || a.NumeroIdentificacion || "";
       const nombreB = getNombrePersona(b.Usuario) || b.NumeroIdentificacion || "";
-      return compareText(cargoA, cargoB) || compareText(nombreA, nombreB);
+      return (
+        compareText(cargoA, cargoB) ||
+        compareText(infoA.provincia, infoB.provincia) ||
+        compareText(infoA.municipio, infoB.municipio) ||
+        compareText(infoA.razonSocial, infoB.razonSocial) ||
+        compareText(nombreA, nombreB)
+      );
     })
     .map((registro) => {
       const info = getJuntaInfo(registro.Junta);
@@ -922,6 +828,7 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
         info.razonSocial,
         info.municipio || "Sin Municipio",
         info.provincia || "Sin Provincia",
+        info.estado,
         info.fechaInicioPeriodo,
         info.fechaFinPeriodo
       ];
@@ -929,7 +836,7 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
 
   return {
     title: getReportTitle("cargos"),
-    subtitle: buildFilterSubtitle("Filtro aplicado", filtro, "Todos los cargos"),
+    subtitle: buildFilterSubtitle("Filtro aplicado", filtro, "Todos los cargos (detalle de personas)"),
     headers: [
       "Cargo",
       "Documento",
@@ -939,6 +846,7 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
       "Junta",
       "Municipio",
       "Provincia",
+      "Estado Junta",
       "Inicio Periodo",
       "Fin Periodo"
     ],
@@ -947,83 +855,18 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
 };
 
 const buildGeneroExportDataset = async ({ filtro = [] } = {}) => {
-  const selected = new Set(filtro.map(normalizeText));
-  const hasFilter = selected.size > 0;
-
-  const registros = await MandatarioJunta.findAll({
-    attributes: ["NumeroIdentificacion", "IDJunta"],
-    include: [
-      {
-        model: Usuario,
-        attributes: [
-          "NumeroIdentificacion",
-          "PrimerNombre",
-          "SegundoNombre",
-          "PrimerApellido",
-          "SegundoApellido",
-          "Sexo"
-        ],
-        required: false
-      },
-      {
-        model: Junta,
-        required: false,
-        include: JUNTA_EXPORT_INCLUDE
-      }
-    ]
+  const data = await getGeneroData({ filtro });
+  const total = (data.series || []).reduce((acc, value) => acc + Number(value || 0), 0);
+  const rows = (data.labels || []).map((label, index) => {
+    const cantidad = Number(data.series?.[index] || 0);
+    const porcentaje = total > 0 ? `${((cantidad / total) * 100).toFixed(2)}%` : "0.00%";
+    return [label, cantidad, porcentaje];
   });
-
-  const grouped = new Map();
-
-  registros.forEach((registro) => {
-    if (!registro.Junta) return;
-    const genero = getGeneroNombre(registro.Usuario?.Sexo);
-    if (hasFilter && !selected.has(normalizeText(genero))) return;
-
-    const idJunta = registro.Junta.IDJunta ?? registro.Junta.idjunta;
-    if (!idJunta) return;
-
-    if (!grouped.has(idJunta)) {
-      grouped.set(idJunta, { junta: registro.Junta, generos: new Map(), total: 0 });
-    }
-
-    const current = grouped.get(idJunta);
-    current.generos.set(genero, (current.generos.get(genero) || 0) + 1);
-    current.total += 1;
-  });
-
-  const rows = Array.from(grouped.values())
-    .sort(sortByJuntaLocation)
-    .map((item) => {
-      const info = getJuntaInfo(item.junta);
-      const resumen = Array.from(item.generos.entries())
-        .sort((a, b) => compareText(a[0], b[0]))
-        .map(([label, count]) => `${label} (${count})`)
-        .join(", ");
-
-      return [
-        resumen || "Sin genero",
-        item.total,
-        info.razonSocial,
-        info.municipio || "Sin Municipio",
-        info.provincia || "Sin Provincia",
-        info.tipoJunta,
-        info.estado
-      ];
-    });
 
   return {
     title: getReportTitle("genero"),
     subtitle: buildFilterSubtitle("Filtro aplicado", filtro, "Todos los generos"),
-    headers: [
-      "Genero(s)",
-      "Personas",
-      "Junta",
-      "Municipio",
-      "Provincia",
-      "Tipo de Junta",
-      "Estado"
-    ],
+    headers: ["Genero", "Cantidad", "Porcentaje"],
     rows
   };
 };
@@ -1065,6 +908,16 @@ const buildProvinciasExportDataset = async ({ provincias = [] } = {}) => {
       ];
     });
 
+  const seenProvincias = new Set();
+  const rowsWithSingleTotal = rows.map((row) => {
+    const provincia = row[0];
+    if (seenProvincias.has(provincia)) {
+      return [row[0], "", ...row.slice(2)];
+    }
+    seenProvincias.add(provincia);
+    return row;
+  });
+
   return {
     title: getReportTitle("provincias"),
     subtitle: buildFilterSubtitle("Filtro aplicado", provincias, "Todas las provincias"),
@@ -1079,7 +932,7 @@ const buildProvinciasExportDataset = async ({ provincias = [] } = {}) => {
       "Inicio Periodo",
       "Fin Periodo"
     ],
-    rows
+    rows: rowsWithSingleTotal
   };
 };
 
@@ -1127,6 +980,16 @@ const buildMunicipiosExportDataset = async ({ municipios = [] } = {}) => {
       ];
     });
 
+  const seenMunicipios = new Set();
+  const rowsWithSingleTotal = rows.map((row) => {
+    const municipio = row[0];
+    if (seenMunicipios.has(municipio)) {
+      return [row[0], row[1], "", ...row.slice(3)];
+    }
+    seenMunicipios.add(municipio);
+    return row;
+  });
+
   return {
     title: getReportTitle("municipios"),
     subtitle: safeMunicipioIds.length
@@ -1143,7 +1006,7 @@ const buildMunicipiosExportDataset = async ({ municipios = [] } = {}) => {
       "Inicio Periodo",
       "Fin Periodo"
     ],
-    rows
+    rows: rowsWithSingleTotal
   };
 };
 
@@ -1317,14 +1180,19 @@ const writeWordRtf = async (dataset) => {
   const lines = [];
   lines.push("{\\rtf1\\ansi\\ansicpg1252\\deff0");
   lines.push("{\\fonttbl{\\f0 Calibri;\\f1 Arial;}}");
-  lines.push("{\\colortbl ;\\red0\\green0\\blue0;\\red200\\green200\\blue200;\\red0\\green94\\blue73;}");
+  lines.push(
+    "{\\colortbl ;\\red0\\green0\\blue0;\\red200\\green200\\blue200;\\red0\\green94\\blue73;\\red225\\green225\\blue225;\\red245\\green247\\blue246;}"
+  );
   lines.push("\\paperw11906\\paperh16838\\margl720\\margr720\\margt720\\margb720");
+
+  // Marca de agua textual institucional.
+  lines.push(`{\\pard\\qc\\cf4\\fs84\\i ${escapeRtf("GOBERNACION DE BOYACA")}\\i0\\par}`);
 
   if (logoHex) {
     lines.push(`{\\pard\\qc{\\pict\\pngblip\\picw600\\pich600\\picwgoal950\\pichgoal950 ${logoHex}}\\par}`);
   }
 
-  lines.push(`{\\pard\\qc\\cf2\\fs64\\i ${escapeRtf("GOBERNACION DE BOYACA")}\\i0\\par}`);
+  lines.push(`{\\pard\\qc\\cf2\\fs64\\b ${escapeRtf("GOBERNACION DE BOYACA")}\\b0\\par}`);
   lines.push(`{\\pard\\qc\\cf3\\fs36\\b ${escapeRtf(dataset.title || "Reporte")}\\b0\\par}`);
 
   if (dataset.subtitle) {
@@ -1333,10 +1201,46 @@ const writeWordRtf = async (dataset) => {
   lines.push(`{\\pard\\qc\\fs20 ${escapeRtf(`Fecha de generacion: ${formatDateTime()}`)}\\par}`);
   lines.push("{\\pard\\sa220\\par}");
 
-  lines.push(`{\\pard\\b ${escapeRtf(headers.join(" | "))}\\b0\\par}`);
-  rows.forEach((row) => {
-    lines.push(`{\\pard ${escapeRtf((row || []).map((cell) => cell ?? "").join(" | "))}\\par}`);
-  });
+  const useTableLayout = headers.length <= 8;
+
+  if (useTableLayout) {
+    const tableWidthTwips = 10466; // Ancho util aproximado en A4 con margenes definidos.
+    const colWidth = Math.max(900, Math.floor(tableWidthTwips / headers.length));
+
+    const buildRow = (cells, isHeader = false) => {
+      const safeCells = headers.map((_, idx) => escapeRtf(String(cells?.[idx] ?? "")));
+      const cellDefs = [];
+      const cellValues = [];
+      let x = 0;
+
+      safeCells.forEach((cell) => {
+        x += colWidth;
+        cellDefs.push(
+          isHeader
+            ? "\\clcbpat5\\clbrdrt\\brdrs\\brdrw10\\clbrdrl\\brdrs\\brdrw10\\clbrdrb\\brdrs\\brdrw10\\clbrdrr\\brdrs\\brdrw10"
+            : "\\clbrdrt\\brdrs\\brdrw10\\clbrdrl\\brdrs\\brdrw10\\clbrdrb\\brdrs\\brdrw10\\clbrdrr\\brdrs\\brdrw10"
+        );
+        cellDefs.push(`\\cellx${x}`);
+        cellValues.push(isHeader ? `\\intbl\\b ${cell}\\b0\\cell` : `\\intbl ${cell}\\cell`);
+      });
+
+      lines.push(`{\\trowd\\trgaph60${cellDefs.join("")}${cellValues.join("")}\\row}`);
+    };
+
+    buildRow(headers, true);
+    rows.forEach((row) => buildRow(row, false));
+  } else {
+    // Para tablas muy anchas se usa formato por bloques para legibilidad.
+    rows.forEach((row, rowIndex) => {
+      lines.push(`{\\pard\\sa70\\b Registro ${rowIndex + 1}\\b0\\par}`);
+      headers.forEach((header, colIndex) => {
+        const value = row?.[colIndex] ?? "";
+        if (value === "") return;
+        lines.push(`{\\pard\\li240\\sa35\\b ${escapeRtf(header)}:\\b0 ${escapeRtf(String(value))}\\par}`);
+      });
+      lines.push("{\\pard\\sa120\\par}");
+    });
+  }
 
   lines.push("}");
   return Buffer.from(lines.join("\n"), "utf8");
