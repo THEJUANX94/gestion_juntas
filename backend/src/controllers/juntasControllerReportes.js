@@ -512,6 +512,9 @@ const getJuntaInfo = (junta = {}) => ({
   correo: junta?.Correo ?? ""
 });
 
+const getMandatarioJunta = (registro = {}) =>
+  registro?.Juntum || registro?.Junta || null;
+
 const getNombrePersona = (usuario = {}) =>
   [
     usuario?.PrimerNombre,
@@ -587,122 +590,18 @@ const buildEdadesExportDataset = async ({ filtro = [] } = {}) => {
 };
 
 const buildComisionesExportDataset = async ({ filtro = [] } = {}) => {
-  const selected = new Set(filtro.map(normalizeText));
-  const hasFilter = selected.size > 0;
-  const wantsSinComision = selected.has("SIN COMISION");
-
-  const registros = await MandatarioJunta.findAll({
-    attributes: ["NumeroIdentificacion", "IDJunta", "IDComision"],
-    include: [
-      {
-        model: Comisiones,
-        as: "Comision",
-        attributes: ["IDComision", "Nombre"],
-        required: false
-      },
-      {
-        model: Junta,
-        required: false,
-        include: JUNTA_EXPORT_INCLUDE
-      }
-    ]
-  });
-
-  const grouped = new Map();
-
-  registros.forEach((registro) => {
-    if (!registro.Junta) return;
-
-    const comisionNombre = registro.Comision?.Nombre || "Sin Comision";
-    const normalizedComision = normalizeText(comisionNombre);
-
-    if (hasFilter) {
-      if (!registro.Comision && !wantsSinComision) return;
-      if (registro.Comision && !selected.has(normalizedComision)) return;
-    }
-
-    const info = getJuntaInfo(registro.Junta);
-    const municipio = info.municipio || "Sin Municipio";
-    const provincia = info.provincia || "Sin Provincia";
-    const key = `${comisionNombre}|||${provincia}|||${municipio}`;
-
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        comision: comisionNombre,
-        provincia,
-        municipio,
-        juntas: new Set(),
-        personas: 0
-      });
-    }
-
-    const current = grouped.get(key);
-    const juntaId = registro.Junta.IDJunta ?? registro.Junta.idjunta;
-    if (juntaId) current.juntas.add(juntaId);
-    current.personas += 1;
-  });
-
-  const groupedByComision = new Map();
-  Array.from(grouped.values()).forEach((item) => {
-    if (!groupedByComision.has(item.comision)) {
-      groupedByComision.set(item.comision, {
-        personas: 0,
-        juntas: new Set(),
-        ubicaciones: []
-      });
-    }
-
-    const current = groupedByComision.get(item.comision);
-    current.personas += item.personas;
-    item.juntas.forEach((juntaId) => current.juntas.add(juntaId));
-    current.ubicaciones.push(item);
-  });
-
-  const orderedComisiones = Array.from(groupedByComision.entries()).sort((a, b) => {
-    if (b[1].personas !== a[1].personas) return b[1].personas - a[1].personas;
-    return compareText(a[0], b[0]);
-  });
-
-  const rows = [];
-  orderedComisiones.forEach(([comision, stats]) => {
-    rows.push([
-      comision || "Sin Comision",
-      "TOTAL COMISION",
-      stats.personas,
-      stats.juntas.size,
-      "",
-      ""
-    ]);
-
-    stats.ubicaciones
-      .sort((a, b) => {
-        if (b.personas !== a.personas) return b.personas - a.personas;
-        if (b.juntas.size !== a.juntas.size) return b.juntas.size - a.juntas.size;
-        return compareText(a.provincia, b.provincia) || compareText(a.municipio, b.municipio);
-      })
-      .forEach((item) => {
-        rows.push([
-          comision || "Sin Comision",
-          "UBICACION",
-          item.personas,
-          item.juntas.size,
-          item.provincia,
-          item.municipio
-        ]);
-      });
-  });
+  const data = await getComisionesData({ filtro });
+  const total = (data.series || []).reduce((acc, value) => acc + Number(value || 0), 0);
+  const rows = (data.labels || []).map((label, index) => [
+    label,
+    Number(data.series?.[index] || 0)
+  ]);
+  rows.push(["TOTAL GENERAL", total]);
 
   return {
     title: getReportTitle("comisiones"),
     subtitle: buildFilterSubtitle("Filtro aplicado", filtro, "Todas las comisiones"),
-    headers: [
-      "Comision",
-      "Tipo Registro",
-      "Participantes",
-      "Juntas",
-      "Provincia",
-      "Municipio"
-    ],
+    headers: ["Comision", "Cantidad"],
     rows
   };
 };
@@ -798,6 +697,7 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
       },
       {
         model: Junta,
+        as: "Juntum",
         required: false,
         include: JUNTA_EXPORT_INCLUDE
       }
@@ -805,57 +705,27 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
   });
 
   if (!hasFilter) {
-    const grouped = new Map();
-    const totalJuntas = new Set();
-    let totalPersonas = 0;
-
-    registros.forEach((registro) => {
-      if (!registro.Junta) return;
-      const cargoNombre = registro.Cargo?.NombreCargo || "Sin Cargo";
-      if (!grouped.has(cargoNombre)) {
-        grouped.set(cargoNombre, { personas: 0, juntas: new Set() });
-      }
-
-      const current = grouped.get(cargoNombre);
-      current.personas += 1;
-      totalPersonas += 1;
-
-      const juntaId = registro.Junta.IDJunta ?? registro.Junta.idjunta;
-      if (juntaId) {
-        current.juntas.add(juntaId);
-        totalJuntas.add(juntaId);
-      }
+    const data = await getCargosData({ filtro: [] });
+    const total = (data.series || []).reduce((acc, value) => acc + Number(value || 0), 0);
+    const rows = (data.labels || []).map((label, index) => {
+      const cantidad = Number(data.series?.[index] || 0);
+      const porcentaje = total > 0
+        ? `${((cantidad / total) * 100).toFixed(2)}%`
+        : "0.00%";
+      return [label, cantidad, porcentaje];
     });
 
-    const rows = Array.from(grouped.entries())
-      .sort((a, b) => {
-        if (b[1].personas !== a[1].personas) return b[1].personas - a[1].personas;
-        return compareText(a[0], b[0]);
-      })
-      .map(([cargo, stats]) => {
-        const porcentaje = totalPersonas > 0
-          ? `${((stats.personas / totalPersonas) * 100).toFixed(2)}%`
-          : "0.00%";
-        return [cargo, stats.personas, stats.juntas.size, porcentaje];
-      });
-
-    rows.push([
-      "TOTAL GENERAL",
-      totalPersonas,
-      totalJuntas.size,
-      totalPersonas > 0 ? "100.00%" : "0.00%"
-    ]);
+    rows.push(["TOTAL GENERAL", total, total > 0 ? "100.00%" : "0.00%"]);
 
     return {
       title: getReportTitle("cargos"),
       subtitle: "Filtro aplicado: Todos los cargos (estadistica general)",
-      headers: ["Cargo", "Personas", "Juntas", "Porcentaje"],
+      headers: ["Cargo", "Cantidad", "Porcentaje"],
       rows
     };
   }
 
   const filtered = registros.filter((registro) => {
-    if (!registro.Junta) return false;
     const cargoNombre = registro.Cargo?.NombreCargo || "Sin Cargo";
     const normalizedCargo = normalizeText(cargoNombre);
     if (!registro.Cargo) return wantsSinCargo;
@@ -866,8 +736,8 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
     .sort((a, b) => {
       const cargoA = a.Cargo?.NombreCargo || "Sin Cargo";
       const cargoB = b.Cargo?.NombreCargo || "Sin Cargo";
-      const infoA = getJuntaInfo(a.Junta);
-      const infoB = getJuntaInfo(b.Junta);
+      const infoA = getJuntaInfo(getMandatarioJunta(a) || {});
+      const infoB = getJuntaInfo(getMandatarioJunta(b) || {});
       const nombreA = getNombrePersona(a.Usuario) || a.NumeroIdentificacion || "";
       const nombreB = getNombrePersona(b.Usuario) || b.NumeroIdentificacion || "";
       return (
@@ -879,7 +749,7 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
       );
     })
     .map((registro) => {
-      const info = getJuntaInfo(registro.Junta);
+      const info = getJuntaInfo(getMandatarioJunta(registro) || {});
       const nombrePersona = getNombrePersona(registro.Usuario) || "Sin nombre";
       return [
         registro.Cargo?.NombreCargo || "Sin Cargo",
