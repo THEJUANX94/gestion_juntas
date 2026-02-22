@@ -262,7 +262,7 @@ export default function InformesJuntas() {
       if (extra.municipios?.length) params.set("municipios", extra.municipios.join(","));
       if (extra.provincias?.length) params.set("provincias", extra.provincias.join(","));
 
-      const fetchUrl = `${VITE_PATH}/api/juntas/reports/${backendKey}/export?${params.toString()}`;
+      const fetchUrl = `${VITE_PATH}/juntas/reports/${backendKey}/export?${params.toString()}`;
       const res = await fetch(fetchUrl, { credentials: "include" });
 
       if (res.status === 404) {
@@ -350,6 +350,13 @@ export default function InformesJuntas() {
                 <strong className="text-4xl font-bold">{totalJuntas}</strong> juntas de acción comunal
               </p>
             </div>
+            <DownloadButtons
+              onDownload={(format) =>
+                downloadReport("province", format, {
+                  provincias: [province]
+                })
+              }
+            />
             <h4 className="mb-3 text-base font-semibold text-gray-700">
               Municipios incluidos ({municipios.length}):
             </h4>
@@ -597,11 +604,10 @@ export default function InformesJuntas() {
                             <p className="mt-2 text-2xl font-bold text-[#009E76]">
                               {provinceData.series?.[i] || 0} juntas
                             </p>
-                            <p className="text-xs text-green-600 mt-2">Click para ver detalles</p>
+                            <p className="text-xs text-green-600 mt-2">Ver detalles</p>
                           </div>
                         ))}
                       </div>
-                      <DownloadButtons onDownload={(format) => downloadReport("province", format)} />
                     </>
                   )}
                 </div>
@@ -695,13 +701,6 @@ export default function InformesJuntas() {
                         labels={municipalityData.labels || []}
                         series={municipalityData.series || []}
                         color="bg-orange-500"
-                      />
-                      <Table
-                        headers={["Municipio", "Juntas"]}
-                        rows={(municipalityData.labels || []).map((label, i) => [
-                          label,
-                          municipalityData.series?.[i]
-                        ])}
                       />
                       <DownloadButtons
                         onDownload={(format) =>
