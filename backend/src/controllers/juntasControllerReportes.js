@@ -642,51 +642,64 @@ const buildComisionesExportDataset = async ({ filtro = [] } = {}) => {
     current.personas += 1;
   });
 
-  const totalsByComision = new Map();
+  const groupedByComision = new Map();
   Array.from(grouped.values()).forEach((item) => {
-    totalsByComision.set(
-      item.comision,
-      (totalsByComision.get(item.comision) || 0) + item.personas
-    );
+    if (!groupedByComision.has(item.comision)) {
+      groupedByComision.set(item.comision, {
+        personas: 0,
+        juntas: new Set(),
+        ubicaciones: []
+      });
+    }
+
+    const current = groupedByComision.get(item.comision);
+    current.personas += item.personas;
+    item.juntas.forEach((juntaId) => current.juntas.add(juntaId));
+    current.ubicaciones.push(item);
   });
 
-  const ordered = Array.from(grouped.values()).sort((a, b) => {
-    if (b.personas !== a.personas) return b.personas - a.personas;
-    const juntasA = a.juntas.size;
-    const juntasB = b.juntas.size;
-    if (juntasB !== juntasA) return juntasB - juntasA;
-    return (
-      compareText(a.comision, b.comision) ||
-      compareText(a.provincia, b.provincia) ||
-      compareText(a.municipio, b.municipio)
-    );
+  const orderedComisiones = Array.from(groupedByComision.entries()).sort((a, b) => {
+    if (b[1].personas !== a[1].personas) return b[1].personas - a[1].personas;
+    return compareText(a[0], b[0]);
   });
 
-  const seenComisiones = new Set();
-  const rows = ordered
-    .map((item) => {
-      const totalComision = totalsByComision.get(item.comision) || 0;
-      const showTotalComision = seenComisiones.has(item.comision) ? "" : totalComision;
-      seenComisiones.add(item.comision);
+  const rows = [];
+  orderedComisiones.forEach(([comision, stats]) => {
+    rows.push([
+      comision || "Sin Comision",
+      "TOTAL COMISION",
+      stats.personas,
+      stats.juntas.size,
+      "",
+      ""
+    ]);
 
-      return [
-        item.comision || "Sin Comision",
-        showTotalComision,
-        item.personas,
-        item.juntas.size,
-        item.provincia,
-        item.municipio
-      ];
-    });
+    stats.ubicaciones
+      .sort((a, b) => {
+        if (b.personas !== a.personas) return b.personas - a.personas;
+        if (b.juntas.size !== a.juntas.size) return b.juntas.size - a.juntas.size;
+        return compareText(a.provincia, b.provincia) || compareText(a.municipio, b.municipio);
+      })
+      .forEach((item) => {
+        rows.push([
+          comision || "Sin Comision",
+          "UBICACION",
+          item.personas,
+          item.juntas.size,
+          item.provincia,
+          item.municipio
+        ]);
+      });
+  });
 
   return {
     title: getReportTitle("comisiones"),
     subtitle: buildFilterSubtitle("Filtro aplicado", filtro, "Todas las comisiones"),
     headers: [
       "Comision",
-      "Total Participantes Comision",
-      "Participantes en Ubicacion",
-      "Juntas en Ubicacion",
+      "Tipo Registro",
+      "Participantes",
+      "Juntas",
       "Provincia",
       "Municipio"
     ],
@@ -791,9 +804,58 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
     ]
   });
 
+  if (!hasFilter) {
+    const grouped = new Map();
+    const totalJuntas = new Set();
+    let totalPersonas = 0;
+
+    registros.forEach((registro) => {
+      if (!registro.Junta) return;
+      const cargoNombre = registro.Cargo?.NombreCargo || "Sin Cargo";
+      if (!grouped.has(cargoNombre)) {
+        grouped.set(cargoNombre, { personas: 0, juntas: new Set() });
+      }
+
+      const current = grouped.get(cargoNombre);
+      current.personas += 1;
+      totalPersonas += 1;
+
+      const juntaId = registro.Junta.IDJunta ?? registro.Junta.idjunta;
+      if (juntaId) {
+        current.juntas.add(juntaId);
+        totalJuntas.add(juntaId);
+      }
+    });
+
+    const rows = Array.from(grouped.entries())
+      .sort((a, b) => {
+        if (b[1].personas !== a[1].personas) return b[1].personas - a[1].personas;
+        return compareText(a[0], b[0]);
+      })
+      .map(([cargo, stats]) => {
+        const porcentaje = totalPersonas > 0
+          ? `${((stats.personas / totalPersonas) * 100).toFixed(2)}%`
+          : "0.00%";
+        return [cargo, stats.personas, stats.juntas.size, porcentaje];
+      });
+
+    rows.push([
+      "TOTAL GENERAL",
+      totalPersonas,
+      totalJuntas.size,
+      totalPersonas > 0 ? "100.00%" : "0.00%"
+    ]);
+
+    return {
+      title: getReportTitle("cargos"),
+      subtitle: "Filtro aplicado: Todos los cargos (estadistica general)",
+      headers: ["Cargo", "Personas", "Juntas", "Porcentaje"],
+      rows
+    };
+  }
+
   const filtered = registros.filter((registro) => {
     if (!registro.Junta) return false;
-    if (!hasFilter) return true;
     const cargoNombre = registro.Cargo?.NombreCargo || "Sin Cargo";
     const normalizedCargo = normalizeText(cargoNombre);
     if (!registro.Cargo) return wantsSinCargo;
