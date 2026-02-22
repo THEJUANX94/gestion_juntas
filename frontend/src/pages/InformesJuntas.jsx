@@ -1,3 +1,9 @@
+/**
+ * Vista de reportes de juntas:
+ * - Consulta datos agregados para graficas.
+ * - Permite aplicar filtros por categoria.
+ * - Descarga reportes en Excel/Word/PDF consumiendo /juntas/reports/:tipo/export.
+ */
 import { useEffect, useState } from "react";
 import { PieChart, pieArcLabelClasses } from "@mui/x-charts/PieChart";
 import { Download, FileSpreadsheet, FileText, FileType, Filter, RotateCcw } from "lucide-react";
@@ -9,21 +15,35 @@ const VITE_PATH =
     ? import.meta.env.VITE_PATH
     : "";
 
+/**
+ * Fetch base del modulo:
+ * - agrega prefijo de entorno.
+ * - envia cookies para autenticar contra la API.
+ */
 const apiFetch = (path, opts = {}) =>
   fetch(`${VITE_PATH}${path}`, { credentials: "include", ...opts });
 
+// Normaliza texto para comparaciones robustas (sin tildes, trim y mayusculas).
 const normalizeText = (value = "") =>
   String(value)
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toUpperCase();
-
+/**
+ * Helpers de compatibilidad para entidades Lugar.
+ * Unifican acceso a claves con variantes de mayusculas/minusculas
+ * para evitar validaciones repetidas en filtros territoriales.
+ */
 const getLugarId = (lugar) => lugar?.IDLugar ?? lugar?.idlugar ?? null;
 const getParentId = (lugar) => lugar?.IDOtroLugar ?? lugar?.idotrolugar ?? null;
 const getLugarNombre = (lugar) => lugar?.NombreLugar ?? lugar?.nombrelugar ?? "";
 const getLugarTipo = (lugar) => lugar?.TipoLugar ?? lugar?.tipolugar ?? "";
 
+/**
+ * Traduce las claves internas del frontend a los nombres de ruta del backend.
+ * Esto evita acoplar la UI al naming de la API y centraliza el mapeo.
+ */
 const routeMap = {
   ages: "edades",
   commissions: "comisiones",
@@ -44,6 +64,10 @@ const tabs = [
   { key: "municipality", label: "Municipio" }
 ];
 
+/**
+ * Grafico de barras horizontal para pares etiqueta-valor.
+ * Escala cada barra contra el maximo del conjunto para conservar comparabilidad.
+ */
 const BarChart = ({ labels = [], series = [], color = "bg-green-600" }) => {
   if (!labels.length) return <p className="mt-3 text-sm text-gray-400">Sin datos para mostrar</p>;
   const max = Math.max(...series, 1);
@@ -65,6 +89,10 @@ const BarChart = ({ labels = [], series = [], color = "bg-green-600" }) => {
   );
 };
 
+/**
+ * Botonera reutilizable de exportacion (excel, word, pdf).
+ * Centraliza el contrato `onDownload(formato)` para todos los reportes.
+ */
 const DownloadButtons = ({ onDownload, compact = false }) => (
   <div className={`flex flex-wrap gap-2 ${compact ? "mt-2" : "mt-5 border-t pt-4"}`}>
     <button
@@ -97,6 +125,10 @@ const DownloadButtons = ({ onDownload, compact = false }) => (
   </div>
 );
 
+/**
+ * Tabla base para presentar detalle numerico junto a las graficas.
+ * Mantiene headers dinamicos y filas alternadas para lectura rapida.
+ */
 const Table = ({ headers, rows }) => (
   <div className="mt-4 overflow-auto">
     <table className="min-w-full border-collapse text-sm">
@@ -148,6 +180,13 @@ export default function InformesJuntas() {
   const [selectedPosition, setSelectedPosition] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
 
+  /**
+   * Carga el catalogo de lugares una sola vez y deriva:
+   * - Provincias de Boyaca
+   * - Municipios hijos de esas provincias
+   *
+   * Estos arreglos alimentan filtros y consultas de reportes territoriales.
+   */
   useEffect(() => {
     apiFetch("/lugares")
       .then((r) => (r.ok ? r.json() : Promise.reject("Error cargando lugares")))
@@ -214,6 +253,13 @@ export default function InformesJuntas() {
       });
   }, []);
 
+  /**
+   * Para reportes de resumen (edades/comisiones/activas/cargos/genero),
+   * al cambiar la pestaña se consulta su endpoint JSON y se guarda en estado.
+   *
+   * Province y municipality se excluyen aqui porque requieren interaccion extra
+   * (seleccion manual o carga bajo demanda).
+   */
   useEffect(() => {
     if (selectedReport === "municipality" || selectedReport === "province") return;
     const endpointMap = {
@@ -252,6 +298,15 @@ export default function InformesJuntas() {
     load();
   }, [selectedReport]);
 
+  /**
+   * Punto unico de descarga para Excel/Word/PDF.
+   *
+   * Flujo:
+   * 1) Convierte la clave de UI a tipo de reporte backend.
+   * 2) Agrega filtros activos como query params.
+   * 3) Consume el endpoint /export como blob binario.
+   * 4) Genera una descarga local con nombre y extension correctos.
+   */
   const downloadReport = async (reportKey, format, extra = {}) => {
     try {
       const backendKey = routeMap[reportKey] || reportKey;
@@ -291,6 +346,13 @@ export default function InformesJuntas() {
     }
   };
 
+  /**
+   * Conserva la forma {labels, series} que consumen los graficos,
+   * pero recortada a un solo elemento cuando hay filtro exacto.
+   *
+   * Importante: no recalcula nada; solo localiza el indice de la etiqueta
+   * seleccionada y toma la posicion equivalente en series.
+   */
   const getFilteredData = (data, filterValue) => {
     if (!data || !data.labels || !filterValue) return data;
     const idx = data.labels.indexOf(filterValue);
@@ -298,6 +360,7 @@ export default function InformesJuntas() {
     return { labels: [data.labels[idx]], series: [data.series[idx]] };
   };
 
+  // Carga resumen de juntas por provincia para grafo y tarjetas.
   const loadProvincias = async () => {
     setLoading(true);
     setError(null);
@@ -312,11 +375,14 @@ export default function InformesJuntas() {
     }
   };
 
+  // Carga resumen de juntas por el subconjunto de municipios seleccionado.
   const loadMunicipios = async () => {
     if (!selectedMunicipalities.length) return;
     setLoading(true);
     setError(null);
     try {
+      // El backend espera ids de municipio separados por coma.
+      // Se envia un subconjunto exacto para que el reporte salga filtrado.
       const res = await apiFetch(`/juntas/reports/municipios?municipios=${selectedMunicipalities.join(",")}`);
       if (!res.ok) throw new Error(`Error ${res.status}`);
       setMunicipalityData(await res.json());
@@ -327,8 +393,15 @@ export default function InformesJuntas() {
     }
   };
 
+  /**
+   * Modal de detalle por provincia:
+   * - Muestra total y lista de municipios de la provincia seleccionada.
+   * - Permite descargar reportes filtrados solo por esa provincia.
+   */
   const ProvinceModal = ({ province, onClose }) => {
     if (!province || !provinceData) return null;
+    // provinceData mantiene paralelismo por indice:
+    // labels[i] -> series[i] -> municipios[i]
     const idx = provinceData.labels.indexOf(province);
     if (idx === -1) return null;
 
@@ -546,6 +619,7 @@ export default function InformesJuntas() {
                     </select>
                   </div>
                   {filteredGender?.labels?.length ? (
+                    // Vista dual: dona para distribucion visual y tabla para lectura exacta de cantidades.
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                       <PieChart
                         series={[
@@ -594,6 +668,7 @@ export default function InformesJuntas() {
                   {provinceData && (
                     <>
                       <BarChart labels={provinceData.labels || []} series={provinceData.series || []} color="bg-amber-500" />
+                      {/* Cada tarjeta abre modal con detalle municipal y exportacion filtrada por provincia. */}
                       <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                         {(provinceData.labels || []).map((prov, i) => (
                           <div key={prov} className="rounded-lg border p-4 hover:shadow-md cursor-pointer transition-all" onClick={() => setModalProvince(prov)}>
@@ -697,6 +772,7 @@ export default function InformesJuntas() {
 
                   {municipalityData && (
                     <>
+                      {/* Grafica comparativa del subconjunto de municipios elegido por el usuario. */}
                       <BarChart
                         labels={municipalityData.labels || []}
                         series={municipalityData.series || []}
@@ -728,3 +804,4 @@ export default function InformesJuntas() {
     </div>
   );
 }
+

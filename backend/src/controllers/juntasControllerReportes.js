@@ -11,6 +11,11 @@ import { MandatarioJunta } from "../model/mandatarioJuntaModel.js";
 import { TipoJunta } from "../model/tipoJuntaModel.js";
 import { Usuario } from "../model/usuarioModel.js";
 
+/**
+ * Controlador de reportes:
+ * - Expone endpoints JSON para graficas del frontend.
+ * - Genera archivos de exportacion (excel/word/pdf) a partir de datasets tabulares.
+ */
 const REPORT_TITLES = {
   edades: "Reporte de Edades",
   comisiones: "Reporte de Comisiones",
@@ -55,6 +60,11 @@ const sortPairsByValueDesc = (pairs) =>
     return compareText(a[0], b[0]);
   });
 
+/**
+ * Aplica filtros de etiquetas sobre datasets tipo grafica:
+ * - Filtra por texto normalizado (sin tildes / case-insensitive).
+ * - Mantiene alineadas labels y series por indice.
+ */
 const filterByLabels = (data, labels = []) => {
   if (!labels.length) return data;
 
@@ -98,6 +108,13 @@ const dedupeByLugarId = (items) => {
   return Array.from(map.values());
 };
 
+/**
+ * Reconstruye la jerarquia territorial de Boyaca usando la tabla Lugar:
+ * Departamento -> Provincias -> Municipios.
+ *
+ * Esta estructura se reutiliza en reportes de provincias y municipios,
+ * y evita repetir consultas/joins complejos por cada funcion.
+ */
 const getBoyacaStructure = async () => {
   const lugares = await Lugar.findAll({
     attributes: ["IDLugar", "NombreLugar", "TipoLugar", "IDOtroLugar"]
@@ -146,6 +163,10 @@ const getBoyacaStructure = async () => {
   };
 };
 
+/**
+ * Cuenta juntas por lista de ids de municipio y devuelve Map<idMunicipio, count>.
+ * Se usa como primitiva para agregar por provincia/municipio sin repetir queries.
+ */
 const countJuntasByMunicipioIds = async (municipioIds) => {
   const safeIds = [...new Set(municipioIds.filter(Boolean))];
   const counts = new Map();
@@ -170,6 +191,10 @@ const countJuntasByMunicipioIds = async (municipioIds) => {
   return counts;
 };
 
+/**
+ * Agrega usuarios por rangos de edad para graficas/tablas.
+ * Calcula edad exacta ajustando mes/dia para no sobrecontar aniversarios pendientes.
+ */
 const getEdadesData = async ({ filtro = [] } = {}) => {
   const usuarios = await Usuario.findAll({ attributes: ["FechaNacimiento"] });
   const now = new Date();
@@ -206,6 +231,10 @@ const getEdadesData = async ({ filtro = [] } = {}) => {
   );
 };
 
+/**
+ * Cuenta participaciones por tipo de comision a partir de MandatarioJunta.
+ * Incluye categoria "Sin Comision" para registros sin relacion cargada.
+ */
 const getComisionesData = async ({ filtro = [] } = {}) => {
   const mandatarios = await MandatarioJunta.findAll({
     include: [
@@ -234,6 +263,9 @@ const getComisionesData = async ({ filtro = [] } = {}) => {
   );
 };
 
+/**
+ * Resume cantidad de juntas por estado activo/inactivo y permite filtro puntual.
+ */
 const getActivasData = async ({ estado = "" } = {}) => {
   const activas = await Junta.count({ where: { Activo: true } });
   const inactivas = await Junta.count({ where: { Activo: false } });
@@ -247,6 +279,10 @@ const getActivasData = async ({ estado = "" } = {}) => {
   return filterByLabels(data, [estado]);
 };
 
+/**
+ * Cuenta mandatarios por cargo para el reporte estadistico de cargos.
+ * Conserva "Sin Cargo" para detectar asignaciones incompletas.
+ */
 const getCargosData = async ({ filtro = [] } = {}) => {
   const mandatarios = await MandatarioJunta.findAll({
     include: [
@@ -274,6 +310,10 @@ const getCargosData = async ({ filtro = [] } = {}) => {
   );
 };
 
+/**
+ * Normaliza sexo a tres categorias consolidadas (Masculino/Femenino/Otro)
+ * para que los reportes no dependan de variantes de escritura.
+ */
 const getGeneroData = async ({ filtro = [] } = {}) => {
   const usuarios = await Usuario.findAll({ attributes: ["Sexo"] });
   const counts = {
@@ -302,6 +342,12 @@ const getGeneroData = async ({ filtro = [] } = {}) => {
   );
 };
 
+/**
+ * Arma reporte por provincia usando la jerarquia territorial:
+ * 1) Obtiene municipios por provincia.
+ * 2) Reutiliza conteos por municipio.
+ * 3) Suma total provincial y detalle por municipio.
+ */
 const getProvinciasData = async ({ provincias = [] } = {}) => {
   const structure = await getBoyacaStructure();
   if (!structure.provincias.length) {
@@ -367,6 +413,10 @@ const getProvinciasData = async ({ provincias = [] } = {}) => {
   };
 };
 
+/**
+ * Arma reporte por municipio con filtro opcional por ids.
+ * Cuando no hay filtro, devuelve todos los municipios de Boyaca.
+ */
 const getMunicipiosData = async ({ municipios = [] } = {}) => {
   const structure = await getBoyacaStructure();
   if (!structure.municipios.length) {
@@ -419,6 +469,11 @@ const getMunicipiosData = async ({ municipios = [] } = {}) => {
   };
 };
 
+/**
+ * Resolver de datos base (JSON) por tipo de reporte.
+ * Estas funciones alimentan graficas y tambien sirven como validacion
+ * de tipo soportado antes de exportar archivos.
+ */
 const getReportData = async (tipo, query) => {
   const safeTipo = normalizeText(tipo).toLowerCase();
   const filtro = splitCsv(query?.filtro);
@@ -494,6 +549,10 @@ const formatDateTime = () =>
 const getTipoJuntaNombre = (junta) =>
   junta?.TipoJuntum?.NombreTipoJunta || junta?.TipoJunta?.NombreTipoJunta || "";
 
+/**
+ * Normaliza una entidad Junta para exportacion tabular, ocultando diferencias
+ * de nombres/aliases entre modelos y campos crudos.
+ */
 const getJuntaInfo = (junta = {}) => ({
   id: junta?.IDJunta ?? junta?.idjunta ?? "",
   razonSocial: junta?.RazonSocial ?? "",
@@ -512,6 +571,7 @@ const getJuntaInfo = (junta = {}) => ({
   correo: junta?.Correo ?? ""
 });
 
+// En asociaciones de Sequelize puede llegar como Juntum o Junta segun el include.
 const getMandatarioJunta = (registro = {}) =>
   registro?.Juntum || registro?.Junta || null;
 
@@ -526,6 +586,9 @@ const getNombrePersona = (usuario = {}) =>
     .join(" ")
     .trim();
 
+/**
+ * Traduce una fecha de nacimiento al bucket usado en reportes de edades.
+ */
 const getAgeRangeFromDate = (fechaNacimiento) => {
   if (!fechaNacimiento) return null;
 
@@ -552,6 +615,10 @@ const getGeneroNombre = (sexo = "") => {
   return "Otro";
 };
 
+/**
+ * Carga juntas con include enriquecido para exportes detallados.
+ * Evita repetir configuracion de joins en cada builder.
+ */
 const loadJuntasForExport = async (where = {}) =>
   Junta.findAll({
     where,
@@ -559,6 +626,7 @@ const loadJuntasForExport = async (where = {}) =>
     order: [["RazonSocial", "ASC"]]
   });
 
+// Orden canonico territorial para que tablas extensas sean faciles de leer.
 const sortByJuntaLocation = (left, right) => {
   const a = getJuntaInfo(left.junta || left);
   const b = getJuntaInfo(right.junta || right);
@@ -572,6 +640,11 @@ const sortByJuntaLocation = (left, right) => {
 const buildFilterSubtitle = (prefix, values, fallback) =>
   `${prefix}: ${values.length ? values.join(", ") : fallback}`;
 
+/**
+ * Dataset de exportacion de edades:
+ * - mismas categorias del frontend
+ * - agrega porcentaje para lectura ejecutiva en tablas.
+ */
 const buildEdadesExportDataset = async ({ filtro = [] } = {}) => {
   const data = await getEdadesData({ filtro });
   const total = (data.series || []).reduce((acc, value) => acc + Number(value || 0), 0);
@@ -589,6 +662,9 @@ const buildEdadesExportDataset = async ({ filtro = [] } = {}) => {
   };
 };
 
+/**
+ * Dataset de exportacion de comisiones con fila de total general.
+ */
 const buildComisionesExportDataset = async ({ filtro = [] } = {}) => {
   const data = await getComisionesData({ filtro });
   const total = (data.series || []).reduce((acc, value) => acc + Number(value || 0), 0);
@@ -606,6 +682,7 @@ const buildComisionesExportDataset = async ({ filtro = [] } = {}) => {
   };
 };
 
+// Convierte texto de UI a boolean usado por el where de Sequelize.
 const parseEstadoFilter = (estado = "") => {
   const normalized = normalizeText(estado);
   if (normalized === "ACTIVA" || normalized === "ACTIVAS") return true;
@@ -613,6 +690,10 @@ const parseEstadoFilter = (estado = "") => {
   return null;
 };
 
+/**
+ * Dataset de juntas activas/inactivas en formato de detalle por junta.
+ * Si hay filtro de estado, limita registros en SQL; si no, exporta ambas.
+ */
 const buildActivasExportDataset = async ({ estado = "" } = {}) => {
   const parsedEstado = parseEstadoFilter(estado);
   const where = parsedEstado === null ? {} : { Activo: parsedEstado };
@@ -659,6 +740,11 @@ const buildActivasExportDataset = async ({ estado = "" } = {}) => {
   };
 };
 
+/**
+ * Cargos tiene dos salidas:
+ * - Sin filtro: estadistica agregada (cargo, cantidad, porcentaje).
+ * - Con filtro: detalle persona-a-persona con junta y periodos.
+ */
 const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
   const selected = new Set(filtro.map(normalizeText));
   const hasFilter = selected.size > 0;
@@ -786,6 +872,9 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
   };
 };
 
+/**
+ * Dataset de genero con columnas de cantidad y porcentaje.
+ */
 const buildGeneroExportDataset = async ({ filtro = [] } = {}) => {
   const data = await getGeneroData({ filtro });
   const total = (data.series || []).reduce((acc, value) => acc + Number(value || 0), 0);
@@ -803,6 +892,12 @@ const buildGeneroExportDataset = async ({ filtro = [] } = {}) => {
   };
 };
 
+/**
+ * Dataset territorial por provincia:
+ * - aplica filtro opcional de provincias
+ * - incluye detalle por junta
+ * - muestra total provincial solo en la primera fila de cada bloque.
+ */
 const buildProvinciasExportDataset = async ({ provincias = [] } = {}) => {
   const selected = new Set(provincias.map(normalizeText));
   const hasFilter = selected.size > 0;
@@ -841,6 +936,7 @@ const buildProvinciasExportDataset = async ({ provincias = [] } = {}) => {
     });
 
   const seenProvincias = new Set();
+  // Solo muestra el total una vez por provincia para evitar ruido visual.
   const rowsWithSingleTotal = rows.map((row) => {
     const provincia = row[0];
     if (seenProvincias.has(provincia)) {
@@ -868,6 +964,12 @@ const buildProvinciasExportDataset = async ({ provincias = [] } = {}) => {
   };
 };
 
+/**
+ * Dataset territorial por municipio:
+ * - filtro opcional por ids de municipio
+ * - detalle por junta
+ * - total municipal en una sola fila por bloque.
+ */
 const buildMunicipiosExportDataset = async ({ municipios = [] } = {}) => {
   const safeMunicipioIds = [...new Set(municipios.filter(Boolean))];
   const where = safeMunicipioIds.length
@@ -913,6 +1015,7 @@ const buildMunicipiosExportDataset = async ({ municipios = [] } = {}) => {
     });
 
   const seenMunicipios = new Set();
+  // Solo muestra el total una vez por municipio para evitar repeticion por junta.
   const rowsWithSingleTotal = rows.map((row) => {
     const municipio = row[0];
     if (seenMunicipios.has(municipio)) {
@@ -942,6 +1045,16 @@ const buildMunicipiosExportDataset = async ({ municipios = [] } = {}) => {
   };
 };
 
+/**
+ * Construye el dataset tabular final para exportacion.
+ * Formato comun esperado por los serializers:
+ * {
+ *   title: string,
+ *   subtitle: string,
+ *   headers: string[],
+ *   rows: Array<Array<string|number>>
+ * }
+ */
 const getExportDataset = async (tipo, query) => {
   const safeTipo = normalizeText(tipo).toLowerCase();
   const filtro = splitCsv(query?.filtro);
@@ -969,6 +1082,7 @@ const getExportDataset = async (tipo, query) => {
   }
 };
 
+// Convierte indice 1-based a nomenclatura Excel (A, B, ..., AA, AB...).
 const toExcelColumnName = (index) => {
   let value = index;
   let columnName = "";
@@ -980,6 +1094,13 @@ const toExcelColumnName = (index) => {
   return columnName || "A";
 };
 
+/**
+ * Serializer Excel (xlsx):
+ * - Usa una hoja unica "Reporte".
+ * - Inserta titulo/subtitulo/fecha en cabecera.
+ * - Renderiza encabezados con estilo, filas alternadas y autofiltro.
+ * - Ajusta ancho de columnas segun contenido.
+ */
 const writeExcel = async (dataset) => {
   const headers = dataset.headers?.length ? dataset.headers : ["Detalle"];
   const rows = dataset.rows?.length
@@ -1100,6 +1221,12 @@ const escapeRtf = (value = "") =>
     .replace(/\r\n|\n|\r/g, "\\line ")
     .replace(/[^\x00-\x7F]/g, (char) => `\\u${char.charCodeAt(0)}?`);
 
+/**
+ * Serializer Word (RTF):
+ * - Inyecta identidad institucional (logo, titulo, marca textual).
+ * - Si la tabla es compacta, usa layout tabular real.
+ * - Si es ancha, cambia a formato por bloques para legibilidad.
+ */
 const writeWordRtf = async (dataset) => {
   const headers = dataset.headers?.length ? dataset.headers : ["Detalle"];
   const rows = dataset.rows?.length
@@ -1178,6 +1305,10 @@ const writeWordRtf = async (dataset) => {
   return Buffer.from(lines.join("\n"), "utf8");
 };
 
+/**
+ * Estima ancho relativo por columna segun headers y muestra de filas.
+ * Evita tablas pdf ilegibles cuando hay columnas con texto largo.
+ */
 const getPdfColumnWidths = (headers, rows, tableWidth) => {
   const sampleRows = rows.slice(0, 40);
   const weights = headers.map((header, index) => {
@@ -1193,6 +1324,12 @@ const getPdfColumnWidths = (headers, rows, tableWidth) => {
   return weights.map((weight) => (weight / sum) * tableWidth);
 };
 
+/**
+ * Serializer PDF:
+ * - Selecciona orientacion dinamica segun numero de columnas.
+ * - Dibuja encabezado institucional, marca de agua y tabla paginada.
+ * - Repite header de tabla automaticamente al crear nuevas paginas.
+ */
 const writePdf = async (dataset) => {
   const headers = dataset.headers?.length ? dataset.headers : ["Detalle"];
   const rows = dataset.rows?.length
@@ -1362,6 +1499,16 @@ export const reporteMunicipios = async (req, res) => {
   }
 };
 
+/**
+ * Endpoint unico de exportacion.
+ *
+ * Pipeline:
+ * 1) Validar formato solicitado.
+ * 2) Validar tipo de reporte y filtros.
+ * 3) Construir dataset tabular.
+ * 4) Serializar segun formato (excel/word/pdf).
+ * 5) Retornar archivo binario con content-type y filename correctos.
+ */
 export const exportarReporte = async (req, res) => {
   const { tipo } = req.params;
   const format = String(req.query?.format || "").toLowerCase();
