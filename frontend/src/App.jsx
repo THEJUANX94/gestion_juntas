@@ -107,7 +107,7 @@ export default function App() {
                 <Route path="usuarios/crear" element={<CreateUser />} />
                 <Route path="usuarios/update/:id" element={<UpdateUser />} />
                 <Route path="configuracion" element={<Configuracion />} />
-                <Route path="logs" element={<Logs />} />
+                <Route path="/logs" element={<Logs />} />
               </Route>
 
               {/* -----------------------------------------------------
