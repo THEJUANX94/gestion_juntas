@@ -15,6 +15,7 @@ export default function AgregarMandatario() {
   const [lugares, setLugares] = useState([]);
   const [listaGrupos, setListaGrupos] = useState([]);
   const [junta, setJunta] = useState(null);
+  const [miembros, setMiembros] = useState([]);
 
   const [formData, setFormData] = useState({
     // Datos Personales
@@ -42,7 +43,7 @@ export default function AgregarMandatario() {
   const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
   const municipiosFiltrados = lugares.filter(l => l.TipoLugar === 'Municipio' && l.IDOtroLugar === formData.departamento);
   const cargosOcupados = miembros.map(m => m.IDCargo);
-
+  
   useEffect(() => {
     const cargarDatos = async () => {
       const resTipoDoc = await fetch(import.meta.env.VITE_PATH + "/tipodocumento");
@@ -51,7 +52,9 @@ export default function AgregarMandatario() {
       const resLugares = await fetch(import.meta.env.VITE_PATH + "/lugares");
       const resGrupos = await fetch(import.meta.env.VITE_PATH + "/grupospoblacionales");
       const resJunta = await fetch(import.meta.env.VITE_PATH + `/juntas/${id}`);
-
+      const resMiembros = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/miembros`);
+      
+      setMiembros(await resMiembros.json());
       setTiposDocumento(await resTipoDoc.json());
       setCargos(await resCargos.json());
       setComisiones(await resComisiones.json());

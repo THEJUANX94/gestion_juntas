@@ -11,6 +11,7 @@ export default function EditarMandatarioExistente() {
     const [municipios, setMunicipios] = useState([]);
     const [cargos, setCargos] = useState([]);
     const [comisiones, setComisiones] = useState([]);
+    const [miembros, setMiembros] = useState([]);
 
     const [form, setForm] = useState({
         Residencia: "",
@@ -71,6 +72,10 @@ export default function EditarMandatarioExistente() {
                 setComisiones(dataCom);
 
                 setLoading(false);
+
+                const resMiembros = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/miembros`);
+
+                setMiembros(await resMiembros.json());
             } catch (error) {
                 console.error("Error cargando datos:", error);
                 setLoading(false);
