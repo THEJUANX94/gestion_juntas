@@ -35,7 +35,7 @@ export const verificarSesion = async (req, res) => {
       numeroIdentificacion: usuario.numeroIdentificacion,
       nombre: `${usuario.PrimerNombre} ${usuario.SegundoNombre || ""} ${usuario.PrimerApellido} ${usuario.SegundoApellido || ""}`.trim(),
       correo: usuario.Correo,
-      rol: usuario.RolInfo?.NombreRol || "Sin rol",
+      IDRol: usuario.RolInfo?.NombreRol || "Sin rol",
     };
 
     return res.json({ usuario: usuarioData });
