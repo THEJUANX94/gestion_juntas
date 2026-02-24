@@ -10,7 +10,7 @@ export default function EditarMandatarioExistente() {
     const [usuario, setUsuario] = useState(null);
     const [municipios, setMunicipios] = useState([]);
     const [cargos, setCargos] = useState([]);
-       const [comisiones, setComisiones] = useState([]);
+    const [comisiones, setComisiones] = useState([]);
 
     const [form, setForm] = useState({
         Residencia: "",
@@ -22,6 +22,7 @@ export default function EditarMandatarioExistente() {
     });
 
     const [loading, setLoading] = useState(true);
+    const cargosOcupados = miembros.map(m => m.IDCargo);
 
     // ===============================
     // Cargar datos iniciales
@@ -82,32 +83,32 @@ export default function EditarMandatarioExistente() {
     // ===============================
     // Manejo de cambios
     // ===============================
-const handleChange = (e) => {
-    const { name, value } = e.target;
+    const handleChange = (e) => {
+        const { name, value } = e.target;
 
-    if (name === "IDCargo") {
-        setForm((prev) => ({
-            ...prev,
-            IDCargo: value,
-            IDComision: value ? "" : prev.IDComision, 
-        }));
-        return;
-    }
+        if (name === "IDCargo") {
+            setForm((prev) => ({
+                ...prev,
+                IDCargo: value,
+                IDComision: value ? "" : prev.IDComision,
+            }));
+            return;
+        }
 
-    if (name === "IDComision") {
-        setForm((prev) => ({
-            ...prev,
-            IDComision: value,
-            IDCargo: value ? "" : prev.IDCargo, 
-        }));
-        return;
-    }
+        if (name === "IDComision") {
+            setForm((prev) => ({
+                ...prev,
+                IDComision: value,
+                IDCargo: value ? "" : prev.IDCargo,
+            }));
+            return;
+        }
 
-    setForm({
-        ...form,
-        [name]: value,
-    });
-};
+        setForm({
+            ...form,
+            [name]: value,
+        });
+    };
 
 
     // ===============================
@@ -225,6 +226,11 @@ const handleChange = (e) => {
                             onChange={handleChange}
                             disabled={!!form.IDComision}
                             className="w-full border rounded-lg p-3"
+                            options={cargos.map(c => ({
+                                value: c.IDCargo,
+                                label: c.NombreCargo + (cargosOcupados.includes(c.IDCargo) ? " (Ocupado)" : ""),
+                                disabled: cargosOcupados.includes(c.IDCargo)
+                            }))}
                         >
                             <option value="">Seleccione un cargo</option>
                             {cargos.map((c) => (

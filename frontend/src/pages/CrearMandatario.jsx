@@ -41,6 +41,7 @@ export default function AgregarMandatario() {
 
   const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
   const municipiosFiltrados = lugares.filter(l => l.TipoLugar === 'Municipio' && l.IDOtroLugar === formData.departamento);
+  const cargosOcupados = miembros.map(m => m.IDCargo);
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -318,7 +319,11 @@ export default function AgregarMandatario() {
                     name="cargo"
                     value={formData.cargo}
                     onChange={handleChange}
-                    options={cargos.map(c => ({ value: c.IDCargo, label: c.NombreCargo }))}
+                    options={cargos.map(c => ({
+                      value: c.IDCargo,
+                      label: c.NombreCargo + (cargosOcupados.includes(c.IDCargo) ? " (Ocupado)" : ""),
+                      disabled: cargosOcupados.includes(c.IDCargo)
+                    }))}
                     disabled={modo === "comision"}
                   />
                 ) : (

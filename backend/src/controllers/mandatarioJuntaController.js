@@ -64,7 +64,7 @@ export const crearPeriodoYVinculo = async (documento, idJunta, inicio, fin, t) =
     IDPeriodo: periodo.IDPeriodo,
     NumeroIdentificacion: documento,
     IDJunta: idJunta
-  },  { transaction: t });
+  }, { transaction: t });
 
   return periodo;
 };
@@ -106,6 +106,9 @@ export const crearMandatario = async (req, res) => {
     // Validar presidente único
     const errorCargo = await validarPresidenteUnico(documento, cargo, idJunta);
     if (errorCargo) return res.status(400).json({ message: errorCargo });
+    // Validar cargo único
+    const errorCargoUnico = await validarCargoUnico(cargo, idJunta);
+    if (errorCargoUnico) return res.status(400).json({ message: errorCargoUnico });
 
     // Crear o actualizar usuario
     let usuario = await Usuario.findByPk(documento, { transaction: t });
@@ -123,7 +126,7 @@ export const crearMandatario = async (req, res) => {
         Correo: email,
         IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
         IDTipoDocumento: tipoDocumento
-      },  { transaction: t });
+      }, { transaction: t });
     }
 
     // Crear mandatario
@@ -145,7 +148,7 @@ export const crearMandatario = async (req, res) => {
         // (Útil si estás actualizando un usuario que ya tenía grupos)
         await PoblacionesPorPersona.destroy({
           where: { numeroidentificacion: documento },
-          
+
         }, { transaction: t });
 
         // 2. Crear las nuevas asociaciones
@@ -434,6 +437,9 @@ export const agregarMandatarioExistente = async (req, res) => {
     const errorPeriodo = validarPeriodoMandato(junta, inicioMandato, finMandato);
     if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
 
+
+    const errorCargoUnico = await validarCargoUnico(IDCargo, idJunta);
+    if (errorCargoUnico) return res.status(400).json({ message: errorCargoUnico });
     // Validar si ya pertenece
     const existe = await MandatarioJunta.findOne({
       where: { NumeroIdentificacion: IDUsuario, IDJunta: idJunta }
@@ -766,5 +772,20 @@ export const eliminarMandatario = async (req, res) => {
       error: error.message
     });
   }
+};
+
+export const validarCargoUnico = async (cargoID, idJunta) => {
+  const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
+
+  const cargo = await Cargo.findByPk(cargoID);
+  if (!cargo || !CARGOS_UNICOS.includes(cargo.NombreCargo)) return null;
+
+  const existe = await MandatarioJunta.findOne({
+    where: { IDJunta: idJunta, IDCargo: cargoID }
+  });
+
+  return existe
+    ? `Ya existe un ${cargo.NombreCargo} en esta junta.`
+    : null;
 };
 
