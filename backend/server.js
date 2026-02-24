@@ -177,7 +177,8 @@ io.on('connection', (socket) => {
       usuarioID: usuario?.id,
       usuarioIDRol: usuario?.IDRol
     });
-    socket.emit('connect_error', { message: 'No tienes permisos para acceder a los logs. Solo administradores pueden conectarse.' });
+    if (!usuarioAutorizado) {
+    socket.emit('auth_error', { mensaje: 'Error de conexión: Asegúrate de ser administrador.' });
     socket.disconnect(true);
     return;
   }
