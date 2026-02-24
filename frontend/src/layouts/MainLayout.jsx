@@ -35,7 +35,7 @@ export default function MainLayout() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
 
-  const userRole = user?.rol;
+  const userRole = user?.IDRol;
 
   const hasPermission = (permiso) => {
     return permiso.includes(userRole);
