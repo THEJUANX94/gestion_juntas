@@ -63,7 +63,7 @@ export default function App() {
           {/* Rutas Protegidas (Requieren Login) */}
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
-              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]} />}>
+              
 
                 {/* -----------------------------------------------------
                   NIVEL 1: ACCESO TOTAL (Solo Listados para Consulta)
@@ -81,7 +81,7 @@ export default function App() {
                 <Route path="/changePassword" element={<ChangePassword />} />
                 <Route path="/juntas/informes" element={<InformesJuntas />} />
 
-              </Route>
+              
 
               {/* -----------------------------------------------------
                   NIVEL 2: OPERATIVO (Admin y Auxiliar)
