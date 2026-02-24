@@ -22,7 +22,7 @@ export default function ListarMandatarios() {
         const transformados = data.map((u) => ({
           nombre: u.NombreCompleto,
           identificacion: u.Identificacion,
-          firmaActiva: u.activa, // Estado de la firma
+          firmaActiva: u.FirmaActiva, // Estado de la firma
         }));
 
         setUsuarios(

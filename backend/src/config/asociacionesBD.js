@@ -23,7 +23,7 @@ export const Asociaciones = () => {
     Usuario.belongsTo(Rol, { foreignKey: "idrol", as: "RolInfo" });
     Usuario.belongsTo(TipoDocumento, { foreignKey: "idtipodocumento" });
     Usuario.hasMany(MandatarioJunta, { foreignKey: 'numeroidentificacion' });
-    Usuario.hasMany(Firma, { foreignKey: "numeroidentificacion" });
+    Usuario.hasOne(Firma, { foreignKey: "numeroidentificacion" });
     Usuario.hasOne(Credenciales, { foreignKey: "numeroidentificacion" });
     Usuario.hasMany(PoblacionesPorPersona, { foreignKey: "numeroidentificacion" });
 
