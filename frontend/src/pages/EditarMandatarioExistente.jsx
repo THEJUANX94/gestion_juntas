@@ -22,8 +22,11 @@ export default function EditarMandatarioExistente() {
         fFinPeriodo: "",
     });
 
+    const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
     const [loading, setLoading] = useState(true);
-    const cargosOcupados = miembros.map(m => m.IDCargo);
+    const cargosOcupados = miembros
+        .filter(m => CARGOS_UNICOS.includes(m.cargo))
+        .map(m => m.cargo)
 
     // ===============================
     // Cargar datos iniciales
@@ -73,7 +76,7 @@ export default function EditarMandatarioExistente() {
 
                 setLoading(false);
 
-                const resMiembros = await fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/miembros`);
+                const resMiembros = await fetch(import.meta.env.VITE_PATH + `/mandatario/${idJunta}/miembros`);
 
                 setMiembros(await resMiembros.json());
             } catch (error) {
@@ -225,25 +228,7 @@ export default function EditarMandatarioExistente() {
                             <Building2 size={18} />
                             Cargo
                         </label>
-                        <select
-                            name="IDCargo"
-                            value={form.IDCargo}
-                            onChange={handleChange}
-                            disabled={!!form.IDComision}
-                            className="w-full border rounded-lg p-3"
-                            options={cargos.map(c => ({
-                                value: c.IDCargo,
-                                label: c.NombreCargo + (cargosOcupados.includes(c.IDCargo) ? " (Ocupado)" : ""),
-                                disabled: cargosOcupados.includes(c.IDCargo)
-                            }))}
-                        >
-                            <option value="">Seleccione un cargo</option>
-                            {cargos.map((c) => (
-                                <option key={c.IDCargo} value={c.IDCargo}>
-                                    {c.NombreCargo}
-                                </option>
-                            ))}
-                        </select>
+                        const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
                     </div>
 
                     {/* Comisión */}
