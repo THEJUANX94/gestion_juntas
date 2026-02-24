@@ -75,6 +75,7 @@ app.use((req, res, next) => {
 
 const server = http.createServer(app);
 const io = new Server(server, {
+  
   cors: {
     // Usamos la lista de allowedOrigins ya definida para evitar discrepancias entre
     // el cliente y el valor de process.env.CLIENT_ORIGIN. Esto también habilita
@@ -84,6 +85,13 @@ const io = new Server(server, {
     credentials: true
   }
 });
+
+global.emitLogToAdmins = (logEntry) => {
+  io.to('admins').emit('new_log', {
+    timestamp: new Date().toISOString(),
+    ...logEntry
+  });
+};
 
 app.use((req, res, next) => {
   logger.info({
@@ -128,42 +136,68 @@ try {
   console.error("No se pudo inicializar la librería Tail. Asegúrate de que el archivo de logs exista.", e);
 }
 
+io.use((socket, next) => {
+  try {
+    const cookieHeader = socket.request.headers.cookie;
+    console.log('Socket conexión cookies:', socket.request.headers.cookie);
+    if (!cookieHeader) {
+      return next(new Error('NO_COOKIE: No se encontraron cookies'));
+    }
 
+    const cookies = cookie.parse(cookieHeader);
+    const token = cookies.auth_token;
+
+    if (!token) {
+      return next(new Error('NO_TOKEN: Token de autenticación no encontrado'));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Token verificado. IDRol:', decoded.IDRol);
+
+    socket.usuario = decoded; 
+    next();
+  } catch (err) {
+    console.error('Error en middleware Socket.IO:', err.message);
+    next(new Error('TOKEN_INVALIDO: ' + err.message));
+  }
+});
 // --- 3. LÓGICA DE SOCKET.IO PARA ADMINISTRADORES ---
 
 io.on('connection', (socket) => {
-  const token = socket.request.cookies.auth_token;
+  const usuario = socket.usuario; 
 
-  let esAdministrador = false;
+  console.log('Intento de conexión. Usuario ID:', usuario?.id, 'IDRol:', usuario?.IDRol, 'AdminID requerido:', ID_ROL_ADMINISTRADOR);
 
-  if (token) {
-    try {
-      // 1. Verificar y decodificar el token JWT
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // 2. Comprobar si el rol decodificado es el de Administrador
-      if (decoded.rol === ID_ROL_ADMINISTRADOR) {
-        esAdministrador = true;
-        socket.usuario = decoded;
-      }
-    } catch (err) {
-      logger.error({ message: 'Error al verificar JWT en Socket.IO', error: err.message, socketId: socket.id });
-    }
-  }
-
-  if (esAdministrador) {
-    socket.join('admins');
-    logger.info({ message: `Admin (ID: ${socket.usuario.id}) connected to logs socket.`, socketId: socket.id });
-    socket.emit('system_message', { message: 'Conectado al feed de logs en vivo.' });
-
-  } else {
+  if (!usuario || usuario.IDRol !== ID_ROL_ADMINISTRADOR) {
+    console.warn('❌ Usuario no autorizado intentando conectar a logs. IDRol:', usuario?.IDRol);
+    logger.warn({
+      message: 'Usuario no autorizado intentando conectar a logs',
+      socketId: socket.id,
+      usuarioID: usuario?.id,
+      usuarioIDRol: usuario?.IDRol
+    });
+    socket.emit('connect_error', { message: 'No tienes permisos para acceder a los logs. Solo administradores pueden conectarse.' });
     socket.disconnect(true);
-    logger.warn({ message: 'Unauthenticated or non-admin user attempted to connect to logs socket.', socketId: socket.id });
     return;
   }
 
+  socket.join('admins');
+
+  logger.info({
+    message: `Admin conectado a logs`,
+    userId: usuario.id,
+    socketId: socket.id
+  });
+
+  socket.emit('system_message', {
+    message: 'Conectado al feed de logs en vivo.'
+  });
+
   socket.on('disconnect', () => {
-    logger.info({ message: 'Client disconnected.', socketId: socket.id });
+    logger.info({
+      message: 'Admin desconectado del socket',
+      socketId: socket.id
+    });
   });
 });
 

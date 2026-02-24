@@ -73,7 +73,7 @@ const Logs = () => {
     useEffect(() => {
         let socket;
         const API_PATH = import.meta.env.VITE_PATH || '';
-
+        console.log('Inicializando socket de logs...');
         const init = async () => {
             try {
                 // Verificamos la cookie de sesión en el servidor
@@ -103,17 +103,29 @@ const Logs = () => {
                     return;
                 }
 
+                // Log del usuario verificado
+                console.log('Usuario verificado:', data.user);
+
                 let connectUrl;
                 try {
-                    connectUrl = API_PATH ? new URL(API_PATH, window.location.origin).origin : undefined;
+                    connectUrl = API_PATH ? new URL(API_PATH, window.location.origin).origin : window.location.origin;
                 } catch (e) {
-                    // Fallback: si por alguna razón no se puede parsear, limpiamos barras finales
-                    connectUrl = API_PATH ? API_PATH.replace(/\/+$|\s+/g, '') : undefined;
+                    // Fallback: usa el origen actual
+                    connectUrl = window.location.origin;
                 }
 
-                socket = io(connectUrl, { withCredentials: true });
+                console.log('Conectando a Socket.IO en:', connectUrl);
+
+                socket = io(connectUrl, { 
+                    withCredentials: true,
+                    reconnection: true,
+                    reconnectionDelay: 1000,
+                    reconnectionDelayMax: 5000,
+                    reconnectionAttempts: 5
+                });
 
                 socket.on('connect', () => {
+                    console.log('✅ Conectado al socket:', socket.id);
                     setLogs(prev => [{
                         timestamp: new Date().toISOString(),
                         level: 'SYSTEM',
@@ -123,15 +135,28 @@ const Logs = () => {
                 });
 
                 socket.on('connect_error', (err) => {
+                    console.error('❌ Error de conexión Socket.IO:', err);
+                    const errorMsg = err?.message || String(err);
                     setLogs(prev => [{
                         timestamp: new Date().toISOString(),
                         level: 'ERROR',
-                        data: { message: `Error de conexión Socket.IO: ${err?.message || err}` },
-                        key: 'connect-error'
+                        data: { message: `Error de conexión: ${errorMsg}. Asegúrate de ser administrador.` },
+                        key: 'connect-error-' + Date.now()
+                    }, ...prev].slice(0, MAX_LOGS));
+                });
+
+                socket.on('disconnect', (reason) => {
+                    console.log('Desconectado:', reason);
+                    setLogs(prev => [{
+                        timestamp: new Date().toISOString(),
+                        level: 'SYSTEM',
+                        data: { message: `Desconectado del servidor. Razón: ${reason}` },
+                        key: 'disconnected'
                     }, ...prev].slice(0, MAX_LOGS));
                 });
 
                 socket.on('system_message', (msg) => {
+                    console.log('Mensaje SYSTEM:', msg);
                     addLogEntry({
                         timestamp: new Date().toISOString(),
                         level: 'SYSTEM',
@@ -141,6 +166,7 @@ const Logs = () => {
 
                 socket.on('new_log', (logEntry) => {
                     // Aceptamos tanto strings como objetos
+                    console.log('LOG:', logEntry);
                     if (typeof logEntry === 'string') {
                         addLogEntry({ timestamp: new Date().toISOString(), level: 'RAW', message: logEntry });
                     } else {
@@ -149,10 +175,11 @@ const Logs = () => {
                 });
 
             } catch (err) {
+                console.error('Error inicializando logs:', err);
                 setLogs(prev => [{
                     timestamp: new Date().toISOString(),
                     level: 'ERROR',
-                    data: { message: `Error inicializando logs: ${err.message || err}` },
+                    data: { message: `Error: ${err.message || err}` },
                     key: 'init-error'
                 }, ...prev].slice(0, MAX_LOGS));
             }

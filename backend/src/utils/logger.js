@@ -45,3 +45,11 @@ export const logOperation = (operation, userDetails = {}, changes = null, level 
 
     logger.log(level, logPayload);
 };
+logger.on('data', (log) => {
+  if (global.emitLogToAdmins) {
+    global.emitLogToAdmins({
+      level: log.level?.toUpperCase() || 'INFO',
+      ...log
+    });
+  }
+});
