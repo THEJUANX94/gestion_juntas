@@ -11,7 +11,6 @@ export const AuthProviderContent = ({ children, navigate }) => {
   const login = (userData) => {
     setIsAuthenticated(true);
     setUser(userData);
-    navigate("/", { replace: true });
   };
 
   const logout = async () => {
@@ -35,21 +34,10 @@ export const AuthProviderContent = ({ children, navigate }) => {
       try {
         const res = await fetch(import.meta.env.VITE_PATH + "/auth/verify", {
           method: "GET",
-          credentials: "include",
+          credentials: "include", 
         });
 
         if (!res.ok) {
-          setIsAuthenticated(false);
-          setUser(null);
-          return;
-        }
-
-        // Verificar que la respuesta sea JSON antes de parsear
-        const contentType = res.headers.get("content-type");
-        if (!contentType?.includes("application/json")) {
-          console.warn("Respuesta no es JSON. Content-Type:", contentType);
-          const text = await res.text();
-          console.warn("Contenido:", text.substring(0, 200));
           setIsAuthenticated(false);
           setUser(null);
           return;
@@ -59,13 +47,13 @@ export const AuthProviderContent = ({ children, navigate }) => {
 
         if (data.valid) {
           setIsAuthenticated(true);
-          setUser(data.user);
+          setUser(data.user); 
         } else {
           setIsAuthenticated(false);
           setUser(null);
         }
       } catch (error) {
-        console.error("Fallo la verificación de sesión:", error.message || error);
+        console.error("Fallo la verificación de sesión:", error);
         setIsAuthenticated(false);
         setUser(null);
       } finally {
