@@ -30,6 +30,7 @@ import poblacionesporpersona from './src/routes/poblacionesporpersonaRoutes.js'
 import { logger } from './src/utils/logger.js';
 import { Asociaciones } from "./src/config/asociacionesBD.js";
 import { verifyMailerConnection } from "./src/utils/mailer.js";
+import cookie from 'cookie';
 
 dotenv.config();
 
