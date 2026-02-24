@@ -53,7 +53,7 @@ export default function App() {
           {/* Rutas Públicas */}
           <Route element={<HomeLayout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/solicitarCertificado" element={<SolicitarCertificadoJunta/>} />
+            <Route path="/solicitarCertificado" element={<SolicitarCertificadoJunta />} />
             <Route path="/validacionqr/:IDCertificado" element={<ValidacionQR />} />
             <Route path="/login" element={<LoginUser />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -63,22 +63,25 @@ export default function App() {
           {/* Rutas Protegidas (Requieren Login) */}
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
+              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]} />}>
 
-              {/* -----------------------------------------------------
+                {/* -----------------------------------------------------
                   NIVEL 1: ACCESO TOTAL (Solo Listados para Consulta)
                  ----------------------------------------------------- */}
-              <Route path="/juntas/consultar" element={<ConsultarJunta />} />
-              <Route path="/juntas/listar" element={<ListarJuntas />} />
-              <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
-              <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
-              <Route path="cargos/listar" element={<ListarCargos />} />
-              <Route path="comisiones/listar" element={<ListarComisiones />} />
-              <Route path="instituciones/listar" element={<ListarInstituciones />} />
-              <Route path="lugares/listar" element={<ListarLugares />} />
-              <Route path="organismos/listar" element={<ListarOrganismos />} />
-              <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
-              <Route path="/changePassword" element={<ChangePassword />} />
-              <Route path="/juntas/informes" element={<InformesJuntas />} />
+                <Route path="/juntas/consultar" element={<ConsultarJunta />} />
+                <Route path="/juntas/listar" element={<ListarJuntas />} />
+                <Route path="/juntas/detalle-junta/:id" element={<DetalleJunta />} />
+                <Route path="/juntas/datos-junta/:id" element={<DatosJunta />} />
+                <Route path="cargos/listar" element={<ListarCargos />} />
+                <Route path="comisiones/listar" element={<ListarComisiones />} />
+                <Route path="instituciones/listar" element={<ListarInstituciones />} />
+                <Route path="lugares/listar" element={<ListarLugares />} />
+                <Route path="organismos/listar" element={<ListarOrganismos />} />
+                <Route path="usuarios/mandatarios" element={<ListarMandatarios />} />
+                <Route path="/changePassword" element={<ChangePassword />} />
+                <Route path="/juntas/informes" element={<InformesJuntas />} />
+
+              </Route>
 
               {/* -----------------------------------------------------
                   NIVEL 2: OPERATIVO (Admin y Auxiliar)
