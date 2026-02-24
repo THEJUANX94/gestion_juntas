@@ -12,8 +12,15 @@ const RoleRoute = ({ allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Verificamos si el rol del usuario está permitido
-  if (allowedRoles.includes(user.IDRol)) {
+  // Normalize `allowedRoles` to an array and guard against undefined
+  const allowed = Array.isArray(allowedRoles)
+    ? allowedRoles
+    : (allowedRoles != null ? [allowedRoles] : []);
+
+  // Use loose equality so numbers/strings compare correctly
+  const hasAccess = allowed.some((role) => role == user?.IDRol);
+
+  if (hasAccess) {
     return <Outlet />;
   }
 
