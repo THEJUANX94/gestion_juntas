@@ -1,14 +1,12 @@
-import { useContext } from "react";
-import { useAuth as useAuthContext } from "../context/AuthContext"; 
+import { useAuth } from "../context/AuthContext";
 
-const useAuth = () => {
-  const context = useAuthContext();
-  
-  if (!context) {
-    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
-  }
+export const usePermissions = () => {
+  const { user } = useAuth();
 
-  return context;
+  const hasPermission = (allowedRoles) => {
+    if (!user) return false;
+    return allowedRoles.includes(user.rol_id);
+  };
+
+  return { hasPermission };
 };
-
-export default useAuth;
