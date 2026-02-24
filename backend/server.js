@@ -34,7 +34,7 @@ import cookie from 'cookie';
 
 dotenv.config();
 
-const ID_ROL_ADMINISTRADOR = "4d41852c-4ee3-4798-bbe0-ca3a65660666";
+const ID_ROL_ADMINISTRADOR = "23b19304-f12f-4329-bc61-e297f80db8e2";
 
 const allowedOrigins = [
   'https://172.20.1.32',
