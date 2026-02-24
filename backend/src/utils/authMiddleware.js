@@ -24,11 +24,7 @@ export const verificarRol = (rolesPermitidos) => {
     if (!req.usuario) {
       return res.status(401).json({ error: 'No autenticado.' });
     }
-
-    console.log("Roles permitidos:", rolesPermitidos);
-    console.log("Rol del usuario haciendo la petición:", req.usuario.rol);
-    console.log("Tipo de dato del rol:", typeof req.usuario.rol);
-    if (!rolesPermitidos.includes(req.usuario.rol)) {
+    if (!rolesPermitidos.includes(req.usuario.IDRol)) {
       return res.status(403).json({ error: 'No tienes permisos para realizar esta acción.' });
     }
 
