@@ -179,6 +179,8 @@ io.on('connection', (socket) => {
     });
     if (!usuarioAutorizado) {
     socket.emit('auth_error', { mensaje: 'Error de conexión: Asegúrate de ser administrador.' });
+    socket.disconnect(true); // Desconecta al cliente de forma segura
+}
     socket.disconnect(true);
     return;
   }
