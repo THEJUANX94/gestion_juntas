@@ -21,7 +21,7 @@ export default function EditarMandatarioExistente() {
         fInicioPeriodo: "",
         fFinPeriodo: "",
     });
-
+    
     const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
     const [loading, setLoading] = useState(true);
     const cargosOcupados = miembros
@@ -228,7 +228,25 @@ export default function EditarMandatarioExistente() {
                             <Building2 size={18} />
                             Cargo
                         </label>
-                        const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
+                        <select
+                            name="IDCargo"
+                            value={form.IDCargo}
+                            onChange={handleChange}
+                            disabled={!!form.IDComision}
+                            className="w-full border rounded-lg p-3"
+                            options={cargos.map(c => ({
+                                value: c.IDCargo,
+                                label: c.NombreCargo + (cargosOcupados.includes(c.IDCargo) ? " (Ocupado)" : ""),
+                                disabled: cargosOcupados.includes(c.IDCargo)
+                            }))}
+                        >
+                            <option value="">Seleccione un cargo</option>
+                            {cargos.map((c) => (
+                                <option key={c.IDCargo} value={c.IDCargo}>
+                                    {c.NombreCargo}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Comisión */}
