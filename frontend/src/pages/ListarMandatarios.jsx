@@ -81,12 +81,19 @@ export default function ListarMandatarios() {
     );
     if (!confirmed) return;
 
-    // Actualización optimista
     setUsuarios((prev) =>
-      prev.map((u) =>
-        u.IDUsuario === usuario.IDUsuario ? { ...u, firmaActiva: nuevoEstadoFirma } : u
-      )
-    );
+  prev.map((u) => {
+    if (u.identificacion === usuario.identificacion) {
+      // El usuario clickeado toma el nuevo estado
+      return { ...u, firmaActiva: nuevoEstadoFirma };
+    } else if (nuevoEstadoFirma === true) {
+      // SI estamos ACTIVANDO una firma, todas las demás DEBEN ponerse en false
+      return { ...u, firmaActiva: false };
+    }
+    // Si solo estamos desactivando una, las demás se quedan como están
+    return u;
+  })
+);
 
     try {
       // Endpoint ajustado para la firma del usuario
@@ -112,7 +119,7 @@ export default function ListarMandatarios() {
       // Revertir en caso de error
       setUsuarios((prev) =>
         prev.map((u) =>
-          u.IDUsuario === usuario.IDUsuario ? { ...u, firmaActiva: !nuevoEstadoFirma } : u
+          u.identificacion === usuario.identificacion ? { ...u, firmaActiva: !nuevoEstadoFirma } : u
         )
       );
       AlertMessage.error("Error", "No se pudo actualizar el estado de la firma.");
