@@ -86,7 +86,6 @@ export default function DetalleJunta() {
 
   useEffect(() => {
     console.log("Cargos recibidos:", miembros.map(m => m.cargo));
-    if (miembros.length === 0) return;
     const cargosActivos = miembros.map(m => m.cargo?.trim());
     const ausentes = ROLES_REQUERIDOS.filter(rol => !cargosActivos.includes(rol));
     setRolesAusentes(ausentes);
