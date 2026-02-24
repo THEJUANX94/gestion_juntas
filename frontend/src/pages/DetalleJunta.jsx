@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail,
-  MapPin, Search, Filter, X, Trash2, CalendarPlus, AlertCircle, Check
+  MapPin, Search, Filter, X, Trash2, CalendarPlus, AlertCircle, Check, ShieldAlert
 } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
@@ -76,6 +76,23 @@ export default function DetalleJunta() {
     return `${f.getDate().toString().padStart(2, "0")}/${(f.getMonth() + 1)
       .toString().padStart(2, "0")}/${f.getFullYear()}`;
   };
+
+  // ──────────────────────────────────────────────────────────────
+  // Validación de roles principales
+  // ──────────────────────────────────────────────────────────────
+  const ROLES_REQUERIDOS = ["Presidente", "Tesorero", "Fiscal"];
+  const [rolesAusentes, setRolesAusentes] = useState([]);
+  const [alertaRolesCerrada, setAlertaRolesCerrada] = useState(false);
+
+  useEffect(() => {
+    if (miembros.length === 0) return;
+    const cargosActivos = miembros.map(m => m.cargo?.trim());
+    const ausentes = ROLES_REQUERIDOS.filter(rol => !cargosActivos.includes(rol));
+    setRolesAusentes(ausentes);
+    // Reabrimos la alerta si cambia la lista de ausentes
+    if (ausentes.length > 0) setAlertaRolesCerrada(false);
+  }, [miembros]);
+  // ──────────────────────────────────────────────────────────────
 
   // Estado para el Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -353,6 +370,40 @@ export default function DetalleJunta() {
 
             </div>
           </div>
+
+          {/* ──────────────────────────────────────────────────────────────
+              ALERTA DE ROLES PRINCIPALES FALTANTES
+          ────────────────────────────────────────────────────────────── */}
+          {rolesAusentes.length > 0 && !alertaRolesCerrada && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-4 shadow-sm">
+              <div className="shrink-0 bg-red-100 p-2 rounded-lg">
+                <ShieldAlert size={22} className="text-red-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-red-700 mb-1">
+                  Roles principales sin asignar
+                </p>
+                <p className="text-sm text-red-600">
+                  La junta no tiene los siguientes roles obligatorios cubiertos:{" "}
+                  {rolesAusentes.map((rol, idx) => (
+                    <span key={rol}>
+                      <span className="font-semibold">{rol}</span>
+                      {idx < rolesAusentes.length - 1 && ", "}
+                    </span>
+                  ))}
+                  . Por favor, agrega un mandatario para cada uno.
+                </p>
+              </div>
+              <button
+                onClick={() => setAlertaRolesCerrada(true)}
+                className="shrink-0 text-red-400 hover:text-red-600 transition-colors"
+                title="Cerrar alerta"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
+          {/* ────────────────────────────────────────────────────────────── */}
 
           {/* Barra de búsqueda y filtros */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
