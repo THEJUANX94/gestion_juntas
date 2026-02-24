@@ -144,7 +144,6 @@ export const getUltimaFirmaData = async () => {
   }
 };
 
-// En tu backend (controlador de usuarios/firmas)
 export const actualizarEstadoFirma = async (req, res) => {
   const { identificacion } = req.params;
   const { Activo } = req.body;
