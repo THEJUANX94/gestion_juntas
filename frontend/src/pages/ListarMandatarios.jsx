@@ -20,7 +20,6 @@ export default function ListarMandatarios() {
         const data = await res.json();
 
         const transformados = data.map((u) => ({
-          IDUsuario: u.IDUsuario,
           nombre: u.NombreCompleto,
           identificacion: u.Identificacion,
           firmaActiva: u.FirmaActiva, // Estado de la firma
@@ -77,43 +76,34 @@ export default function ListarMandatarios() {
 
     const confirmed = await AlertMessage.confirm(
       "Gestionar Firma",
-      `¿Deseas ${nuevoEstadoFirma ? "ACTIVAR" : "DESACTIVAR"} la firma de "${usuario.nombre}" (ID: ${usuario.identificacion})?`
+      `¿Deseas ${nuevoEstadoFirma ? "ACTIVAR" : "DESACTIVAR"} la firma de "${usuario.nombre}"?`
     );
     if (!confirmed) return;
 
+    // Actualización optimista
     setUsuarios((prev) =>
-  prev.map((u) => {
-    if (u.identificacion === usuario.identificacion) {
-      // El usuario clickeado toma el nuevo estado
-      return { ...u, firmaActiva: nuevoEstadoFirma };
-    } else if (nuevoEstadoFirma === true) {
-      // SI estamos ACTIVANDO una firma, todas las demás DEBEN ponerse en false
-      return { ...u, firmaActiva: false };
-    }
-    // Si solo estamos desactivando una, las demás se quedan como están
-    return u;
-  })
-);
+      prev.map((u) => {
+        if (u.identificacion === usuario.identificacion) {
+          return { ...u, firmaActiva: nuevoEstadoFirma };
+        }
+        // Si activamos una, las demás mueren visualmente
+        if (nuevoEstadoFirma === true) return { ...u, firmaActiva: false };
+        return u;
+      })
+    );
 
     try {
-      // Endpoint ajustado para la firma del usuario
-      // ... dentro de handleToggleFirma
       const res = await fetch(
-        import.meta.env.VITE_PATH + `/usuarios/${usuario.identificacion}/firma/estado`, // Usa identificación si eso espera el backend
+        `${import.meta.env.VITE_PATH}/usuarios/${usuario.identificacion}/firma/estado`,
         {
           method: "PATCH",
-          credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ Activo: nuevoEstadoFirma }), // Cambiado a 'Activo' para coincidir con el backend
+          body: JSON.stringify({ Activo: nuevoEstadoFirma }),
         }
       );
 
-      if (!res.ok) throw new Error("Error al cambiar estado de la firma");
-
-      AlertMessage.success(
-        "Firma actualizada",
-        `La firma de ${usuario.nombre} ahora está ${nuevoEstadoFirma ? "ACTIVA" : "INACTIVA"}.`
-      );
+      if (!res.ok) throw new Error("Error en la petición");
+      AlertMessage.success("Actualizado", "Firma gestionada con éxito");
     } catch (error) {
       console.error(error);
       // Revertir en caso de error

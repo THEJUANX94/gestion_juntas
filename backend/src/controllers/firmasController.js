@@ -158,31 +158,19 @@ export const actualizarEstadoFirma = async (req, res) => {
       );
     }
 
-    // Luego actualiza la firma específica
-    const usuario = await Usuario.findOne({
-      where: { Identificacion: identificacion }
-    });
-
-    if (!usuario) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
-    }
-
     const [numUpdated] = await Firma.update(
       { activa: Activo },
-      { where: { IDUsuario: usuario.IDUsuario } }
+      { where: { numeroidentificacion: identificacion } }
     );
 
     if (numUpdated === 0) {
-      return res.status(404).json({ error: "Firma no encontrada" });
+      return res.status(404).json({ error: "No se encontró la firma para esta identificación" });
     }
 
-    res.json({ 
-      success: true, 
-      mensaje: `Firma ${Activo ? 'activada' : 'desactivada'} correctamente` 
-    });
+    res.json({ success: true, mensaje: "Estado actualizado correctamente" });
 
   } catch (error) {
-    console.error("Error al actualizar firma:", error);
-    res.status(500).json({ error: "Error al actualizar el estado de la firma" });
+    console.error("Error en el servidor:", error);
+    res.status(500).json({ error: "Error interno al actualizar firma" });
   }
 };
