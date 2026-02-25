@@ -17,14 +17,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { PERMISOS, ROLES } from "../config/roles";
-
-const NOMBRE_ROLES = {
-  [ROLES.ADMIN]: "Administrador",
-  [ROLES.AUXILIAR]: "Auxiliar",
-  [ROLES.DESCARGA]: "Descarga",
-  [ROLES.CONSULTA]: "Consulta",
-};
+import { PERMISOS } from "../config/roles";
+import { usePermissions } from "../hooks/usePermissions";
 
 export default function MainLayout() {
   const location = useLocation();
@@ -34,12 +28,8 @@ export default function MainLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef(null);
-
+  const { hasPermission } = usePermissions();
   const userRole = user?.IDRol;
-
-  const hasPermission = (permiso) => {
-    return permiso.includes(userRole);
-  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
