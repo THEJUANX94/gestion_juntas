@@ -85,7 +85,12 @@ const generarCertificadoJAC = async (datosCertificado) => {
   yPos += 5;
 
   // ── TABLA DE DIGNATARIOS ──
-  if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
+  const CARGOS_CERTIFICADO = ['presidente', 'presidenta', 'tesorero', 'tesorera', 'fiscal', 'vicepresidente', 'vicepresidenta'];
+  const dignatariosTabla = (datosCertificado.dignatarios || []).filter(d =>
+    CARGOS_CERTIFICADO.includes((d.cargo || '').toLowerCase().trim())
+  );
+
+  if (dignatariosTabla.length > 0) {
     const colWidths = [35, 65, 25, 35];
     const totalW = colWidths.reduce((a, b) => a + b, 0);
     const HEADER_H = 7;
@@ -111,7 +116,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
 
-    datosCertificado.dignatarios.forEach(d => {
+    dignatariosTabla.forEach(d => {
       const cargo = (d.cargo || d.comision || '').toString();
       const nombre = (d.nombre || '').toUpperCase();
       const cedula = (d.cedula || '').toString();

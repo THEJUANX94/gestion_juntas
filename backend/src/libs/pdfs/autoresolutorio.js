@@ -102,13 +102,11 @@ const generarAutoresolutorio = async (datosCertificado) => {
 
   const resources = await addPDFHeader(doc, datosCertificado);
 
-  // AUTO number in header band, right-aligned before QR
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
+  // AUTO number on its own line, centered, below header band
+  let yPos = 38;
   const autoText = `AUTO No. ${datosCertificado.IDCertificado || '____'} DE ${formatDateSlash(datosCertificado.FechaCreacion)}`;
-  doc.text(autoText, 168, 20, { align: 'right' });
-
-  let yPos = 43;
+  centerText(doc, autoText, yPos, 10, 'bold');
+  yPos += 8;
   let result;
 
   // Helper: write inline article (bold label + normal body on same line)
