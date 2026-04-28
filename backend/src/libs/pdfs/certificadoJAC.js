@@ -1,196 +1,192 @@
 import {
   createDoc,
   addPDFHeader,
-  addPDFFooer,
   centerText,
   checkPageBreak,
   DEFAULTS
 } from '../pdfBase.js';
 
-const buscarDignatarioPorCargo = (dignatarios, cargoBuscado) => {
-  if (!dignatarios || !Array.isArray(dignatarios)) return null;
-  return dignatarios.find(d =>
-    d.cargo && d.cargo.toUpperCase().includes(cargoBuscado.toUpperCase())
-  ) || null;
+const formatDateSlash = (date) => {
+  if (!date) return '____';
+  const d = new Date(date);
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const generarResolucionJAC = async (datosCertificado) => {
+const formatTimeFull = (date) => {
+  if (!date) return '00:00:00';
+  const d = new Date(date);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+};
+
+const formatDateLong = (date) => {
+  if (!date) return '____';
+  const d = new Date(date);
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  return `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+};
+
+const generarCertificadoJAC = async (datosCertificado) => {
   const doc = createDoc();
 
-  const presidente = buscarDignatarioPorCargo(datosCertificado.dignatarios, 'PRESIDENTE');
+  const municipio = (datosCertificado.NombreMunicipio || '').toUpperCase();
+  const nombreOrganizacion = (datosCertificado.nombreOrganizacion || '').toUpperCase();
+  const personeriaNumero = datosCertificado.personeriaNumero || '____';
+  const personeriaFecha = datosCertificado.personeriaFecha || '____';
+  const periodoFin = datosCertificado.periodoFin;
+  const tipodocumento = (datosCertificado.TipoCertificado || 'JUNTA DE ACCIÓN COMUNAL').toUpperCase();
 
-  const municipio = (datosCertificado.NombreMunicipio || "").toUpperCase();
-  const nombreOrganizacion = (datosCertificado.nombreOrganizacion || "").toUpperCase();
-  const tipoOrganismo = (datosCertificado.TipoCertificado || "").toUpperCase();
-
-  // Datos del Presidente
-  const nombrePresidente = (presidente?.nombre || "REPRESENTANTE LEGAL").toString().toUpperCase();
-  const cedulaPresidente = (presidente?.cedula || "__________").toString();
-
-  // Configuración de Fechas y Año
-  const anioResolucion = "2026";
-
-  const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
+  const { margenIzq, margenDer } = DEFAULTS;
   const anchoUtil = 210 - margenIzq - margenDer;
+  const now = datosCertificado.FechaCreacion ? new Date(datosCertificado.FechaCreacion) : new Date();
 
-  let yPos = 50;
-
-  // --- HEADER Y LOGOS ---
   const resources = await addPDFHeader(doc, datosCertificado);
 
-  // --- TÍTULO DE LA RESOLUCIÓN ---
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  centerText(doc, `RESOLUCIÓN NÚMERO _____________ DE ${anioResolucion}`, yPos);
-  yPos += 6;
+  let yPos = 43;
+  let result;
 
-  centerText(doc, "(_______________________)", yPos);
+  const writePara = (text, currentY, fontSize = 10, indent = 0) => {
+    const w = anchoUtil - indent;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(fontSize);
+    const lines = doc.splitTextToSize(text, w);
+    const h = lines.length * 5 + 3;
+    let r = checkPageBreak(doc, currentY, h);
+    let y = r.yPos;
+    doc.text(lines, margenIzq + indent, y, { align: 'justify', maxWidth: w });
+    return y + h;
+  };
+
+  // ── ENCABEZADO DE SECCIÓN ──
+  centerText(doc, 'SECRETARÍA DE GOBIERNO Y ACCIÓN COMUNAL', yPos, 11, 'bold');
+  yPos += 6;
+  centerText(doc, 'DIRECCIÓN DE PARTICIPACIÓN Y ACCIÓN COMUNAL', yPos, 11, 'bold');
+  yPos += 12;
+
+  // ── PREÁMBULO ──
+  yPos = writePara(
+    'El(A) Director(a) de Participación y Acción Comunal en uso de sus facultades legales y en especial las que le confiere la ley 52 de 1990, la ley 2166 del 18 de diciembre de 2021 y el Decreto 1066 del 2015 y Decreto Departamental 076 de 30 de Enero de 2019.',
+    yPos
+  );
+  yPos += 5;
+
+  // ── CERTIFICA ──
+  centerText(doc, 'CERTIFICA:', yPos, 12, 'bold');
   yPos += 10;
 
-  // Objeto de la Resolución
-  const tituloObjeto = `POR LA CUAL SE RECONOCE PERSONERÍA JURÍDICA A LA ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio} DEPARTAMENTO DE BOYACÁ`;
-  const linesTitulo = doc.splitTextToSize(tituloObjeto, anchoUtil);
+  // ── CUERPO ──
+  yPos = writePara(
+    `Que la ${tipodocumento} ${nombreOrganizacion} del municipio de ${municipio}, Departamento de Boyacá, cuenta con Personería Jurídica otorgada mediante resolución No.${personeriaNumero} de fecha ${personeriaFecha}, expedida por Gobernación de Boyacá.`,
+    yPos
+  );
+  yPos += 3;
 
-  linesTitulo.forEach(line => {
-    centerText(doc, line, yPos);
+  yPos = writePara('Que fueron inscritos como dignatarios de dicha organización:', yPos);
+  yPos += 5;
+
+  // ── TABLA DE DIGNATARIOS ──
+  if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
+    const colWidths = [35, 65, 25, 35];
+    const totalW = colWidths.reduce((a, b) => a + b, 0);
+    const HEADER_H = 7;
+    const headers = ['CARGO', 'NOMBRE Y APELLIDO', 'DOCUMENTO', 'EXPEDIDO EN'];
+
+    result = checkPageBreak(doc, yPos, HEADER_H + 2);
+    yPos = result.yPos;
+
+    doc.setFillColor(230, 230, 230);
+    doc.rect(margenIzq, yPos, totalW, HEADER_H, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+
+    let hx = margenIzq;
+    headers.forEach((h, i) => {
+      if (i > 0) doc.line(hx, yPos, hx, yPos + HEADER_H);
+      doc.text(h, hx + 2, yPos + 5);
+      hx += colWidths[i];
+    });
+    doc.rect(margenIzq, yPos, totalW, HEADER_H);
+    yPos += HEADER_H;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+
+    datosCertificado.dignatarios.forEach(d => {
+      const cargo = (d.cargo || d.comision || '').toString();
+      const nombre = (d.nombre || '').toUpperCase();
+      const cedula = (d.cedula || '').toString();
+      const expedido = (d.expedidoEn || municipio || '').toUpperCase();
+
+      const cells = [
+        doc.splitTextToSize(cargo, colWidths[0] - 4),
+        doc.splitTextToSize(nombre, colWidths[1] - 4),
+        doc.splitTextToSize(cedula, colWidths[2] - 4),
+        doc.splitTextToSize(expedido, colWidths[3] - 4),
+      ];
+      const maxLines = Math.max(...cells.map(c => c.length));
+      const rowH = Math.max(7, maxLines * 4 + 3);
+
+      result = checkPageBreak(doc, yPos, rowH);
+      yPos = result.yPos;
+
+      doc.rect(margenIzq, yPos, totalW, rowH);
+      let cx = margenIzq;
+      cells.forEach((lines, i) => {
+        if (i > 0) doc.line(cx, yPos, cx, yPos + rowH);
+        doc.text(lines, cx + 2, yPos + 4);
+        cx += colWidths[i];
+      });
+      yPos += rowH;
+    });
+
     yPos += 5;
-  });
-  yPos += 8;
+  }
 
-  // --- AUTORIDAD COMPETENTE ---
-  centerText(doc, "EL DIRECTOR DE PARTICIPACIÓN Y ACCIÓN COMUNAL", yPos);
-  yPos += 8;
+  // ── TEXTOS FINALES ──
+  yPos = writePara(`Que el periodo del dignatario vence el ${formatDateLong(periodoFin)}`, yPos);
+  yPos += 2;
+  yPos = writePara('Esta constancia es válida por el termino de 6 (seis) meses.', yPos);
+  yPos += 2;
+  yPos = writePara('Se expide con el fin de adelantar tramites del organismo comunal', yPos);
+  yPos += 10;
+
+  // ── FOOTER ──
+  result = checkPageBreak(doc, yPos, 75);
+  yPos = result.yPos;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  const textoFacultades = "En uso de sus facultades legales y en especial las que confiere la Ley 52 de 1990, Ley 2166 de 18 de diciembre de 2021, Decreto 1501 del 13 de septiembre de 2023, Decreto 1066 del 26 de mayo de 2015, Decreto Departamental 076 de 30 de enero de 2019 y";
+  doc.text(`Dada en Tunja el día: ${formatDateSlash(datosCertificado.FechaCreacion)}`, margenIzq, yPos);
+  yPos += 15;
 
-  const linesFacultades = doc.splitTextToSize(textoFacultades, anchoUtil);
-  doc.text(linesFacultades, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-  yPos += (linesFacultades.length * 5) + 8;
+  // Firma
+  const anchoFirma = 50;
+  const altoFirma = 25;
+  const xFirma = (210 - anchoFirma) / 2;
 
-  // --- CONSIDERANDOS ---
-  doc.setFont('helvetica', 'bold');
-  centerText(doc, "CONSIDERANDO:", yPos, 10, 'bold');
-  yPos += 8;
-  doc.setFont('helvetica', 'normal');
+  if (resources.base64Firma) {
+    doc.addImage(resources.base64Firma, 'PNG', xFirma, yPos, anchoFirma, altoFirma);
+    yPos += altoFirma + 3;
+  } else {
+    yPos += 20;
+  }
 
-  // Determinar género para el texto
-  const genero = nombrePresidente.includes("SEÑORA") || nombrePresidente.startsWith("MARIA") ||
-    nombrePresidente.startsWith("ANA") ? "la señora" : "el señor";
-  const identificado = genero === "la señora" ? "identificada" : "identificado";
-
-  const txtConsiderando1 = `Que ${genero} ${nombrePresidente}, ${identificado} con cédula de ciudadanía No. ${cedulaPresidente} de ${municipio}, en calidad de PRESIDENTE DE LA ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ solicitó a esta Dependencia se le reconozca PERSONERÍA JURÍDICA, comprometiéndose a cumplir con todas las normas vigentes que reglamentan a los Organismos Comunales.`;
-
-  const txtConsiderando2 = "Que igualmente anexa a esta solicitud Acta No.01 de constitución y aprobación de estatutos y Acta No. 02 de elección de Dignatarios;";
-
-  const txtConsiderando3 = `Listado de afiliados y Certificación del Secretario de Planeación del Municipio de ${municipio} Boyacá.`;
-
-  const txtConsiderando4 = "Que estudiada la documentación se encontró acorde con lo preceptuado en la Ley 52 del 28 de Diciembre de 1990, 2166 de 18 de diciembre de 2021, Decreto 1501 del 13 de septiembre de 2023, Decreto 1066 del 26 de mayo de 2015 y demás normas vigentes que reglamentan a las Organizaciones Comunales.";
-
-  const txtConsiderando5 = "Que en mérito de lo expuesto, el Director de Participación y Acción Comunal de la Secretaría de Gobierno y Acción Comunal de la Gobernación de Boyacá,";
-
-  const considerandos = [txtConsiderando1, txtConsiderando2, txtConsiderando3, txtConsiderando4, txtConsiderando5];
-
-  considerandos.forEach((texto) => {
-    const lines = doc.splitTextToSize(texto, anchoUtil);
-    let result = checkPageBreak(doc, yPos, (lines.length * 5) + 6);
-    yPos = result.yPos;
-    doc.text(lines, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-    yPos += (lines.length * 5) + 6;
-  });
-
-  // --- PARTE RESOLUTIVA ---
-  doc.setFont('helvetica', 'bold');
-  centerText(doc, "RESUELVE:", yPos, 10, 'bold');
-  yPos += 8;
-
-  // Artículos
-  const articulos = [
-    {
-      titulo: "ARTÍCULO PRIMERO.-",
-      cuerpo: `Reconocer PERSONERÍA JURÍDICA A LA ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ.`
-    },
-    {
-      titulo: "ARTÍCULO SEGUNDO.-",
-      cuerpo: `Inscribir los Estatutos de la ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ.`
-    },
-    {
-      titulo: "ARTÍCULO TERCERO.-",
-      cuerpo: "Efectuar la inscripción de dicha PERSONERÍA JURÍDICA en los libros que para este fin se llevan en la Dirección de Participación y Acción Comunal de la Secretaría de Gobierno y Acción Comunal de la Gobernación de Boyacá."
-    },
-    {
-      titulo: "ARTÍCULO CUARTO.-",
-      cuerpo: `Registrar como Representante Legal de la ${tipoOrganismo} ${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}, DEPARTAMENTO DE BOYACÁ, a ${genero} ${nombrePresidente}, ${identificado} con cédula de ciudadanía No. ${cedulaPresidente} de ${municipio}, Presidente de la misma.`
-    },
-    {
-      titulo: "ARTÍCULO QUINTO.-",
-      cuerpo: "La presente Resolución rige a partir de la fecha de su expedición."
-    }
-  ];
-
-  articulos.forEach((art) => {
-    // SOLUCIÓN CORRECTA: Dibujar título y cuerpo por separado, no superponer
-
-    // Calcular altura necesaria
-    const cuerpoLines = doc.splitTextToSize(art.cuerpo, anchoUtil);
-    const alturaBloque = (cuerpoLines.length * 5) + 6;
-
-    // Verificar salto de página
-    let result = checkPageBreak(doc, yPos, alturaBloque);
-    yPos = result.yPos;
-
-    // 1. Dibujar SOLO el título en negrita
-    doc.setFont('helvetica', 'bold');
-    doc.text(art.titulo, margenIzq, yPos);
-
-    // 2. Calcular dónde termina el título para continuar el cuerpo
-    const tituloWidth = doc.getTextWidth(art.titulo);
-    const espacioDisponible = anchoUtil - tituloWidth - 2; // 2mm de separación
-
-    // 3. Dibujar el cuerpo en la misma línea si cabe, o en la siguiente
-    doc.setFont('helvetica', 'normal');
-
-    // Si el cuerpo cabe en la misma línea
-    if (espacioDisponible > 30) { // Si hay suficiente espacio (más de 30mm)
-      const cuerpoEnLinea = doc.splitTextToSize(art.cuerpo, espacioDisponible);
-      doc.text(cuerpoEnLinea[0], margenIzq + tituloWidth + 2, yPos);
-
-      // Si hay más líneas del cuerpo, las dibujamos debajo
-      if (cuerpoEnLinea.length > 1) {
-        yPos += 5;
-        const restoCuerpo = cuerpoEnLinea.slice(1);
-        doc.text(restoCuerpo, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-        yPos += (restoCuerpo.length * 5);
-      } else {
-        yPos += 5;
-      }
-    } else {
-      // Si no cabe, poner el cuerpo en la siguiente línea
-      yPos += 5;
-      doc.text(cuerpoLines, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-      yPos += (cuerpoLines.length * 5);
-    }
-
-    yPos += 6; // Espaciado entre artículos
-  });
-
-  // --- NOTIFICACIÓN Y FIRMA ---
+  centerText(doc, resources.nombreFirmante || 'NOMBRE FIRMANTE', yPos, 11, 'bold');
   yPos += 5;
-  doc.setFont('helvetica', 'bold');
-  centerText(doc, "NOTIFÍQUESE Y CÚMPLASE", yPos, 10, 'bold');
-  yPos += 10;
+  centerText(doc, resources.cargoFirmante || 'CARGO FIRMANTE', yPos, 10, 'normal');
+  yPos += 12;
 
-  addPDFFooer(
-    doc,
-    resources.nombreFirmante,
-    resources.cargoFirmante,
-    resources.base64Firma,
-    yPos
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text(
+    `Realizó:________________  Elaboro:________________  Fecha: ${formatDateSlash(datosCertificado.FechaCreacion)}  Hora: ${formatTimeFull(now)}`,
+    margenIzq, yPos
   );
+  yPos += 5;
+  doc.setFontSize(10);
+  doc.text('GOBERNACIÓN DE BOYACÁ', margenIzq, yPos);
 
-  // CRÍTICO: Retornar el buffer del PDF
   return doc.output('arraybuffer');
 };
 
-export default generarResolucionJAC;
+export default generarCertificadoJAC;

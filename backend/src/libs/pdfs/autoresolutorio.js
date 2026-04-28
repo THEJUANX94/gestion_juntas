@@ -1,334 +1,399 @@
 import {
   createDoc,
   addPDFHeader,
-  addPDFFooer,
   centerText,
   checkPageBreak,
-  DEFAULTS,
-  loadResources
+  DEFAULTS
 } from '../pdfBase.js';
+
+const formatDateSlash = (date) => {
+  if (!date) return '____';
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}/${m}/${day}`;
+};
+
+const formatDateLong = (date) => {
+  if (!date) return '____';
+  const d = new Date(date);
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  return `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+};
+
+const makeTableDrawer = (doc, anchoUtil, margenIzq) => {
+  const colWidths = [35, 65, 25, 35];
+  const totalW = colWidths.reduce((a, b) => a + b, 0);
+  const HEADER_H = 7;
+
+  return (title, col1Header, rows, startY) => {
+    let y = startY;
+    let r;
+
+    r = checkPageBreak(doc, y, 20);
+    y = r.yPos;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    const tw = doc.getTextWidth(title);
+    doc.text(title, margenIzq + (anchoUtil - tw) / 2, y);
+    y += 6;
+
+    r = checkPageBreak(doc, y, HEADER_H + 2);
+    y = r.yPos;
+
+    doc.setFillColor(230, 230, 230);
+    doc.rect(margenIzq, y, totalW, HEADER_H, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+
+    const headers = [col1Header, 'NOMBRE Y APELLIDO', 'DOCUMENTO', 'EXPEDIDO EN'];
+    let hx = margenIzq;
+    headers.forEach((h, i) => {
+      if (i > 0) doc.line(hx, y, hx, y + HEADER_H);
+      doc.text(h, hx + 2, y + 5);
+      hx += colWidths[i];
+    });
+    doc.rect(margenIzq, y, totalW, HEADER_H);
+    y += HEADER_H;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+
+    rows.forEach(row => {
+      const cells = row.map((cell, i) =>
+        doc.splitTextToSize((cell || '').toString(), colWidths[i] - 4)
+      );
+      const maxLines = Math.max(...cells.map(c => c.length));
+      const rowH = Math.max(7, maxLines * 4 + 3);
+
+      r = checkPageBreak(doc, y, rowH);
+      y = r.yPos;
+
+      doc.rect(margenIzq, y, totalW, rowH);
+      let cx = margenIzq;
+      cells.forEach((lines, i) => {
+        if (i > 0) doc.line(cx, y, cx, y + rowH);
+        doc.text(lines, cx + 2, y + 4);
+        cx += colWidths[i];
+      });
+      y += rowH;
+    });
+
+    return y + 4;
+  };
+};
 
 const generarAutoresolutorio = async (datosCertificado) => {
   const doc = createDoc();
 
-  // --- MAPEO DE DATOS CON VALORES POR DEFECTO ---
-  const municipio = (datosCertificado.NombreMunicipio).toUpperCase();
-  const nombreOrganizacion = (datosCertificado.nombreOrganizacion).toUpperCase();
-  const personeriaNumero = datosCertificado.personeriaNumero;
-  const personeriaFecha = datosCertificado.personeriaFecha;
+  const municipio = (datosCertificado.NombreMunicipio || '').toUpperCase();
+  const nombreOrganizacion = (datosCertificado.nombreOrganizacion || '').toUpperCase();
+  const personeriaNumero = datosCertificado.personeriaNumero || '____';
+  const personeriaFecha = datosCertificado.personeriaFecha || '____';
   const periodoInicio = datosCertificado.periodoInicio;
   const periodoFin = datosCertificado.periodoFin;
-  const tipodocumento = datosCertificado.TipoCertificado
+  const tipodocumento = (datosCertificado.TipoCertificado || 'JUNTA DE ACCIÓN COMUNAL').toUpperCase();
 
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
-  const anchoUtil = 210 - margenIzq - margenDer; // ~160mm
+  const anchoUtil = 210 - margenIzq - margenDer;
 
-  let yPos = 50; // Posición vertical inicial (después del header con logo y QR)
-
-  // --- CARGAR RECURSOS Y AGREGAR HEADER ---
   const resources = await addPDFHeader(doc, datosCertificado);
 
-  // --- TÍTULO PRINCIPAL ---
-  const titulo = `POR MEDIO DE LA CUAL SE REALIZA LA INSCRIPCIÓN Y RECONOCIMIENTO DE DIGNATARIOS ELEGIDOS POR LA ${tipodocumento}`;
-  const linesTitulo = doc.splitTextToSize(titulo, 140);
-  doc.setFont('helvetica', 'normal');
+  // AUTO number in header band, right-aligned before QR
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.text(linesTitulo, 105, yPos, { align: 'center' });
-  yPos += (linesTitulo.length * 5) + 5;
+  const autoText = `AUTO No. ${datosCertificado.IDCertificado || '____'} DE ${formatDateSlash(datosCertificado.FechaCreacion)}`;
+  doc.text(autoText, 168, 20, { align: 'right' });
 
-  // --- IDENTIFICACIÓN DE LA ORGANIZACIÓN ---
-  centerText(doc, `${tipodocumento} DEL MUNICIPIO DE ${municipio}`, yPos, 10, 'bold');
-  yPos += 6;
+  let yPos = 43;
+  let result;
 
-  centerText(doc, `CON PERSONERIA N° ${personeriaNumero} DE FECHA ${personeriaFecha}`, yPos, 10, 'bold');
-  yPos += 10;
+  // Helper: write inline article (bold label + normal body on same line)
+  const writeArticle = (label, body, currentY) => {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    const labelW = doc.getTextWidth(label + ' ');
+    const firstAvail = anchoUtil - labelW;
 
-  centerText(doc, "LA DIRECCIÓN DE PARTICIPACIÓN Y ACCIÓN COMUNAL DE LA SECRETARIA", yPos, 9, 'bold');
-  yPos += 4;
-  centerText(doc, "DE GOBIERNO Y ACCIÓN COMUNAL DE LA GOBERNACIÓN DE BOYACÁ", yPos, 9, 'bold');
-  yPos += 10;
+    // Word-fit first line after label
+    const words = body.trim().split(' ');
+    let firstLine = '';
+    let wi = 0;
+    doc.setFont('helvetica', 'normal');
+    while (wi < words.length) {
+      const test = firstLine + (firstLine ? ' ' : '') + words[wi];
+      if (doc.getTextWidth(test) <= firstAvail) { firstLine = test; wi++; } else break;
+    }
+    const remainBody = words.slice(wi).join(' ');
+    const remainLines = remainBody ? doc.splitTextToSize(remainBody, anchoUtil) : [];
+    const h = (1 + remainLines.length) * 5 + 8;
 
-  // --- INTRODUCCIÓN LEGAL ---
-  const introText = "En ejercicio de las facultades y competencias legales previstas en las Leyes 743 y 753 de 2002; Ley 1437 de 2011; Ley 2166 del 18 de diciembre de 2021, el Decreto Único Reglamentario N° 1066 de 2015; las Resoluciones 1513 de 22 de septiembre de 2021 y 0108 de 26 de enero de 2022, expedidas por el Ministerio del Interior y, en especial la Ordenanza 049 de 2019, emitida por la Asamblea de Boyacá y el Decreto Departamental 076 de 30 de enero de 2019 proferido por el Gobernador de Boyacá,";
+    let r = checkPageBreak(doc, currentY, h);
+    let y = r.yPos;
 
+    doc.setFont('helvetica', 'bold');
+    doc.text(label, margenIzq, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(firstLine, margenIzq + labelW, y);
+
+    if (remainLines.length > 0) {
+      y += 5;
+      doc.text(remainLines, margenIzq, y, { align: 'justify', maxWidth: anchoUtil });
+      y += remainLines.length * 5;
+    } else {
+      y += 5;
+    }
+    return y + 5;
+  };
+
+  // Helper: write paragraph (normal or small)
+  const writePara = (text, currentY, fontSize = 10, indent = 0) => {
+    const w = anchoUtil - indent;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(fontSize);
+    const lines = doc.splitTextToSize(text, w);
+    const h = lines.length * 5 + 3;
+    let r = checkPageBreak(doc, currentY, h);
+    let y = r.yPos;
+    doc.text(lines, margenIzq + indent, y, { align: 'justify', maxWidth: w });
+    return y + h;
+  };
+
+  // ── TÍTULO ──
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  const linesIntro = doc.splitTextToSize(introText, anchoUtil);
 
-  let heightIntro = (linesIntro.length * 5) + 5;
-  let result = checkPageBreak(doc, yPos, heightIntro);
-  yPos = result.yPos;
-
-  doc.text(linesIntro, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-  yPos += heightIntro;
-
-  yPos += 2;
-  centerText(doc, "CONSIDERANDO:", yPos, 10, 'bold');
-  yPos += 8;
-
-  // --- CONSIDERANDOS ---
-  const considerandos = [
-    "Que el artículo 63 y siguientes de la Ley 743 de 2002, en concordancia con numeral 4° del artículo 2.3.2.1.25 del Decreto 1066 de 2015, los nombramientos y elección de dignatarios se inscribirá ante las entidades que ejercen su vigilancia, inspección y control, quien expedirá el respectivo acto administrativo de inscripción.",
-    "Que la ordenanza No 049 de 2019, establece que la Secretaría de Gobierno y Acción Comunal está compuesta entre otras por la Dirección de Participación y Acción Comunal, la cual tiene entre otras funciones ejercer las funciones de Inspección, Control y Vigilancia de los organismos de acción comunal de primero y segundo grado que existan en el Departamento de Boyacá.",
-    "Que la Resolución 1513 del 22 de septiembre de 2021, 'Por la cual se dictan disposiciones para el normal desarrollo de la elección de Dignatarios y Directivos de los Órganos de Acción Comunal' estableció en su artículo 6 el cronograma electoral.",
-    "Que la Ley 743 de 2002 en su artículo 30, establece en relación al periodo de los directivos y los dignatarios, lo siguiente: 'El período de los directivos y dignatarios de los organismos de acción comunal es el mismo de las corporaciones públicas nacional y territoriales, según el caso.'",
-    `Que La ${tipodocumento} del Municipio de ${municipio}, realizó el proceso de elección de dignatarios de conformidad a las modalidades de elección establecidas en la ley.`,
-    `Que en razón a que la elección de dignatarios de la ${tipodocumento} del Municipio de ${municipio}, se llevó a cabo conforme a la normativa vigente, es oportuno aplicar la referida normativa para el estudio de los requisitos establecidos para la elección y posterior inscripción de dignatarios.`,
-    "Que de conformidad con lo previsto en el artículo 18 del Decreto 890 de 2008 compilado en el artículo 2.3.2.2.18 del Decreto Único 1066 de 2015 se debe acreditar los requisitos de Acta de Asamblea, Listado de asistentes y Planchas o Listas presentadas.",
-    `Con el objeto de verificar el cumplimiento de los requisitos mínimos de validez de la elección de dignatarios, la Dirección de Participación y Acción Comunal procedió con el análisis jurídico de la documentación aportada por la ${nombreOrganizacion} del Municipio de ${municipio}, encontrando que se ajusta de manera íntegra con los requisitos legales.`
+  const tituloPartes = [
+    'POR MEDIO DE LA CUAL SE REALIZA LA INSCRIPCIÓN Y',
+    `RECONOCIMIENTO DE DIGNATARIOS ELEGIDOS POR LA ${tipodocumento}`,
+    `${nombreOrganizacion} DEL MUNICIPIO DE ${municipio}`,
+    `CON PERSONERIA N° ${personeriaNumero} DE FECHA ${personeriaFecha}`
   ];
 
-  considerandos.forEach((considerando, idx) => {
-    const lines = doc.splitTextToSize(considerando, anchoUtil);
-    const heightNeeded = (lines.length * 5) + 3;
-
-    result = checkPageBreak(doc, yPos, heightNeeded);
-    yPos = result.yPos;
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(lines, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-    yPos += heightNeeded;
+  tituloPartes.forEach(parte => {
+    const split = doc.splitTextToSize(parte, anchoUtil);
+    split.forEach(l => { centerText(doc, l, yPos, 10, 'bold'); yPos += 5; });
   });
+  yPos += 4;
 
-  // --- Cierre de considerandos ---
-  const textoIntroResuelve = "Con fundamento en las anteriores consideraciones, la Dirección de Participación y Acción Comunal, en uso de sus facultades legales,";
-  const linesIntroResuelve = doc.splitTextToSize(textoIntroResuelve, anchoUtil);
-
-  let heightIntroResuelve = (linesIntroResuelve.length * 5) + 5;
-  result = checkPageBreak(doc, yPos, heightIntroResuelve);
-  yPos = result.yPos;
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(linesIntroResuelve, margenIzq, yPos, { align: 'justify', maxWidth: anchoUtil });
-  yPos += heightIntroResuelve;
-
-  yPos += 2;
-  centerText(doc, "RESUELVE:", yPos, 11, 'bold');
+  centerText(doc, 'LA DIRECCIÓN DE PARTICIPACIÓN Y ACCIÓN COMUNAL DE LA SECRETARIA', yPos, 10, 'bold');
+  yPos += 5;
+  centerText(doc, 'DE GOBIERNO Y ACCIÓN COMUNAL DE LA GOBERNACIÓN DE BOYACÁ', yPos, 10, 'bold');
   yPos += 10;
 
-  // --- ARTÍCULOS ---
+  // ── PREÁMBULO LEGAL ──
+  yPos = writePara(
+    'En ejercicio de las facultades y competencias legales previstas en la Ley 1437 de 2011; Ley  2166 del 18 de diciembre de 2021, Ley 2200 de 2022, el Decreto Único Reglamentario N° 1066 de 2015; las Resoluciones 1513 de 22 de septiembre de 2021 y 0108 de 26 de enero de 2022, expedidas por el Ministerio del Interior y, en especial la Ordenanza 049 de 2018, emitida por la Asamblea de Boyacá y el Decreto Departamental 076 de 30 de enero de 2019 proferido por el Gobernador de Boyacá,',
+    yPos
+  );
+  yPos += 2;
 
-  // ARTÍCULO PRIMERO
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  const art1Label = "ARTÍCULO PRIMERO:";
+  centerText(doc, 'CONSIDERANDO:', yPos, 10, 'bold');
+  yPos += 8;
 
-  const textoArt1 = `Inscribir a la ${tipodocumento} del municipio de ${municipio}, Departamento de Boyacá, para el periodo comprendido.`;
-  doc.setFont('helvetica', 'normal');
-  const splitArt1 = doc.splitTextToSize(textoArt1, anchoUtil - 5);
-  // calcular espacio necesario (incluye una línea para la etiqueta)
-  let heightNeededArt1 = (splitArt1.length * 5) + 8;
-  result = checkPageBreak(doc, yPos, heightNeededArt1);
+  // ── CONSIDERANDOS ──
+
+  // 1
+  yPos = writePara(
+    'Que el numeral 4, Artículo 76 de la Ley 2166 de 2021, señala que es función de las Entidades que ejercen Inspección, Vigilancia y Control:',
+    yPos
+  );
+  yPos = writePara(
+    " ''Expedir los actos administrativos de reconocimiento, suspensión y cancelación de la personería jurídica de los organismos comunales.''",
+    yPos, 10, 5
+  );
+
+  // 2
+  yPos = writePara(
+    'Que la Ordenanza No. 049 del 6 de Diciembre de 2018, estableció que la Secretaría de Gobierno y Acción Comunal, está compuesta  entre otras, por la Dirección de Participación y Acción Comunal, la cual tiene como función:',
+    yPos
+  );
+  yPos = writePara(
+    '7. Ejercer las funciones de Inspección, Control y Vigilancia de los organismos de acción comunal de primero y segundo grado que existan en el Departamento.',
+    yPos, 8, 5
+  );
+
+  // 3
+  yPos = writePara(
+    'Que el literal A del Artículo 1 de la Resolución 0108 del 2022, estableció que:',
+    yPos
+  );
+  yPos = writePara(
+    "''Las Juntas de Acción Comunal y Juntas de Vivienda Comunitaria que no llevaron a cabo las elecciones el pasado 28 de noviembre de 2021, podrán celebrar las elecciones el 24 de abril de 2022 y su periodo iniciará el primero de julio del mismo año.''",
+    yPos, 10, 5
+  );
+
+  // 4
+  yPos = writePara(
+    `Que en razón a que la elección de dignatarios de la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, se llevó a cabo el día 24 de Abril de 2022 y en esa medida, se adelantó en vigencia de la Ley 2166 de 2021 y el Decreto 1066 de 2015, es oportuno aplicar la referida normativa para el estudio de los requisitos establecidos para la elección y posterior inscripción de dignatarios.`,
+    yPos
+  );
+
+  // 5
+  yPos = writePara(
+    'Que de conformidad con lo previsto en el Artículo 2.3.2.2.18 del Decreto Único 1066 de 2015, para efectos de la inscripción de dignatarios ante la entidad que ejerce Inspección, Vigilancia y Control, se deberá acreditar los siguientes requisitos, así:',
+    yPos
+  );
+  const items5 = [
+    '1. Original del Acta de Asamblea General, suscrita por el Presidente y Secretario de la asamblea, así como por los miembros del Tribunal de Garantías, de la elección de dignatarios o en su defecto, copia de la misma, certificada por el secretario del organismo de acción comunal.',
+    '2. Listado original de asistentes a la Asamblea General.',
+    '3. Planchas o Listas presentadas.',
+    '4. Los demás documentos que tengan relación directa con la elección.',
+    '5. El cumplimiento de los requisitos mínimos para la validez de la Asamblea General, tales como el quórum, participación del tribunal de garantías, entre otros.'
+  ];
+  items5.forEach(item => { yPos = writePara(item, yPos, 8, 5); });
+
+  // 6
+  yPos = writePara(
+    `Con el objeto de verificar el cumplimiento de los requisitos mínimos de validez de la elección de dignatarios, la Dirección de Participación y Acción Comunal procedió con el análisis jurídico de la documentación aportada por la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, encontrando que se ajusta de manera íntegra con los requisitos establecidos en la Ley 2166 de 2021 y el artículo 2.3.2.2.18 del Decreto Único 1066 de 2015.`,
+    yPos
+  );
+
+  // Cierre
+  yPos = writePara(
+    'Con fundamento en las anteriores consideraciones, la Dirección de Participación y Acción Comunal, en uso de sus facultades legales,',
+    yPos
+  );
+  yPos += 3;
+
+  centerText(doc, 'RESUELVE:', yPos, 10, 'bold');
+  yPos += 10;
+
+  // ── ARTÍCULO PRIMERO ──
+  yPos = writeArticle(
+    'ARTÍCULO PRIMERO:',
+    ` Inscribir a la ${tipodocumento} ${nombreOrganizacion} del municipio de ${municipio}, Departamento de Boyacá, para el periodo comprendido entre el ${periodoInicio || '____'} y el ${periodoFin || '____'} a los siguientes dignatarios:`,
+    yPos
+  );
+
+  // Type subtitle before tables
+  result = checkPageBreak(doc, yPos, 12);
   yPos = result.yPos;
+  centerText(doc, tipodocumento, yPos, 10, 'bold');
+  yPos += 7;
 
-  // Imprimir etiqueta en su propia línea
-  doc.setFont('helvetica', 'bold');
-  doc.text(art1Label, margenIzq, yPos);
-  yPos += 6;
-
-  // Imprimir texto del artículo
-  doc.setFont('helvetica', 'normal');
-  doc.text(splitArt1, margenIzq + 5, yPos);
-  yPos += (splitArt1.length * 5) + 5;
-
-  // Tabla de dignatarios
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  centerText(doc, tipodocumento, yPos, 9, 'bold');
-  yPos += 6;
-
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  // ── TABLAS DE DIGNATARIOS ──
+  const drawTable = makeTableDrawer(doc, anchoUtil, margenIzq);
 
   if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
-
-    // --- PASO 1: CLASIFICACIÓN EXACTA ---
-    const grupoPresidente = [];
-    const rolesGenerales = {}; // Objeto para Tesorero, Fiscal, etc.
-    const grupoComisiones = [];
-    const grupoSuplentes = [];
+    const directivos = [];
+    const fiscales = [];
+    const delegados = [];
+    const comisionesMap = {};
 
     datosCertificado.dignatarios.forEach(d => {
       const cargo = (d.cargo || '').trim();
       const cargoLower = cargo.toLowerCase();
       const comision = (d.comision || '').trim();
+      const expedido = (d.expedidoEn || municipio || '').toUpperCase();
+      const nombre = (d.nombre || '').toUpperCase();
+      const cedula = (d.cedula || '').toString();
 
-      // 1. Prioridad: Suplentes (van al final)
-      if (cargoLower.includes('suplente')) {
-        grupoSuplentes.push(d);
-        return;
-      }
-
-      // 2. Prioridad: Presidente (va al inicio)
-      if (cargoLower === 'presidente' || cargoLower === 'presidenta') {
-        grupoPresidente.push(d);
-        return;
-      }
-
-      // 3. Prioridad: Cargo estándar (si existe texto en cargo)
-      if (cargo.length > 0) {
-        if (!rolesGenerales[cargo]) {
-          rolesGenerales[cargo] = [];
+      if (comision) {
+        if (!comisionesMap[comision]) {
+          comisionesMap[comision] = { rows: [], col1Header: cargo ? 'CARGO' : 'COMISIÓN' };
         }
-        rolesGenerales[cargo].push(d);
-        return;
-      }
-
-      // 4. Prioridad: Por Comisión (si no tiene cargo pero tiene comisión)
-      if (comision.length > 0) {
-        grupoComisiones.push(d);
-        return;
+        if (!cargo) comisionesMap[comision].col1Header = 'COMISIÓN';
+        comisionesMap[comision].rows.push([cargo || comision, nombre, cedula, expedido]);
+      } else if (cargoLower.includes('fiscal')) {
+        fiscales.push([cargo, nombre, cedula, expedido]);
+      } else if (cargoLower.includes('delegado')) {
+        delegados.push([cargo, nombre, cedula, expedido]);
+      } else {
+        directivos.push([cargo, nombre, cedula, expedido]);
       }
     });
 
-    // --- PASO 2: FUNCIÓN DE DIBUJADO (Ligeramente ajustada para mostrar Comisión) ---
-    const anchoRecuadro = anchoUtil - 10;
-    const margenRecuadro = margenIzq + 5;
-
-    // param: tituloGrupo -> Texto grande arriba
-    // param: listaPersonas -> Array de objetos
-    // param: usarCampoComision -> Booleano para saber qué campo mostrar
-    const dibujarGrupo = (tituloGrupo, listaPersonas, usarCampoComision = false) => {
-      if (!listaPersonas || listaPersonas.length === 0) return;
-
-      // Verificar espacio para el TÍTULO
-      result = checkPageBreak(doc, yPos, 15);
-      yPos = result.yPos;
-
-      // Dibujar TÍTULO
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(0, 100, 0);
-      doc.text(tituloGrupo.toUpperCase(), margenRecuadro, yPos);
-      yPos += 5;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
-
-      listaPersonas.forEach(d => {
-        // Lógica para el texto: Si es grupo de comisiones, mostramos la comisión, si no, el cargo
-        const rolAMostrar = usarCampoComision ? (d.comision || '') : (d.cargo || '');
-
-        const textoDignatario = `${d.nombre || ''} (CC: ${d.cedula || ''}) - ${rolAMostrar}`;
-
-        const lineas = doc.splitTextToSize(textoDignatario, anchoRecuadro - 4);
-        const altoFila = (lineas.length * 4) + 4;
-
-        // Verificar salto de página dentro de la tabla
-        result = checkPageBreak(doc, yPos, altoFila + 2);
-        if (result.yPos !== yPos) {
-          yPos = result.yPos;
-          doc.setFont('helvetica', 'bold');
-          doc.text(`${tituloGrupo.toUpperCase()} (Cont.)`, margenRecuadro, yPos - 5);
-          doc.setFont('helvetica', 'normal');
-        } else {
-          yPos = result.yPos;
-        }
-
-        doc.setDrawColor(0, 100, 0);
-        doc.rect(margenRecuadro, yPos, anchoRecuadro, altoFila);
-        doc.text(lineas, margenRecuadro + 2, yPos + 4);
-
-        yPos += altoFila;
-      });
-
-      yPos += 8; // Separación entre tablas
-    };
-
-    // --- PASO 3: ORDEN DE EJECUCIÓN ---
-
-    // 1. PRESIDENTE (Siempre primero)
-    // Usamos "PRESIDENTE" como título genérico, o tomamos el cargo del primero si quieres ser específico ("PRESIDENTA")
-    const tituloPresi = grupoPresidente.length > 0 ? grupoPresidente[0].cargo : 'PRESIDENTE';
-    dibujarGrupo(tituloPresi, grupoPresidente);
-
-    // 2. OTROS CARGOS (Orden alfabético o según aparezcan)
-    Object.keys(rolesGenerales).forEach(cargo => {
-      dibujarGrupo(cargo, rolesGenerales[cargo]);
+    if (directivos.length > 0) {
+      yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);
+    }
+    if (fiscales.length > 0) {
+      yPos = drawTable('FISCAL', 'CARGO', fiscales, yPos);
+    }
+    Object.entries(comisionesMap).forEach(([comisionName, data]) => {
+      const nameUp = comisionName.toUpperCase();
+      const title = nameUp.startsWith('COMISI') ? nameUp : `COMISIÓN DE ${nameUp}`;
+      yPos = drawTable(title, data.col1Header, data.rows, yPos);
     });
-
-    // 3. POR COMISIÓN (Si existen comisionados sin cargo)
-    // Pasamos 'true' en el tercer argumento para que muestre el campo 'comision' en vez de 'cargo'
-    dibujarGrupo('POR COMISIÓN', grupoComisiones, true);
-
-    // 4. SUPLENTES (Siempre al final)
-    dibujarGrupo('SUPLENTES', grupoSuplentes);
-
+    if (delegados.length > 0) {
+      yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegados, yPos);
+    }
   } else {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
     doc.text('[ESPACIO PARA LISTADO DE DIGNATARIOS]', margenIzq + 10, yPos);
     yPos += 10;
   }
 
-  doc.setFontSize(8);
+  // Parágrafo
+  yPos = writePara(
+    'Parágrafo: La inscripción de los mismos se realizará en el Registro Sistematizado de Información de los Organismos de Acción Comunal.',
+    yPos
+  );
+  yPos += 5;
+
+  // ── ARTÍCULO SEGUNDO ──
+  yPos = writeArticle(
+    'ARTÍCULO SEGUNDO:',
+    ` El periodo de los dignatarios elegidos por la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, inicia el ${formatDateLong(periodoInicio)} al ${formatDateLong(periodoFin)}.`,
+    yPos
+  );
+
+  // ── ARTÍCULO TERCERO ──
+  yPos = writeArticle(
+    'ARTÍCULO TERCERO:',
+    ` Comunicar el presente acto administrativo al representante legal o quien haga sus veces, de la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, conforme a lo establecido en ley 1437 de 2011 articulo 70.`,
+    yPos
+  );
+
+  // ── ARTÍCULO CUARTO ──
+  yPos = writeArticle(
+    'ARTÍCULO CUARTO:',
+    ' Contra el presente Auto no proceden recursos de conformidad con el artículo 75 de la Ley 1437 de 2011.',
+    yPos
+  );
+  yPos += 5;
+
+  // ── FOOTER ──
+  result = checkPageBreak(doc, yPos, 75);
+  yPos = result.yPos;
+
   doc.setFont('helvetica', 'normal');
-  doc.text("Parágrafo: La inscripción de los mismos se realizará en el Registro Sistematizado.", margenIzq, yPos);
+  doc.setFontSize(10);
+  doc.text(`Dado el día: ${formatDateSlash(datosCertificado.FechaCreacion)}`, margenIzq, yPos);
+
+  centerText(doc, 'COMUNÍQUESE Y CÚMPLASE', yPos, 10, 'bold');
+  yPos += 12;
+
+  // Firma
+  const anchoFirma = 50;
+  const altoFirma = 25;
+  const xFirma = (210 - anchoFirma) / 2;
+
+  if (resources.base64Firma) {
+    doc.addImage(resources.base64Firma, 'PNG', xFirma, yPos, anchoFirma, altoFirma);
+    yPos += altoFirma + 3;
+  } else {
+    yPos += 20;
+  }
+
+  centerText(doc, resources.nombreFirmante || 'NOMBRE FIRMANTE', yPos, 11, 'bold');
+  yPos += 5;
+  centerText(doc, resources.cargoFirmante || 'CARGO FIRMANTE', yPos, 10, 'normal');
+  yPos += 12;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('Proyectó:________________', margenIzq, yPos);
+  yPos += 5;
+  doc.text('Revisó_________________', margenIzq, yPos);
   yPos += 8;
 
-  // ARTÍCULO SEGUNDO
   doc.setFontSize(10);
-  const art2Label = "ARTÍCULO SEGUNDO:";
-
-  const textoArt2 = `El periodo de los dignatarios elegidos por la ${tipodocumento} del Municipio de ${municipio}, inicia el ${periodoInicio} y finaliza el ${periodoFin}.`;
-  doc.setFont('helvetica', 'normal');
-  const splitArt2 = doc.splitTextToSize(textoArt2, anchoUtil - 5);
-  let heightNeededArt2 = (splitArt2.length * 5) + 8;
-  result = checkPageBreak(doc, yPos, heightNeededArt2);
-  yPos = result.yPos;
-
-  doc.setFont('helvetica', 'bold');
-  doc.text(art2Label, margenIzq, yPos);
-  yPos += 6;
-
-  doc.setFont('helvetica', 'normal');
-  doc.text(splitArt2, margenIzq + 5, yPos);
-  yPos += (splitArt2.length * 5) + 5;
-
-  // ARTÍCULO TERCERO
-  const art3Label = "ARTÍCULO TERCERO:";
-  const textoArt3 = `Comunicar el presente acto administrativo al representante legal de la ${tipodocumento} del Municipio de ${municipio}, conforme a lo establecido en ley 1437 de 2011 artículo 70.`;
-  doc.setFont('helvetica', 'normal');
-  const splitArt3 = doc.splitTextToSize(textoArt3, anchoUtil - 5);
-  let heightNeededArt3 = (splitArt3.length * 5) + 8;
-  result = checkPageBreak(doc, yPos, heightNeededArt3);
-  yPos = result.yPos;
-
-  doc.setFont('helvetica', 'bold');
-  doc.text(art3Label, margenIzq, yPos);
-  yPos += 6;
-
-  doc.setFont('helvetica', 'normal');
-  doc.text(splitArt3, margenIzq + 5, yPos);
-  yPos += (splitArt3.length * 5) + 5;
-
-  // ARTÍCULO CUARTO
-  const art4Label = "ARTÍCULO CUARTO:";
-  const textoArt4 = "Contra el presente Auto no proceden recursos de conformidad con el artículo 75 de la Ley 1437 de 2011.";
-  doc.setFont('helvetica', 'normal');
-  const splitArt4 = doc.splitTextToSize(textoArt4, anchoUtil - 5);
-  let heightNeededArt4 = (splitArt4.length * 5) + 8;
-  result = checkPageBreak(doc, yPos, heightNeededArt4);
-  yPos = result.yPos;
-
-  doc.setFont('helvetica', 'bold');
-  doc.text(art4Label, margenIzq, yPos);
-  yPos += 6;
-
-  doc.setFont('helvetica', 'normal');
-  doc.text(splitArt4, margenIzq + 5, yPos);
-  yPos += (splitArt4.length * 5) + 8;
-
-  // --- FIRMA AL FINAL (Posición reservada) ---
-  // Dejar espacio suficiente y luego agregar firma al final de la página
-  addPDFFooer(
-    doc,
-    resources.nombreFirmante,
-    resources.cargoFirmante,
-    resources.base64Firma,
-    altoPagina - margenInf - 40 // Posición fija cerca del final
-  );
+  doc.text('GOBERNACIÓN DE BOYACÁ', margenIzq, yPos);
 
   return doc.output('arraybuffer');
 };

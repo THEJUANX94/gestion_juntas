@@ -58,6 +58,13 @@ export const crearCertificado = async (req, res) => {
           if (com) nombreComision = com.Nombre;
         }
 
+        // Buscamos el lugar de expedición del documento
+        let expedidoEn = null;
+        if (m.Expedido) {
+          const lugarExp = await Lugar.findByPk(m.Expedido);
+          if (lugarExp) expedidoEn = lugarExp.NombreLugar;
+        }
+
         const nombre = u ? `${u.PrimerNombre || ''} ${u.SegundoNombre || ''} ${u.PrimerApellido || ''} ${u.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim() : null;
 
         // Empujamos el objeto con AMBOS datos (cargo y comision)
@@ -65,7 +72,8 @@ export const crearCertificado = async (req, res) => {
           cargo: c ? c.NombreCargo : null,
           comision: nombreComision || null,
           nombre: nombre || null,
-          cedula: m.NumeroIdentificacion
+          cedula: m.NumeroIdentificacion,
+          expedidoEn: expedidoEn || null
         });
 
       } catch (e) {
@@ -223,13 +231,20 @@ export const enviarAutoresolutorio = async (req, res) => {
           if (com) nombreComision = com.Nombre;
         }
 
+        let expedidoEn = null;
+        if (m.Expedido) {
+          const lugarExp = await Lugar.findByPk(m.Expedido);
+          if (lugarExp) expedidoEn = lugarExp.NombreLugar;
+        }
+
         const nombre = u ? `${u.PrimerNombre || ''} ${u.SegundoNombre || ''} ${u.PrimerApellido || ''} ${u.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim() : null;
 
         dignatarios.push({
           cargo: c ? c.NombreCargo : null,
           comision: nombreComision,
           nombre: nombre,
-          cedula: m.NumeroIdentificacion
+          cedula: m.NumeroIdentificacion,
+          expedidoEn: expedidoEn || null
         });
       } catch (e) { console.warn('Warning Dignatario:', e.message); }
     }
