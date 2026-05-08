@@ -130,6 +130,8 @@ export default function DetalleJunta() {
     if (!documento) {
       AlertMessage.info('No hay documento disponible para generar el certificado.');
       return;
+
+      
     }
 
     const API_BASE = import.meta.env.VITE_PATH || '';

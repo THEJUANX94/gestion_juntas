@@ -96,27 +96,27 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const periodoInicio = datosCertificado.periodoInicio;
   const periodoFin = datosCertificado.periodoFin;
   const tipodocumento = (datosCertificado.TipoCertificado || 'JUNTA DE ACCIÓN COMUNAL').toUpperCase();
+  const fechaEleccion = datosCertificado.fechaEleccion
+    ? formatDateLong(datosCertificado.fechaEleccion)
+    : '____';
 
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
   const anchoUtil = 210 - margenIzq - margenDer;
 
   const resources = await addPDFHeader(doc, datosCertificado);
 
-  // AUTO number on its own line, centered, below header band
   let yPos = 38;
   const autoText = `AUTO No. ${datosCertificado.IDCertificado || '____'} DE ${formatDateSlash(datosCertificado.FechaCreacion)}`;
   centerText(doc, autoText, yPos, 10, 'bold');
   yPos += 8;
   let result;
 
-  // Helper: write inline article (bold label + normal body on same line)
   const writeArticle = (label, body, currentY) => {
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     const labelW = doc.getTextWidth(label + ' ');
     const firstAvail = anchoUtil - labelW;
 
-    // Word-fit first line after label
     const words = body.trim().split(' ');
     let firstLine = '';
     let wi = 0;
@@ -147,7 +147,6 @@ const generarAutoresolutorio = async (datosCertificado) => {
     return y + 5;
   };
 
-  // Helper: write paragraph (normal or small)
   const writePara = (text, currentY, fontSize = 10, indent = 0) => {
     const w = anchoUtil - indent;
     doc.setFont('helvetica', 'normal');
@@ -184,7 +183,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
 
   // ── PREÁMBULO LEGAL ──
   yPos = writePara(
-    'En ejercicio de las facultades y competencias legales previstas en la Ley 1437 de 2011; Ley  2166 del 18 de diciembre de 2021, Ley 2200 de 2022, el Decreto Único Reglamentario N° 1066 de 2015; las Resoluciones 1513 de 22 de septiembre de 2021 y 0108 de 26 de enero de 2022, expedidas por el Ministerio del Interior y, en especial la Ordenanza 049 de 2018, emitida por la Asamblea de Boyacá y el Decreto Departamental 076 de 30 de enero de 2019 proferido por el Gobernador de Boyacá,',
+    'En ejercicio de las facultades y competencias legales previstas en la Ley 1437 de 2011; Ley 2166 del 18 de diciembre de 2021, Ley 2200 de 2022, el Decreto Único Reglamentario N° 1066 de 2015, el Decreto 1501 del 13 de septiembre de 2023 y la Circular 09 del 22 de diciembre de 2025, expedida por el Ministerio del Interior y, en especial la Ordenanza 049 de 2018, emitida por la Asamblea de Boyacá y el Decreto Departamental 076 de 30 de enero de 2019 proferido por el Gobernador de Boyacá,',
     yPos
   );
   yPos += 2;
@@ -206,47 +205,40 @@ const generarAutoresolutorio = async (datosCertificado) => {
 
   // 2
   yPos = writePara(
-    'Que la Ordenanza No. 049 del 6 de Diciembre de 2018, estableció que la Secretaría de Gobierno y Acción Comunal, está compuesta  entre otras, por la Dirección de Participación y Acción Comunal, la cual tiene como función:',
+    "Que el numeral 7, Artículo 38 de la Ordenanza No. 049 del 6 de diciembre de 2018, estableció que la Secretaría de Gobierno y Acción Comunal, está compuesta entre otras, por la Dirección de Participación y Acción Comunal, la cual tiene como función:",
     yPos
   );
   yPos = writePara(
-    '7. Ejercer las funciones de Inspección, Control y Vigilancia de los organismos de acción comunal de primero y segundo grado que existan en el Departamento.',
-    yPos, 8, 5
+    "'Ejercer las funciones de Inspección, Control y Vigilancia de los organismos de acción comunal de primero y segundo grado que existan en el Departamento.'",
+    yPos, 10, 5
   );
 
   // 3
   yPos = writePara(
-    'Que el literal A del Artículo 1 de la Resolución 0108 del 2022, estableció que:',
+    `Que la elección de dignatarios de la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, se llevó a cabo el día ${fechaEleccion} de conformidad con la ley 2166 de 2021, el Decreto 1501 de 2023 y la circular 009 del 22 de diciembre de 2025.`,
     yPos
-  );
-  yPos = writePara(
-    "''Las Juntas de Acción Comunal y Juntas de Vivienda Comunitaria que no llevaron a cabo las elecciones el pasado 28 de noviembre de 2021, podrán celebrar las elecciones el 24 de abril de 2022 y su periodo iniciará el primero de julio del mismo año.''",
-    yPos, 10, 5
   );
 
   // 4
   yPos = writePara(
-    `Que en razón a que la elección de dignatarios de la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, se llevó a cabo el día 24 de Abril de 2022 y en esa medida, se adelantó en vigencia de la Ley 2166 de 2021 y el Decreto 1066 de 2015, es oportuno aplicar la referida normativa para el estudio de los requisitos establecidos para la elección y posterior inscripción de dignatarios.`,
+    'Que de conformidad con lo previsto en el Articulo 2.3.2.1.3.2. del Decreto 1501 de 2023, para efectos de la inscripción de dignatarios ante la entidad que ejerce Inspección, Vigilancia y Control, se deberá acreditar los siguientes requisitos, así:',
     yPos
   );
-
-  // 5
-  yPos = writePara(
-    'Que de conformidad con lo previsto en el Artículo 2.3.2.2.18 del Decreto Único 1066 de 2015, para efectos de la inscripción de dignatarios ante la entidad que ejerce Inspección, Vigilancia y Control, se deberá acreditar los siguientes requisitos, así:',
-    yPos
-  );
-  const items5 = [
-    '1. Original del Acta de Asamblea General, suscrita por el Presidente y Secretario de la asamblea, así como por los miembros del Tribunal de Garantías, de la elección de dignatarios o en su defecto, copia de la misma, certificada por el secretario del organismo de acción comunal.',
-    '2. Listado original de asistentes a la Asamblea General.',
-    '3. Planchas o Listas presentadas.',
-    '4. Los demás documentos que tengan relación directa con la elección.',
-    '5. El cumplimiento de los requisitos mínimos para la validez de la Asamblea General, tales como el quórum, participación del tribunal de garantías, entre otros.'
+  const items4 = [
+    '1. Convocatoria a elección del tribunal de garantías.',
+    '2. Acta de constitución del tribunal de garantías.',
+    '3. Convocatoria a elección de dignatarios.',
+    '4. Acta de asamblea de elección de dignatarios, suscrita por el Presidente y Secretario de la asamblea, así como por los miembros del Tribunal de Garantías.',
+    '5. Copia del libro de afiliados vigente.',
+    '6. Listado de asistentes a la Asamblea General.',
+    '7. Copia de las cédulas de ciudadanía de los dignatarios elegidos.',
+    '8. Planchas o listas presentadas a las elecciones.'
   ];
-  items5.forEach(item => { yPos = writePara(item, yPos, 8, 5); });
+  items4.forEach(item => { yPos = writePara(item, yPos, 10, 5); });
 
-  // 6
+  // 5 — análisis jurídico
   yPos = writePara(
-    `Con el objeto de verificar el cumplimiento de los requisitos mínimos de validez de la elección de dignatarios, la Dirección de Participación y Acción Comunal procedió con el análisis jurídico de la documentación aportada por la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, encontrando que se ajusta de manera íntegra con los requisitos establecidos en la Ley 2166 de 2021 y el artículo 2.3.2.2.18 del Decreto Único 1066 de 2015.`,
+    `Con el objeto de verificar el cumplimiento de los requisitos mínimos de validez de la elección de dignatarios, la Dirección de Participación y Acción Comunal procedió con el análisis jurídico de la documentación aportada por la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, encontrando que se ajusta de manera íntegra con los requisitos establecidos en la Ley 2166 de 2021 y el artículo 2.3.2.1.3.2. del Decreto 1501 de 2023.`,
     yPos
   );
 
@@ -263,7 +255,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   // ── ARTÍCULO PRIMERO ──
   yPos = writeArticle(
     'ARTÍCULO PRIMERO:',
-    ` Inscribir a la ${tipodocumento} ${nombreOrganizacion} del municipio de ${municipio}, Departamento de Boyacá, para el periodo comprendido entre el ${periodoInicio || '____'} y el ${periodoFin || '____'} a los siguientes dignatarios:`,
+    ` Inscribir y Reconocer como dignatarios en la ${tipodocumento} ${nombreOrganizacion} del municipio de ${municipio}, Departamento de Boyacá, para el periodo comprendido entre el ${formatDateLong(periodoInicio)} hasta el ${formatDateLong(periodoFin)} a los siguientes:`,
     yPos
   );
 
@@ -326,31 +318,19 @@ const generarAutoresolutorio = async (datosCertificado) => {
     yPos += 10;
   }
 
-  // Parágrafo
-  yPos = writePara(
-    'Parágrafo: La inscripción de los mismos se realizará en el Registro Sistematizado de Información de los Organismos de Acción Comunal.',
-    yPos
-  );
   yPos += 5;
 
   // ── ARTÍCULO SEGUNDO ──
   yPos = writeArticle(
     'ARTÍCULO SEGUNDO:',
-    ` El periodo de los dignatarios elegidos por la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, inicia el ${formatDateLong(periodoInicio)} al ${formatDateLong(periodoFin)}.`,
+    ` Notificar el presente acto administrativo al representante legal o quien haga sus veces, de la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, conforme a lo establecido en ley 1437 de 2011 articulo 70.`,
     yPos
   );
 
   // ── ARTÍCULO TERCERO ──
   yPos = writeArticle(
     'ARTÍCULO TERCERO:',
-    ` Comunicar el presente acto administrativo al representante legal o quien haga sus veces, de la ${tipodocumento} ${nombreOrganizacion} del Municipio de ${municipio}, conforme a lo establecido en ley 1437 de 2011 articulo 70.`,
-    yPos
-  );
-
-  // ── ARTÍCULO CUARTO ──
-  yPos = writeArticle(
-    'ARTÍCULO CUARTO:',
-    ' Contra el presente Auto no proceden recursos de conformidad con el artículo 75 de la Ley 1437 de 2011.',
+    ' Contra el presente Auto procede el recurso de reposición de conformidad con el artículo 76 de la Ley 1437 de 2011.',
     yPos
   );
   yPos += 5;
@@ -378,9 +358,9 @@ const generarAutoresolutorio = async (datosCertificado) => {
     yPos += 20;
   }
 
-  centerText(doc, resources.nombreFirmante || 'NOMBRE FIRMANTE', yPos, 11, 'bold');
+  centerText(doc, resources.nombreFirmante || 'OLGA LUCIA SOTO GONZALEZ', yPos, 11, 'bold');
   yPos += 5;
-  centerText(doc, resources.cargoFirmante || 'CARGO FIRMANTE', yPos, 10, 'normal');
+  centerText(doc, resources.cargoFirmante || 'DIRECTORA DE PARTICIPACION Y ACCION COMUNAL', yPos, 10, 'normal');
   yPos += 12;
 
   doc.setFont('helvetica', 'normal');

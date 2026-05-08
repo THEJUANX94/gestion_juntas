@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
-import { PERMISOS } from "../config/roles";
+import { PERMISOS, NOMBRE_ROLES } from "../config/roles";
 import { usePermissions } from "../hooks/usePermissions";
 
 export default function MainLayout() {

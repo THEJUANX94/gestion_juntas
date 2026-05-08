@@ -3,7 +3,13 @@ export const ROLES = {
   AUXILIAR: "d9226d47-4e7b-465e-9bb9-9a24342a26ba",
   CONSULTA: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
   DESCARGA: "820e649b-fcd8-435d-ae98-80e9be8afc27"
-  
+};
+
+export const NOMBRE_ROLES = {
+  "23b19304-f12f-4329-bc61-e297f80db8e2": "Administrador",
+  "d9226d47-4e7b-465e-9bb9-9a24342a26ba": "Auxiliar",
+  "8d0784a1-7fc6-406a-903f-3b9bfd43ce16": "Consulta",
+  "820e649b-fcd8-435d-ae98-80e9be8afc27": "Descarga"
 };
 
 export const PERMISOS = {

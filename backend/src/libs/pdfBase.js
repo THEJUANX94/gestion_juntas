@@ -118,23 +118,16 @@ export const addPDFHeader = async (doc, datosCertificado) => {
   const resources = await loadResources();
   const { margenIzq } = DEFAULTS;
 
-  // Logo
+  // Logo (1200x700 px → ratio 1.714, renderizar 34x20mm para no deformar)
   if (resources.base64Logo) {
-    doc.addImage(resources.base64Logo, "PNG", margenIzq, 10, 25, 25);
+    doc.addImage(resources.base64Logo, "PNG", margenIzq, 10, 34, 20);
   }
 
-  // Texto Gobernación
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text("GOBERNACIÓN DE", margenIzq + 30, 18);
-
-  doc.setFontSize(14);
-  doc.text("Boyacá", margenIzq + 30, 24);
-
+  // Texto secretaría (Gobernación de Boyacá ya va incluida en el logo)
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text("Secretaría de Gobierno y", margenIzq + 30, 30);
-  doc.text("Acción Comunal", margenIzq + 30, 34);
+  doc.text("Secretaría de Gobierno y", margenIzq + 38, 18);
+  doc.text("Acción Comunal", margenIzq + 38, 23);
 
   // QR a la derecha
   try {

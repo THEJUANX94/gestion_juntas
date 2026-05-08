@@ -81,11 +81,11 @@ const generarCertificadoJAC = async (datosCertificado) => {
   );
   yPos += 3;
 
-  yPos = writePara('Que fueron inscritos como dignatarios de dicha organización:', yPos);
+  yPos = writePara('Que el representante legal que fue inscrito en la Junta de Acción Comunal antes nombrada es:', yPos);
   yPos += 5;
 
   // ── TABLA DE DIGNATARIOS ──
-  const CARGOS_CERTIFICADO = ['presidente', 'presidenta', 'tesorero', 'tesorera', 'fiscal', 'vicepresidente', 'vicepresidenta'];
+  const CARGOS_CERTIFICADO = ['presidente', 'presidenta'];
   const dignatariosTabla = (datosCertificado.dignatarios || []).filter(d =>
     CARGOS_CERTIFICADO.includes((d.cargo || '').toLowerCase().trim())
   );
