@@ -16,6 +16,7 @@ export default function DetalleJunta() {
   const juntaData = location.state?.junta || null;
   const juntaIdFromRoute = juntaData?.IDJunta || null;
   const [miembros, setMiembros] = useState([]);
+  const [loadingDoc, setLoadingDoc] = useState(null);
 
   const { id } = useParams();
 
@@ -181,6 +182,9 @@ export default function DetalleJunta() {
       return;
     }
 
+    setLoadingDoc(tipo);
+    AlertMessage.toast('Generando documento', 'El documento se descargará en un momento...');
+
     const API_BASE = import.meta.env.VITE_PATH || '';
     const endpoint = `${API_BASE}/certificados`;
 
@@ -219,6 +223,8 @@ export default function DetalleJunta() {
     } catch (e) {
       console.error('Excepción al generar PDF para junta:', e);
       AlertMessage.error('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
+    } finally {
+      setLoadingDoc(null);
     }
   };
 
@@ -335,14 +341,19 @@ export default function DetalleJunta() {
               return generatePdfForJunta(juntaIdFromRoute, tipo);
             };
 
+            const isGenerating = accion.action && loadingDoc === accion.action;
+
             return (
               <button
                 key={idx}
                 onClick={handleClick}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white ${accion.color} transition-all shadow-sm hover:shadow-md`}
+                disabled={isGenerating}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white ${accion.color} transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed`}
               >
-                <Icon size={20} />
-                <span className="text-sm font-medium">{accion.label}</span>
+                <Icon size={20} className={isGenerating ? 'animate-spin' : ''} />
+                <span className="text-sm font-medium">
+                  {isGenerating ? 'Generando...' : accion.label}
+                </span>
               </button>
             );
           })}

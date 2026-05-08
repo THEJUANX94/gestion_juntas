@@ -57,6 +57,21 @@ export const AlertMessage = {
     });
   },
 
+  toast: (title = "Procesando", text = "") => {
+    MySwal.fire({
+      ...baseConfig,
+      icon: "info",
+      title,
+      text,
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 4000,
+      timerProgressBar: true,
+      backdrop: false,
+    });
+  },
+
   confirm: async (
     title = "¿Estás seguro?",
     text = "Esta acción no se puede deshacer"
