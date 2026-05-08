@@ -16,10 +16,16 @@ const MESES_ES = [
 
 const parseToBogota = (date) => {
   if (!date) return null;
+  if (date instanceof Date) {
+    return Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
+  }
+  if (typeof date === 'number') {
+    return Temporal.Instant.fromEpochMilliseconds(date).toZonedDateTimeISO(BOGOTA);
+  }
   try {
     return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
   } catch {
-    return Temporal.PlainDate.from(date).toZonedDateTime({ timeZone: BOGOTA });
+    return Temporal.PlainDate.from(String(date)).toZonedDateTime({ timeZone: BOGOTA });
   }
 };
 
