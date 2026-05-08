@@ -13,10 +13,7 @@ const parseToBogota = (date) => {
   try {
     return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
   } catch {
-    return Temporal.PlainDate.from(String(date))
-      .toZonedDateTime({ timeZone: 'UTC' })
-      .toInstant()
-      .toZonedDateTimeISO(BOGOTA);
+    return Temporal.PlainDate.from(String(date)).toZonedDateTime({ timeZone: BOGOTA });
   }
 };
 
@@ -26,86 +23,47 @@ const formatDateSlash = (date) => {
   return `${String(zdt.day).padStart(2, '0')}/${String(zdt.month).padStart(2, '0')}/${zdt.year}`;
 };
 
-// ── Test cases ──
+const formatDateLong = (date) => {
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const zdt = parseToBogota(date);
+  if (!zdt) return '____';
+  const mes = MESES[zdt.month - 1];
+  return `${zdt.day} de ${mes.charAt(0).toUpperCase() + mes.slice(1)} de ${zdt.year}`;
+};
 
-// Case 1: JS Date at 9:01 PM Bogota = 02:01 AM UTC May 8
-const d1 = new Date('2026-05-08T02:01:00.000Z');
-console.log('=== Case 1: JS Date (UTC May 8 02:01) ===');
-console.log('instanceof Date:', d1 instanceof Date);
-console.log('getTime():', d1.getTime());
-console.log('formatDateSlash:', formatDateSlash(d1));
-console.log('Expected: 07/05/2026');
-console.log('PASS:', formatDateSlash(d1) === '07/05/2026');
-console.log();
+let passed = 0, failed = 0;
+const test = (label, result, expected) => {
+  const ok = result === expected;
+  console.log(`${ok ? '✓' : '✗'} ${label}`);
+  if (!ok) console.log(`    expected: ${expected}\n    got:      ${result}`);
+  ok ? passed++ : failed++;
+};
 
-// Case 2: JS Date at 1 AM Bogota = 06:00 AM UTC (both on same date)
-const d2 = new Date('2026-05-07T06:00:00.000Z');
-console.log('=== Case 2: JS Date (UTC May 7 06:00 = Bogota May 7 01:00) ===');
-console.log('formatDateSlash:', formatDateSlash(d2));
-console.log('Expected: 07/05/2026');
-console.log('PASS:', formatDateSlash(d2) === '07/05/2026');
-console.log();
+// ── FechaCreacion: JS Date (TIMESTAMP from Sequelize/pg) ──
+// User at 10:59 PM Bogota May 7 → UTC = May 8 03:59 AM
+const certDate1 = new Date('2026-05-08T03:59:38.000Z');
+test('FechaCreacion: 10:59 PM Bogota May 7 (UTC May 8 03:59)', formatDateSlash(certDate1), '07/05/2026');
 
-// Case 3: String like what Sequelize/pg might return for TIMESTAMPTZ
-const d3 = '2026-05-08 02:01:00.000+00';
-console.log('=== Case 3: PostgreSQL-style string "2026-05-08 02:01:00.000+00" ===');
-console.log('formatDateSlash:', formatDateSlash(d3));
-console.log('Expected: 07/05/2026');
-console.log('PASS:', formatDateSlash(d3) === '07/05/2026');
-console.log();
+// User at 2:01 AM Bogota May 8 (UTC May 8 07:01) → already May 8 in Bogota
+const certDate2 = new Date('2026-05-08T07:01:00.000Z');
+test('FechaCreacion: 2:01 AM Bogota May 8 (UTC May 8 07:01)', formatDateSlash(certDate2), '08/05/2026');
 
-// Case 4: ISO string with Z
-const d4 = '2026-05-08T02:01:00.000Z';
-console.log('=== Case 4: ISO string with Z ===');
-console.log('formatDateSlash:', formatDateSlash(d4));
-console.log('Expected: 07/05/2026');
-console.log('PASS:', formatDateSlash(d4) === '07/05/2026');
-console.log();
+// User at 9:01 PM Bogota May 7 (UTC May 8 02:01)
+const certDate3 = new Date('2026-05-08T02:01:00.000Z');
+test('FechaCreacion: 9:01 PM Bogota May 7 (UTC May 8 02:01)', formatDateSlash(certDate3), '07/05/2026');
 
-// Case 5: Plain date string (what pg returns for DATE columns)
-const d5 = '2026-05-08';
-console.log('=== Case 5: Plain date string "2026-05-08" (pg DATE column) ===');
-console.log('formatDateSlash:', formatDateSlash(d5));
-console.log('Expected: 07/05/2026 (UTC midnight converts to Bogota May 7)');
-console.log('PASS:', formatDateSlash(d5) === '07/05/2026');
-console.log();
+// Midday Bogota May 7 (UTC May 7 17:00)
+const certDate4 = new Date('2026-05-07T17:00:00.000Z');
+test('FechaCreacion: 12 PM Bogota May 7 (UTC May 7 17:00)', formatDateSlash(certDate4), '07/05/2026');
 
-// Case 6: What if the DATE was stored as May 7 (Bogota date)?
-const d6 = '2026-05-07';
-console.log('=== Case 6: Plain date string "2026-05-07" (Bogota date stored) ===');
-console.log('formatDateSlash:', formatDateSlash(d6));
-console.log('Expected depends on how date was stored:');
-console.log('  If stored as Bogota date: should be 07/05/2026');
-console.log('  But UTC catch converts: UTC midnight May 7 = Bogota May 6 at 7PM');
-console.log('formatDateSlash result:', formatDateSlash(d6), '(= 06/05/2026 due to UTC catch)');
-console.log();
+// ── Period/assembly dates: plain strings from pg DATE columns (Bogota calendar dates) ──
+test('periodoInicio: "2016-07-01" → July 1 2016', formatDateSlash('2016-07-01'), '01/07/2016');
+test('periodoFin: "2020-07-01" → July 1 2020', formatDateSlash('2020-07-01'), '01/07/2020');
+test('personeriaFecha "2019-01-30" → Jan 30 2019', formatDateSlash('2019-01-30'), '30/01/2019');
+test('formatDateLong "2016-07-01"', formatDateLong('2016-07-01'), '1 de Julio de 2016');
+test('formatDateLong "2020-07-01"', formatDateLong('2020-07-01'), '1 de Julio de 2020');
 
-// Case 7: new Date() right now
-const d7 = new Date();
-console.log('=== Case 7: new Date() right now ===');
-console.log('UTC time:', d7.toISOString());
-console.log('formatDateSlash:', formatDateSlash(d7));
-console.log();
+// ── ISO string with Z (if Sequelize returns this format) ──
+test('ISO Z string "2026-05-08T02:01:00Z" → Bogota May 7', formatDateSlash('2026-05-08T02:01:00Z'), '07/05/2026');
 
-// Case 8: Sequelize might return a Date with different internal representation
-// Simulate what might happen if Sequelize timezone is set and double-offsets
-const d8 = new Date('2026-05-08T07:01:00.000Z'); // 9:01 PM Bogota but with +5h error
-console.log('=== Case 8: JS Date with +5h error (2026-05-08T07:01Z = midnight May 8 Bogota) ===');
-console.log('formatDateSlash:', formatDateSlash(d8));
-console.log('This would show 08/05/2026 if this is what parseToBogota receives');
-console.log();
-
-console.log('=== Temporal.Instant.from() test with PostgreSQL string ===');
-try {
-  const r = Temporal.Instant.from('2026-05-08 02:01:00.000+00');
-  console.log('Temporal.Instant.from("2026-05-08 02:01:00.000+00") SUCCEEDED:', r.toString());
-} catch(e) {
-  console.log('Temporal.Instant.from("2026-05-08 02:01:00.000+00") FAILED:', e.message);
-}
-
-try {
-  const r = Temporal.Instant.from('2026-05-08 02:01:00+00:00');
-  console.log('Temporal.Instant.from("2026-05-08 02:01:00+00:00") SUCCEEDED:', r.toString());
-} catch(e) {
-  console.log('Temporal.Instant.from("2026-05-08 02:01:00+00:00") FAILED:', e.message);
-}
+console.log(`\n${passed} passed, ${failed} failed`);
