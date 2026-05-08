@@ -1,3 +1,4 @@
+import { Temporal } from 'temporal-polyfill';
 import {
   createDoc,
   addPDFHeader,
@@ -6,24 +7,40 @@ import {
   DEFAULTS
 } from '../pdfBase.js';
 
-const formatDateSlash = (date) => {
-  if (!date) return '____';
-  const d = new Date(date);
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+const BOGOTA = 'America/Bogota';
+
+const MESES_ES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+const parseToBogota = (date) => {
+  if (!date) return null;
+  try {
+    return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
+  } catch {
+    return Temporal.PlainDate.from(date).toZonedDateTime({ timeZone: BOGOTA });
+  }
 };
 
-const formatTimeFull = (date) => {
-  if (!date) return '00:00:00';
-  const d = new Date(date);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+const formatDateSlash = (date) => {
+  if (!date) return '____';
+  const zdt = parseToBogota(date);
+  if (!zdt) return '____';
+  return `${String(zdt.day).padStart(2, '0')}/${String(zdt.month).padStart(2, '0')}/${zdt.year}`;
+};
+
+const formatTimeFull = (zdt) => {
+  if (!zdt) return '00:00:00';
+  return `${String(zdt.hour).padStart(2, '0')}:${String(zdt.minute).padStart(2, '0')}:${String(zdt.second).padStart(2, '0')}`;
 };
 
 const formatDateLong = (date) => {
   if (!date) return '____';
-  const d = new Date(date);
-  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  return `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  const zdt = parseToBogota(date);
+  if (!zdt) return '____';
+  const mes = MESES_ES[zdt.month - 1];
+  return `${zdt.day} de ${mes.charAt(0).toUpperCase() + mes.slice(1)} de ${zdt.year}`;
 };
 
 const generarCertificadoJAC = async (datosCertificado) => {
@@ -38,7 +55,9 @@ const generarCertificadoJAC = async (datosCertificado) => {
 
   const { margenIzq, margenDer } = DEFAULTS;
   const anchoUtil = 210 - margenIzq - margenDer;
-  const now = datosCertificado.FechaCreacion ? new Date(datosCertificado.FechaCreacion) : new Date();
+  const now = datosCertificado.FechaCreacion
+    ? parseToBogota(datosCertificado.FechaCreacion)
+    : Temporal.Now.zonedDateTimeISO(BOGOTA);
 
   const resources = await addPDFHeader(doc, datosCertificado);
 

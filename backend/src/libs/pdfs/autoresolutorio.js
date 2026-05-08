@@ -1,3 +1,4 @@
+import { Temporal } from 'temporal-polyfill';
 import {
   createDoc,
   addPDFHeader,
@@ -6,21 +7,35 @@ import {
   DEFAULTS
 } from '../pdfBase.js';
 
+const BOGOTA = 'America/Bogota';
+
+const MESES_ES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+const parseToBogota = (date) => {
+  if (!date) return null;
+  try {
+    return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
+  } catch {
+    return Temporal.PlainDate.from(date).toZonedDateTime({ timeZone: BOGOTA });
+  }
+};
+
 const formatDateSlash = (date) => {
   if (!date) return '____';
-  const d = new Date(date);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}/${m}/${day}`;
+  const zdt = parseToBogota(date);
+  if (!zdt) return '____';
+  return `${String(zdt.day).padStart(2, '0')}/${String(zdt.month).padStart(2, '0')}/${zdt.year}`;
 };
 
 const formatDateLong = (date) => {
   if (!date) return '____';
-  const d = new Date(date);
-  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  return `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+  const zdt = parseToBogota(date);
+  if (!zdt) return '____';
+  const mes = MESES_ES[zdt.month - 1];
+  return `${zdt.day} de ${mes.charAt(0).toUpperCase() + mes.slice(1)} de ${zdt.year}`;
 };
 
 const makeTableDrawer = (doc, anchoUtil, margenIzq) => {
