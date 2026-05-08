@@ -16,26 +16,19 @@ const MESES_ES = [
 
 const parseToBogota = (date) => {
   if (!date) return null;
-  console.log('[DEBUG parseToBogota] type:', typeof date, '| instanceof Date:', date instanceof Date, '| value:', String(date).slice(0, 50));
+  // JS Date objects (TIMESTAMP columns via Sequelize/pg): epoch-based, convert from UTC
   if (date instanceof Date) {
-    const result = Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
-    console.log('[DEBUG parseToBogota] instanceof Date branch → day:', result.day, 'month:', result.month, 'year:', result.year);
-    return result;
+    return Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
   }
   if (typeof date === 'number') {
     return Temporal.Instant.fromEpochMilliseconds(date).toZonedDateTimeISO(BOGOTA);
   }
   try {
-    const result = Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
-    console.log('[DEBUG parseToBogota] try branch → day:', result.day, 'month:', result.month, 'year:', result.year);
-    return result;
+    // ISO strings with offset/Z: treat as instants
+    return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
   } catch {
-    const result = Temporal.PlainDate.from(String(date))
-      .toZonedDateTime({ timeZone: 'UTC' })
-      .toInstant()
-      .toZonedDateTimeISO(BOGOTA);
-    console.log('[DEBUG parseToBogota] catch branch → day:', result.day, 'month:', result.month, 'year:', result.year);
-    return result;
+    // Plain date strings "YYYY-MM-DD" from pg DATE columns: these represent Bogota calendar dates
+    return Temporal.PlainDate.from(String(date)).toZonedDateTime({ timeZone: BOGOTA });
   }
 };
 
@@ -118,7 +111,6 @@ const makeTableDrawer = (doc, anchoUtil, margenIzq) => {
 };
 
 const generarAutoresolutorio = async (datosCertificado) => {
-  console.log('[DEBUG generarAutoresolutorio] FechaCreacion raw:', datosCertificado.FechaCreacion, '| type:', typeof datosCertificado.FechaCreacion, '| instanceof Date:', datosCertificado.FechaCreacion instanceof Date);
   const doc = createDoc();
 
   const municipio = (datosCertificado.NombreMunicipio || '').toUpperCase();

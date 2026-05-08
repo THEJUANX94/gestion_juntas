@@ -16,6 +16,7 @@ const MESES_ES = [
 
 const parseToBogota = (date) => {
   if (!date) return null;
+  // JS Date objects (TIMESTAMP columns via Sequelize/pg): epoch-based, convert from UTC
   if (date instanceof Date) {
     return Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
   }
@@ -23,12 +24,11 @@ const parseToBogota = (date) => {
     return Temporal.Instant.fromEpochMilliseconds(date).toZonedDateTimeISO(BOGOTA);
   }
   try {
+    // ISO strings with offset/Z: treat as instants
     return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
   } catch {
-    return Temporal.PlainDate.from(String(date))
-      .toZonedDateTime({ timeZone: 'UTC' })
-      .toInstant()
-      .toZonedDateTimeISO(BOGOTA);
+    // Plain date strings "YYYY-MM-DD" from pg DATE columns: these represent Bogota calendar dates
+    return Temporal.PlainDate.from(String(date)).toZonedDateTime({ timeZone: BOGOTA });
   }
 };
 

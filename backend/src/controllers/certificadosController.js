@@ -100,16 +100,17 @@ export const crearCertificado = async (req, res) => {
     const tipoCertificadoValue = tipoNombre || 'DESCONOCIDO';
 
     // --- Crear el certificado en BD (necesita campos obligatorios del modelo) ---
+    const ahora = new Date();
     const nuevoCertificado = await Certificados.create({
-      FechaCreacion: new Date(),
+      FechaCreacion: ahora,
       IDJunta: junta.IDJunta,
-      NombreCertificado: junta.RazonSocial || `Certificado_${new Date().toISOString()}`,
+      NombreCertificado: junta.RazonSocial || `Certificado_${ahora.toISOString()}`,
       TipoCertificado: tipoCertificadoValue
     });
 
     // Preparar datos para el PDF (solo con valores reales; si falta algo, se deja undefined/null)
     const datosCertificado = {
-      FechaCreacion: nuevoCertificado.FechaCreacion,
+      FechaCreacion: ahora,
       IDCertificado: nuevoCertificado.IDCertificado,
       NombreMunicipio: nombreMunicipio || null,
       nombreOrganizacion: junta.RazonSocial || null,
