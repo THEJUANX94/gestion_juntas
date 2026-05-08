@@ -25,7 +25,10 @@ const parseToBogota = (date) => {
   try {
     return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
   } catch {
-    return Temporal.PlainDate.from(String(date)).toZonedDateTime({ timeZone: BOGOTA });
+    return Temporal.PlainDate.from(String(date))
+      .toZonedDateTime({ timeZone: 'UTC' })
+      .toInstant()
+      .toZonedDateTimeISO(BOGOTA);
   }
 };
 
