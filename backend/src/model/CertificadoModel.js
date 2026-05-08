@@ -3,8 +3,8 @@ import { sequelize } from "../config/database.js";
 
 export const Certificados = sequelize.define('Certificados', {
   IDCertificado: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.SMALLINT,
+    autoIncrement: true,
     primaryKey: true,
     field: 'idcertificado'
   },
