@@ -16,19 +16,26 @@ const MESES_ES = [
 
 const parseToBogota = (date) => {
   if (!date) return null;
+  console.log('[DEBUG parseToBogota] type:', typeof date, '| instanceof Date:', date instanceof Date, '| value:', String(date).slice(0, 50));
   if (date instanceof Date) {
-    return Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
+    const result = Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
+    console.log('[DEBUG parseToBogota] instanceof Date branch → day:', result.day, 'month:', result.month, 'year:', result.year);
+    return result;
   }
   if (typeof date === 'number') {
     return Temporal.Instant.fromEpochMilliseconds(date).toZonedDateTimeISO(BOGOTA);
   }
   try {
-    return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
+    const result = Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
+    console.log('[DEBUG parseToBogota] try branch → day:', result.day, 'month:', result.month, 'year:', result.year);
+    return result;
   } catch {
-    return Temporal.PlainDate.from(String(date))
+    const result = Temporal.PlainDate.from(String(date))
       .toZonedDateTime({ timeZone: 'UTC' })
       .toInstant()
       .toZonedDateTimeISO(BOGOTA);
+    console.log('[DEBUG parseToBogota] catch branch → day:', result.day, 'month:', result.month, 'year:', result.year);
+    return result;
   }
 };
 
@@ -111,12 +118,13 @@ const makeTableDrawer = (doc, anchoUtil, margenIzq) => {
 };
 
 const generarAutoresolutorio = async (datosCertificado) => {
+  console.log('[DEBUG generarAutoresolutorio] FechaCreacion raw:', datosCertificado.FechaCreacion, '| type:', typeof datosCertificado.FechaCreacion, '| instanceof Date:', datosCertificado.FechaCreacion instanceof Date);
   const doc = createDoc();
 
   const municipio = (datosCertificado.NombreMunicipio || '').toUpperCase();
   const nombreOrganizacion = (datosCertificado.nombreOrganizacion || '').toUpperCase();
   const personeriaNumero = datosCertificado.personeriaNumero || '____';
-  const personeriaFecha = datosCertificado.personeriaFecha || '____';
+  const personeriaFecha = datosCertificado.personeriaFecha ? formatDateLong(datosCertificado.personeriaFecha) : '____';
   const periodoInicio = datosCertificado.periodoInicio;
   const periodoFin = datosCertificado.periodoFin;
   const tipodocumento = (datosCertificado.TipoCertificado || 'JUNTA DE ACCIÓN COMUNAL').toUpperCase();

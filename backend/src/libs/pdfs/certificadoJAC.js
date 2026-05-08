@@ -58,7 +58,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
   const municipio = (datosCertificado.NombreMunicipio || '').toUpperCase();
   const nombreOrganizacion = (datosCertificado.nombreOrganizacion || '').toUpperCase();
   const personeriaNumero = datosCertificado.personeriaNumero || '____';
-  const personeriaFecha = datosCertificado.personeriaFecha || '____';
+  const personeriaFecha = datosCertificado.personeriaFecha ? formatDateLong(datosCertificado.personeriaFecha) : '____';
   const periodoFin = datosCertificado.periodoFin;
   const tipodocumento = (datosCertificado.TipoCertificado || 'JUNTA DE ACCIÓN COMUNAL').toUpperCase();
 

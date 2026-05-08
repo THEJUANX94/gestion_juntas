@@ -118,7 +118,8 @@ export const crearCertificado = async (req, res) => {
       periodoInicio: junta.FechaInicioPeriodo || null,
       periodoFin: junta.FechaFinPeriodo || null,
       dignatarios: dignatarios.length > 0 ? dignatarios : null,
-      TipoCertificado: tipoNombre || null
+      TipoCertificado: tipoNombre || null,
+      fechaEleccion: junta.FechaAsamblea || null
     };
 
     // Tipo de PDF: puede venir en el body; por defecto 'autoresolutorio'
@@ -278,7 +279,8 @@ export const enviarAutoresolutorio = async (req, res) => {
       periodoInicio: junta.FechaInicioPeriodo,
       periodoFin: junta.FechaFinPeriodo,
       dignatarios: dignatarios.length > 0 ? dignatarios : null,
-      TipoCertificado: tipoNombre
+      TipoCertificado: tipoNombre,
+      fechaEleccion: junta.FechaAsamblea
     };
 
     const pdfRaw = await generatePdf('autoresolutorio', datosCertificado);
