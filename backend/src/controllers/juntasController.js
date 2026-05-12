@@ -619,7 +619,8 @@ export const actualizarJunta = async (req, res) => {
       TipoJunta: tipoJunta,
       IDMunicipio: idMunicipio,
       IDInstitucion: idInstitucion,
-      Correo: correo
+      Correo: correo,
+      UltimoEditor: req.usuario.nombre
     });
 
     return res.json({

@@ -167,6 +167,8 @@ export const crearMandatario = async (req, res) => {
 
     const periodo = await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, t);
 
+    await junta.update({ UltimoEditor: req.usuario.nombre }, { transaction: t });
+
     await t.commit();
 
     res.json({
@@ -703,6 +705,8 @@ export const actualizarMandatario = async (req, res) => {
       await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo);
     }
 
+    await junta.update({ UltimoEditor: req.usuario.nombre });
+
     return res.json({
       message: "Mandatario actualizado correctamente"
     });
@@ -760,6 +764,9 @@ export const eliminarMandatario = async (req, res) => {
     await MandatarioJunta.destroy({
       where: { NumeroIdentificacion: documento, IDJunta: idJunta }
     });
+
+    const juntaToUpdate = await Junta.findByPk(idJunta);
+    if (juntaToUpdate) await juntaToUpdate.update({ UltimoEditor: req.usuario.nombre });
 
     return res.json({
       message: "Mandatario eliminado correctamente de la junta"
