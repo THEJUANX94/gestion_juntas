@@ -53,7 +53,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
         Correo: initialData.Correo || "",
         Celular: initialData.Celular || "",
         Firma: initialData.Firma || null,
-        Usuario: initialData.Usuario || null,
+        Usuario: initialData.Credenciale?.Login || initialData.Credencial?.Login || "",
         Contrasena: null,
       }));
 
