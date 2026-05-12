@@ -63,7 +63,7 @@ export default function App() {
           {/* Rutas Protegidas (Requieren Login) */}
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
-              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]} />}>
+              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]} />}>
 
                 {/* -----------------------------------------------------
                   NIVEL 1: ACCESO TOTAL (Solo Listados para Consulta)
