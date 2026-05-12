@@ -466,7 +466,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
                 { value: "Mandatario", label: "Mandatario" },
                 { value: "Descarga", label: "Descarga" },
                 { value: "Consulta", label: "Consulta" },
-                { value: "GeneracionAuto", label: "GeneracionAuto"}
+                { value: "Generación Auto", label: "Generación Auto" },
               ]}
             />
 
@@ -500,7 +500,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
                 )}
               </div>
             )}
-            {["Administrador", "Consulta", "Auxiliar", "Descarga"].includes(form.NombreRol) && (
+            {["Administrador", "Auxiliar", "Descarga", "Consulta", "Generación Auto"].includes(form.NombreRol) && (
               <div>
                 <label className="text-sm font-medium block mb-1">
                   Usuario <span className="text-red-500">*</span>
