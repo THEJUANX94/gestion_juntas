@@ -37,7 +37,9 @@ export default function EditarMandatario() {
   });
 
   const departamentos = lugares.filter(l => l.TipoLugar === 'Departamento');
-  const municipiosFiltrados = lugares.filter(l => l.TipoLugar === 'Municipio' && l.IDOtroLugar === formData.departamento);
+  const provinciasDelDepto = lugares.filter(l => l.TipoLugar === 'Provincia' && l.IDOtroLugar === formData.departamento);
+  const idsContenedores = [formData.departamento, ...provinciasDelDepto.map(p => p.IDLugar)];
+  const municipiosFiltrados = lugares.filter(l => l.TipoLugar === 'Municipio' && idsContenedores.includes(l.IDOtroLugar));
 
   // CARGAR DATOS DEL BACKEND
   useEffect(() => {

@@ -230,7 +230,12 @@ export const obtenerUsuarios = async (req, res) => {
   try {
     const usuarios = await Usuario.findAll({
       include: [
-        { model: Rol, as: "RolInfo", attributes: ["NombreRol"] },
+        {
+          model: Rol,
+          as: "RolInfo",
+          attributes: ["NombreRol"],
+          where: { NombreRol: ["Administrador", "Auxiliar", "Generación Auto"] },
+        },
         { model: Firma, attributes: ["Ubicacion", "FechaCreacion"] },
       ],
     });
