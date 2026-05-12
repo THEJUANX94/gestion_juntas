@@ -1,13 +1,13 @@
 import { Router } from "express";
-import { 
-  crearJunta, 
-  obtenerJuntas, 
-  obtenerJuntaPorId, 
-  actualizarJunta, 
-  eliminarJunta, 
-  obtenerTodasLasJuntas, 
-  exportarJuntasExcel, 
-  cambiarPeriodoJunta, 
+import {
+  crearJunta,
+  obtenerJuntas,
+  obtenerJuntaPorId,
+  actualizarJunta,
+  eliminarJunta,
+  obtenerTodasLasJuntas,
+  exportarJuntasExcel,
+  cambiarPeriodoJunta,
   reporteEdades,
   reporteComisiones,
   reporteJuntasActivas,
@@ -26,7 +26,7 @@ import { ROLES } from "../config/roles.js";
 
 const router = Router();
 
-const ROLES_INFORMES = [ROLES.ADMIN, ROLES.AUXILIAR, ROLES.DESCARGA, ROLES.CONSULTA];
+const ROLES_INFORMES = [ROLES.ADMIN, ROLES.AUXILIAR, ROLES.DESCARGA, ROLES.CONSULTA, ROLES.GENERACION_AUTO];
 
 // ===================================
 // RUTAS PARA REPORTES
@@ -50,15 +50,15 @@ router.get("/reports/:tipo/export", verificarAuth, verificarRol(ROLES_INFORMES),
 // CRUD JUNTAS
 // ===================================
 
-router.post("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), crearJunta);
+router.post("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), crearJunta);
 
 router.get("/", obtenerJuntas);
-router.get("/all", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.DESCARGA]), obtenerTodasLasJuntas);
-router.get("/export/excel", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), exportarJuntasExcel);
-router.post("/:id/cambiar-periodo", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), cambiarPeriodoJunta);
+router.get("/all", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.DESCARGA, ROLES.GENERACION_AUTO]), obtenerTodasLasJuntas);
+router.get("/export/excel", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), exportarJuntasExcel);
+router.post("/:id/cambiar-periodo", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), cambiarPeriodoJunta);
 
-router.get("/:id", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerJuntaPorId); 
-router.put("/:id", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarJunta); 
+router.get("/:id", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerJuntaPorId);
+router.put("/:id", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), actualizarJunta);
 
 router.delete("/:id", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarJunta);
 

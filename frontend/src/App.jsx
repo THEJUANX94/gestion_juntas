@@ -87,7 +87,7 @@ export default function App() {
                   NIVEL 2: OPERATIVO (Admin y Auxiliar)
                   Pueden Crear, Editar, Actualizar cosas de negocio
                  ----------------------------------------------------- */}
-              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR]} />}>
+              <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]} />}>
                 <Route path="/juntas/crear" element={<CrearJunta />} />
                 <Route path="/juntas/:id/mandatario/crear" element={<CrearMandatario />} />
                 <Route path="/juntas/mandatario/editar/:id/:documento" element={<EditarMandatario />} />
