@@ -5,13 +5,15 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
-import { crearNuevoPeriodoJunta } from '../services/juntasServices'
+import { crearNuevoPeriodoJunta } from '../services/juntasServices';
+import { useAuth } from '../context/AuthContext';
+import { ROLES } from '../config/roles';
 
 export default function DetalleJunta() {
 
   const navigate = useNavigate();
   const location = useLocation();
-
+  const { user } = useAuth();
 
   const juntaData = location.state?.junta || null;
   const juntaIdFromRoute = juntaData?.IDJunta || null;
@@ -125,6 +127,11 @@ export default function DetalleJunta() {
     { icon: Database, label: "Organismo Comunal", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/${id}` },
     { icon: CalendarPlus, label: 'Nuevo periodo', color: 'bg-yellow-500 hover:bg-yellow-600', action: 'nuevo_periodo' }
   ];
+
+  const accionesFiltradas = acciones.filter(accion =>
+    accion.action !== 'autoresolutorio' ||
+    [ROLES.ADMIN, ROLES.GENERACION_AUTO].includes(user?.IDRol)
+  );
 
 
   const generatePdfForDocumento = async (documento, tipo = 'autoresolutorio') => {
@@ -326,7 +333,7 @@ export default function DetalleJunta() {
       <aside className="w-64 bg-white border-r border-gray-200 p-6 shadow-sm">
         <h3 className="text-lg font-bold text-gray-800 mb-6">Acciones Rápidas</h3>
         <nav className="space-y-3">
-          {acciones.map((accion, idx) => {
+          {accionesFiltradas.map((accion, idx) => {
             const Icon = accion.icon;
 
             const handleClick = () => {
