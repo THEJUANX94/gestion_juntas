@@ -367,6 +367,7 @@ export const obtenerUsuarioPorId = async (req, res) => {
       include: [
         { model: Rol, as: "RolInfo", attributes: ["NombreRol"] },
         { model: Firma, attributes: ["Ubicacion", "FechaCreacion"] },
+        { model: TipoDocumento, attributes: ["NombreTipo"] },
       ],
     });
 
