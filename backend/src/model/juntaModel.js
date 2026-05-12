@@ -86,6 +86,11 @@ export const Junta = sequelize.define("Junta", {
     allowNull: false,
     field: "correo"
   },
+  UltimoEditor: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: "ultimo_editor"
+  },
   Activo: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

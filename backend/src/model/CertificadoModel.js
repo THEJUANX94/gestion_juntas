@@ -31,6 +31,16 @@ export const Certificados = sequelize.define('Certificados', {
     type: DataTypes.TEXT,
     allowNull: false,
     field: "tipocertificado"
+  },
+  ElaboradoPor: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: "elaborado_por"
+  },
+  GeneradoPor: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: "generado_por"
   }
 }, {
     tableName: "certificados",
