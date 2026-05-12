@@ -525,6 +525,8 @@ export const eliminarUsuario = async (req, res) => {
 
     const usuarioInfo = usuario.toJSON();
 
+    await Credenciales.destroy({ where: { numeroIdentificacion: NumeroIdentificacion } });
+
     const firmas = await Firma.findAll({ where: { NumeroIdentificacion } });
     let firmasEliminadas = 0;
     for (const firma of firmas) {
