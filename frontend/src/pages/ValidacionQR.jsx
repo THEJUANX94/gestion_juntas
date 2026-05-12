@@ -41,6 +41,8 @@ export default function ValidacionQR() {
 									<div><span className="font-bold">Fecha de Creación:</span> {new Date(result.data.FechaCreacion).toLocaleString()}</div>
 									<div><span className="font-bold">Tipo Junta:</span> {result.data.TipoCertificado}</div>
 									<div><span className="font-bold">Certificado:</span> {result.data.IDCertificado}</div>
+									<div><span className="font-bold">Elaborado por:</span> {result.data.ElaboradoPor || 'No registrado'}</div>
+									<div><span className="font-bold">Generado por:</span> {result.data.GeneradoPor || 'No registrado'}</div>
 								</div>
 							</div>
 						) : (
