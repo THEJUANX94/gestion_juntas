@@ -70,6 +70,22 @@ export const crearPeriodoYVinculo = async (documento, idJunta, inicio, fin, t) =
 };
 
 
+export const validarCargoUnico = async (cargoID, idJunta) => {
+  const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
+
+  const cargo = await Cargo.findByPk(cargoID);
+  if (!cargo || !CARGOS_UNICOS.includes(cargo.NombreCargo)) return null;
+
+  const existe = await MandatarioJunta.findOne({
+    where: { IDJunta: idJunta, IDCargo: cargoID }
+  });
+
+  return existe
+    ? `Ya existe un ${cargo.NombreCargo} en esta junta.`
+    : null;
+};
+
+
 export const crearMandatario = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -779,20 +795,5 @@ export const eliminarMandatario = async (req, res) => {
       error: error.message
     });
   }
-};
-
-export const validarCargoUnico = async (cargoID, idJunta) => {
-  const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
-
-  const cargo = await Cargo.findByPk(cargoID);
-  if (!cargo || !CARGOS_UNICOS.includes(cargo.NombreCargo)) return null;
-
-  const existe = await MandatarioJunta.findOne({
-    where: { IDJunta: idJunta, IDCargo: cargoID }
-  });
-
-  return existe
-    ? `Ya existe un ${cargo.NombreCargo} en esta junta.`
-    : null;
 };
 

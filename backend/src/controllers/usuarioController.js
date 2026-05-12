@@ -434,7 +434,6 @@ export const actualizarUsuario = async (req, res) => {
       if (Contraseña) {
         const saltRounds = 10;
         datosCredenciales.Contraseña = await bcrypt.hash(Contraseña, saltRounds);
-        datosCredenciales.Contraseña = Contraseña;
       }
 
       const credenciales = await Credenciales.findOne({ where: { numeroIdentificacion: NumeroIdentificacion } });
