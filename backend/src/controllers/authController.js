@@ -7,18 +7,18 @@ export const verificarSesion = async (req, res) => {
     const token = req.cookies?.auth_token;
 
     if (!token) {
-      return res.status(401).json({ error: "No autenticado" });
+      return res.status(401).json({ valid: false, error: "No autenticado" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded?.numeroIdentificacion) {
-      return res.status(401).json({ error: "Token inválido" });
+    if (!decoded?.id) {
+      return res.status(401).json({ valid: false, error: "Token inválido" });
     }
 
-    const usuario = await Usuario.findByPk(decoded.numeroIdentificacion, {
+    const usuario = await Usuario.findByPk(decoded.id, {
       include: [{ model: Rol, as: "RolInfo", attributes: ["NombreRol"] }],
       attributes: [
-        "numeroIdentificacion",
+        "NumeroIdentificacion",
         "PrimerNombre",
         "SegundoNombre",
         "PrimerApellido",
@@ -28,19 +28,21 @@ export const verificarSesion = async (req, res) => {
     });
 
     if (!usuario) {
-      return res.status(404).json({ error: "Usuario no encontrado" });
+      return res.status(404).json({ valid: false, error: "Usuario no encontrado" });
     }
 
-    const usuarioData = {
-      numeroIdentificacion: usuario.numeroIdentificacion,
-      nombre: `${usuario.PrimerNombre} ${usuario.SegundoNombre || ""} ${usuario.PrimerApellido} ${usuario.SegundoApellido || ""}`.trim(),
-      correo: usuario.Correo,
-      IDRol: usuario.RolInfo?.NombreRol || "Sin rol",
-    };
-
-    return res.json({ usuario: usuarioData });
+    return res.json({
+      valid: true,
+      user: {
+        numeroIdentificacion: usuario.NumeroIdentificacion,
+        nombre: `${usuario.PrimerNombre || ''} ${usuario.SegundoNombre || ''} ${usuario.PrimerApellido || ''} ${usuario.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim(),
+        correo: usuario.Correo,
+        IDRol: decoded.IDRol,
+        nombreRol: usuario.RolInfo?.NombreRol || 'Sin rol'
+      }
+    });
   } catch (error) {
     console.error("Error verificando sesión:", error);
-    return res.status(401).json({ error: "Sesión no válida" });
+    return res.status(401).json({ valid: false, error: "Sesión no válida" });
   }
 };

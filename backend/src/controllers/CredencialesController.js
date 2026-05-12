@@ -107,6 +107,7 @@ export const loginUsuario = async (req, res) => {
             {
                 id: user.numeroIdentificacion,
                 IDRol: user.IDRol,
+                nombre: `${user.PrimerNombre || ''} ${user.SegundoNombre || ''} ${user.PrimerApellido || ''} ${user.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim(),
             },
             process.env.JWT_SECRET,
             { expiresIn: "8h" }
