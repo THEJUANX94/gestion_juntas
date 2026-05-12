@@ -217,7 +217,6 @@ const generarCertificadoJAC = async (datosCertificado) => {
   );
   yPos += 5;
   doc.setFontSize(10);
-  doc.text('GOBERNACIÓN DE BOYACÁ', margenIzq, yPos);
 
   return doc.output('arraybuffer');
 };

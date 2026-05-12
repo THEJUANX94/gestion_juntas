@@ -410,7 +410,6 @@ const generarAutoresolutorio = async (datosCertificado) => {
   yPos += 8;
 
   doc.setFontSize(10);
-  doc.text('GOBERNACIÓN DE BOYACÁ', margenIzq, yPos);
 
   return doc.output('arraybuffer');
 };
