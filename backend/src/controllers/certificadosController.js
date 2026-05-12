@@ -29,6 +29,10 @@ export const crearCertificado = async (req, res) => {
       return res.status(404).json({ error: 'No se encontró la junta proporcionada.' });
     }
 
+    // Capturar información de autoría
+    const elaboradoPor = junta.UltimoEditor || null;
+    const generadoPor = req.usuario?.nombre || null;
+
     // Obtener municipio (Lugar) si existe
     let nombreMunicipio = null;
     try {
@@ -105,7 +109,9 @@ export const crearCertificado = async (req, res) => {
       FechaCreacion: ahora,
       IDJunta: junta.IDJunta,
       NombreCertificado: junta.RazonSocial || `Certificado_${ahora.toISOString()}`,
-      TipoCertificado: tipoCertificadoValue
+      TipoCertificado: tipoCertificadoValue,
+      ElaboradoPor: elaboradoPor,
+      GeneradoPor: generadoPor
     });
 
     // Preparar datos para el PDF (solo con valores reales; si falta algo, se deja undefined/null)
@@ -120,7 +126,9 @@ export const crearCertificado = async (req, res) => {
       periodoFin: junta.FechaFinPeriodo || null,
       dignatarios: dignatarios.length > 0 ? dignatarios : null,
       TipoCertificado: tipoNombre || null,
-      fechaEleccion: junta.FechaAsamblea || null
+      fechaEleccion: junta.FechaAsamblea || null,
+      elaboradoPor,
+      generadoPor
     };
 
     // Tipo de PDF: puede venir en el body; por defecto 'autoresolutorio'
