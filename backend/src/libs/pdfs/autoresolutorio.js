@@ -14,6 +14,15 @@ const MESES_ES = [
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
 ];
 
+const clasificarComision = (nombreComision) => {
+  const n = (nombreComision || '').toLowerCase();
+  if (n.includes('convivencia') || n.includes('conciliaci')) {
+    return 'COMISION DE CONVIVENCIA Y CONCILIACION';
+  }
+  if (n.includes('empresarial')) return 'COMISION EMPRESARIAL';
+  return 'COMISIONES DE TRABAJO';
+};
+
 const parseToBogota = (date) => {
   if (!date) return null;
   // JS Date objects (TIMESTAMP columns via Sequelize/pg): epoch-based, convert from UTC
@@ -293,54 +302,57 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const drawTable = makeTableDrawer(doc, anchoUtil, margenIzq);
 
   if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
-    const directivos = [];
-    const fiscales = [];
-    const delegados = [];
-    const comisionesMap = {};
+  const directivos = [];
+  const fiscales = [];
+  const delegados = [];
+  const comisionesAgrupadas = {
+    'COMISION DE CONVIVENCIA Y CONCILIACION': [],
+    'COMISION EMPRESARIAL': [],
+    'COMISIONES DE TRABAJO': []
+  };
 
-    datosCertificado.dignatarios.forEach(d => {
-      const cargo = (d.cargo || '').trim();
-      const cargoLower = cargo.toLowerCase();
-      const comision = (d.comision || '').trim();
-      const expedido = (d.expedidoEn || municipio || '').toUpperCase();
-      const nombre = (d.nombre || '').toUpperCase();
-      const cedula = (d.cedula || '').toString();
+  datosCertificado.dignatarios.forEach(d => {
+    const cargo = (d.cargo || '').trim();
+    const cargoLower = cargo.toLowerCase();
+    const comision = (d.comision || '').trim();
+    const expedido = (d.expedidoEn || municipio || '').toUpperCase();
+    const nombre = (d.nombre || '').toUpperCase();
+    const cedula = (d.cedula || '').toString();
 
-      if (comision) {
-        if (!comisionesMap[comision]) {
-          comisionesMap[comision] = { rows: [], col1Header: cargo ? 'CARGO' : 'COMISIÓN' };
-        }
-        if (!cargo) comisionesMap[comision].col1Header = 'COMISIÓN';
-        comisionesMap[comision].rows.push([cargo || comision, nombre, cedula, expedido]);
-      } else if (cargoLower.includes('fiscal')) {
-        fiscales.push([cargo, nombre, cedula, expedido]);
-      } else if (cargoLower.includes('delegado')) {
-        delegados.push([cargo, nombre, cedula, expedido]);
-      } else {
-        directivos.push([cargo, nombre, cedula, expedido]);
-      }
-    });
+    if (comision) {
+      const categoria = clasificarComision(comision);
+      comisionesAgrupadas[categoria].push([cargo || comision, nombre, cedula, expedido]);
+    } else if (cargoLower.includes('fiscal')) {
+      fiscales.push([cargo, nombre, cedula, expedido]);
+    } else if (cargoLower.includes('delegado')) {
+      delegados.push([cargo, nombre, cedula, expedido]);
+    } else {
+      directivos.push([cargo, nombre, cedula, expedido]);
+    }
+  });
 
-    if (directivos.length > 0) {
-      yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);
-    }
-    if (fiscales.length > 0) {
-      yPos = drawTable('FISCAL', 'CARGO', fiscales, yPos);
-    }
-    Object.entries(comisionesMap).forEach(([comisionName, data]) => {
-      const nameUp = comisionName.toUpperCase();
-      const title = nameUp.startsWith('COMISI') ? nameUp : `COMISIÓN DE ${nameUp}`;
-      yPos = drawTable(title, data.col1Header, data.rows, yPos);
-    });
-    if (delegados.length > 0) {
-      yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegados, yPos);
-    }
-  } else {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.text('[ESPACIO PARA LISTADO DE DIGNATARIOS]', margenIzq + 10, yPos);
-    yPos += 10;
+  directivos.sort((a, b) => a[0] === 'Presidente' ? -1 : b[0] === 'Presidente' ? 1 : 0);
+
+  if (directivos.length > 0) {
+    yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);
   }
+  if (fiscales.length > 0) {
+    yPos = drawTable('FISCAL', 'CARGO', fiscales, yPos);
+  }
+  Object.entries(comisionesAgrupadas).forEach(([titulo, rows]) => {
+    if (rows.length > 0) {
+      yPos = drawTable(titulo, 'CARGO', rows, yPos);
+    }
+  });
+  if (delegados.length > 0) {
+    yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegados, yPos);
+  }
+} else {
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('[ESPACIO PARA LISTADO DE DIGNATARIOS]', margenIzq + 10, yPos);
+  yPos += 10;
+}
 
   yPos += 5;
 
@@ -387,11 +399,14 @@ const generarAutoresolutorio = async (datosCertificado) => {
   centerText(doc, resources.cargoFirmante || 'DIRECTORA DE PARTICIPACION Y ACCION COMUNAL', yPos, 10, 'normal');
   yPos += 12;
 
-  doc.setFont('helvetica', 'normal');
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.text('Proyectó:________________', margenIzq, yPos);
+  doc.text('Elaboró y generó:', margenIzq, yPos);
   yPos += 5;
-  doc.text('Revisó_________________', margenIzq, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Elaboró: ${datosCertificado.elaboradoPor || '________________'}`, margenIzq, yPos);
+  yPos += 5;
+  doc.text(`Generó: ${datosCertificado.generadoPor || '________________'}`, margenIzq, yPos);
   yPos += 8;
 
   doc.setFontSize(10);
