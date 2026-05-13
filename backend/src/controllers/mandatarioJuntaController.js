@@ -71,6 +71,8 @@ export const crearPeriodoYVinculo = async (documento, idJunta, inicio, fin, t) =
 
 
 export const validarCargoUnico = async (cargoID, idJunta) => {
+  if (!cargoID) return null;
+
   const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
 
   const cargo = await Cargo.findByPk(cargoID);

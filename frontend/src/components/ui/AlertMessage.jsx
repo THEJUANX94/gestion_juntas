@@ -72,6 +72,17 @@ export const AlertMessage = {
     });
   },
 
+  warning: (title = "Advertencia", text = "") => {
+    MySwal.fire({
+      ...baseConfig,
+      icon: "warning",
+      title,
+      text,
+      confirmButtonText: "Entendido",
+      showConfirmButton: true,
+    });
+  },
+
   confirm: async (
     title = "¿Estás seguro?",
     text = "Esta acción no se puede deshacer"
