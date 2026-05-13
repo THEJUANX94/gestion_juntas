@@ -123,10 +123,6 @@ export const addPDFHeader = async (doc, datosCertificado) => {
     doc.addImage(resources.base64Logo, "PNG", margenIzq, 10, 34, 20);
   }
 
-  // Texto secretaría debajo del logo, centrado bajo él, tamaño reducido
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-
   // QR a la derecha (omitir en modo preview)
   if (!datosCertificado.preview) {
     try {
