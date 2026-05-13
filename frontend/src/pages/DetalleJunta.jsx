@@ -16,7 +16,7 @@ export default function DetalleJunta() {
   const { user } = useAuth();
 
   const juntaData = location.state?.junta || null;
-  const juntaIdFromRoute = juntaData?.IDJunta || null;
+  const juntaIdFromRoute = juntaData?.IDJunta || id || null;
   const [miembros, setMiembros] = useState([]);
   const [loadingDoc, setLoadingDoc] = useState(null);
 
