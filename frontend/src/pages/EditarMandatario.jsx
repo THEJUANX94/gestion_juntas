@@ -48,15 +48,21 @@ export default function EditarMandatario() {
     const loadData = async () => {
       try {
         // 1. Cargamos las listas maestras y el mandatario
-        const [resLugares, resGrupos, resMand] = await Promise.all([
+        const [resLugares, resGrupos, resMand, resTipoDoc, resCargos, resComisiones] = await Promise.all([
           fetch(import.meta.env.VITE_PATH + "/lugares"),
           fetch(import.meta.env.VITE_PATH + "/grupospoblacionales"),
-          fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`)
+          fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`),
+          fetch(import.meta.env.VITE_PATH + "/tipodocumento"),
+          fetch(import.meta.env.VITE_PATH + "/cargos"),
+          fetch(import.meta.env.VITE_PATH + "/comisiones")
         ]);
 
         const listaLugares = await resLugares.json();
         const listaGruposPob = await resGrupos.json();
         const mand = await resMand.json();
+        setTiposDocumento(await resTipoDoc.json());
+        setCargos(await resCargos.json());
+        setComisiones(await resComisiones.json());
 
         // 2. PETICIÓN CLAVE: Traer la relación de la tabla intermedia
         // Asumiendo que tu endpoint para la intermedia filtra por el documento del mandatario
