@@ -303,6 +303,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
 
   if (datosCertificado.dignatarios && datosCertificado.dignatarios.length > 0) {
   const directivos = [];
+  const fiscales = [];
   const delegados = [];
   const comisionesAgrupadas = {
     'COMISION DE CONVIVENCIA Y CONCILIACION': [],
@@ -323,6 +324,8 @@ const generarAutoresolutorio = async (datosCertificado) => {
       comisionesAgrupadas[categoria].push([cargo || comision, nombre, cedula, expedido]);
     } else if (cargoLower.includes('conciliador')) {
       comisionesAgrupadas['COMISION DE CONVIVENCIA Y CONCILIACION'].push([cargo, nombre, cedula, expedido]);
+    } else if (cargoLower.includes('fiscal')) {
+      fiscales.push([cargo, nombre, cedula, expedido]);
     } else if (cargoLower.includes('delegado')) {
       delegados.push([cargo, nombre, cedula, expedido]);
     } else {
@@ -330,7 +333,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
     }
   });
 
-  const CARGO_ORDER = ['presidente', 'vicepresidente', 'tesorero', 'secretario', 'fiscal'];
+  const CARGO_ORDER = ['presidente', 'vicepresidente', 'tesorero', 'secretario'];
   directivos.sort((a, b) => {
     const ai = CARGO_ORDER.findIndex(o => a[0].toLowerCase().includes(o));
     const bi = CARGO_ORDER.findIndex(o => b[0].toLowerCase().includes(o));
@@ -339,6 +342,9 @@ const generarAutoresolutorio = async (datosCertificado) => {
 
   if (directivos.length > 0) {
     yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);
+  }
+  if (fiscales.length > 0) {
+    yPos = drawTable('FISCAL', 'CARGO', fiscales, yPos);
   }
   Object.entries(comisionesAgrupadas).forEach(([titulo, rows]) => {
     if (rows.length > 0) {
