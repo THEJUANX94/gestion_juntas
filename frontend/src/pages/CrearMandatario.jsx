@@ -180,7 +180,6 @@ export default function AgregarMandatario() {
 
       AlertMessage.info("Mandatario creado correctamente");
       navigate(`/juntas/detalle-junta/${id}`);
-      console.log("Respuesta:", data);
 
     } catch (error) {
       console.error(error);

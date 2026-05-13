@@ -40,7 +40,7 @@ export default function BuscarMandatario() {
   };
 
   const handleCrearNuevo = () => {
-    window.location.href = `/juntas/${idJunta}/mandatario/crear`;
+    navigate(`/juntas/${idJunta}/mandatario/crear`);
   };
 
 const handleAgregarAJunta = (user) => {

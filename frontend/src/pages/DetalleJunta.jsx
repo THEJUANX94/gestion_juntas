@@ -93,7 +93,6 @@ export default function DetalleJunta() {
   const [alertaRolesCerrada, setAlertaRolesCerrada] = useState(false);
 
   useEffect(() => {
-    console.log("Cargos recibidos:", miembros.map(m => m.cargo));
     const cargosActivos = miembros.map(m => m.cargo?.trim());
     const ausentes = ROLES_REQUERIDOS.filter(rol => !cargosActivos.includes(rol));
     setRolesAusentes(ausentes);
@@ -255,7 +254,7 @@ export default function DetalleJunta() {
       "Esta acción no se puede deshacer. ¿Deseas continuar?"
     );
 
-    if (!confirm) return;
+    if (!result) return;
 
     try {
       const resp = await fetch(import.meta.env.VITE_PATH + `/mandatario/${idMandatario}`, {
@@ -329,11 +328,11 @@ export default function DetalleJunta() {
         copiarDignatarios: formData.copiarDignatarios
       });
 
-      alert(`Éxito: ${resultado.message}`);
+      AlertMessage.success("Nuevo periodo creado correctamente");
       setIsModalOpen(false);
-      window.location.reload();
+      navigate(0);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      AlertMessage.error(error.message || "Error al crear el nuevo periodo");
     } finally {
       setLoading(false);
     }

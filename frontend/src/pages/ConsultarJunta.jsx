@@ -83,7 +83,6 @@ export default function ConsultarJunta() {
             );
 
             const data = await resp.json();
-            console.log(data);
 
             if (!resp.ok) {
                 return AlertMessage.error("Error", data.message);

@@ -186,8 +186,6 @@ export const crearMandatario = async (req, res) => {
         }));
 
         await PoblacionesPorPersona.bulkCreate(nuevasAsociaciones, { transaction: t });
-
-        console.log(`Asociados ${nuevasAsociaciones.length} grupos al documento ${documento}`);
       } catch (errorPoblacion) {
         console.error("Error al guardar grupos poblacionales:", errorPoblacion);
       }
@@ -243,8 +241,6 @@ export const getMiembrosJunta = async (req, res) => {
   const { id } = req.params;
 
   try {
-    console.log("Buscando miembros para junta:", id);
-
     // ============================================
     // 1. Obtener información de la junta (sin Periodo)
     // ============================================
@@ -306,8 +302,6 @@ export const getMiembrosJunta = async (req, res) => {
         }
       ]
     });
-
-    console.log("Miembros encontrados:", miembros.length);
 
     // ============================================
     // 3. Formatear respuesta
