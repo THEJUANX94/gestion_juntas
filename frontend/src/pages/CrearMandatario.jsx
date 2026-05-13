@@ -68,7 +68,13 @@ export default function AgregarMandatario() {
       setComisiones(await resComisiones.json());
       setLugares(await resLugares.json());
       setListaGrupos(await resGrupos.json());
-      setJunta(await resJunta.json());
+      const juntaData = await resJunta.json();
+      setJunta(juntaData);
+      setFormData(prev => ({
+        ...prev,
+        fInicioPeriodo: juntaData.FechaInicioPeriodo ? juntaData.FechaInicioPeriodo.split('T')[0] : "",
+        fFinPeriodo: juntaData.FechaFinPeriodo ? juntaData.FechaFinPeriodo.split('T')[0] : "",
+      }));
     };
 
     cargarDatos();
