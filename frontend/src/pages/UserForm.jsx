@@ -40,21 +40,21 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
     if (initialData) {
       setForm(prev => ({
         ...prev,
-        NombreTipoDocumento: initialData.NombreTipoDocumento || "",
+        NombreTipoDocumento: initialData.TipoDocumento?.NombreTipo || "",
         NumeroIdentificacion: initialData.NumeroIdentificacion || "",
         PrimerApellido: initialData.PrimerApellido || "",
         SegundoApellido: initialData.SegundoApellido || "",
         PrimerNombre: initialData.PrimerNombre || "",
         SegundoNombre: initialData.SegundoNombre || "",
-        Sexo: initialData.Sexo || initialData.sexo || "",              
-        TipoSangre: initialData.tipodesangre || "",    
+        Sexo: initialData.Sexo || "",
+        TipoSangre: initialData.TipoSangre || "",
         FechaNacimiento: initialData.FechaNacimiento || "",
-        NombreRol: initialData.nombrerol || "",      
+        NombreRol: initialData.RolInfo?.NombreRol || "",
         Correo: initialData.Correo || "",
         Celular: initialData.Celular || "",
         Firma: initialData.Firma || null,
-        Usuario: initialData.Usuario || null,
-        Contrasena: initialData.Contrasena || null,
+        Usuario: initialData.Credenciale?.Login || initialData.Credencial?.Login || "",
+        Contrasena: null,
       }));
 
       if (initialData.Firma) {
@@ -232,7 +232,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
       return false;
     }
 
-    if (["Administrador", "Consulta", "Auxiliar", "Descarga"].includes(form.NombreRol) && (!form.Usuario || !form.Contrasena)) {
+    if (mode === "create" && ["Administrador", "Consulta", "Auxiliar", "Descarga", "GeneracionAuto"].includes(form.NombreRol) && (!form.Usuario || !form.Contrasena)) {
       return false;
     }
 
@@ -292,7 +292,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
 
       await onSubmit(formData);
 
-      if (["Administrador", "Consulta", "Auxiliar", "Descarga"].includes(form.NombreRol)) {
+      if (["Administrador", "Consulta", "Auxiliar", "Descarga", "GeneracionAuto"].includes(form.NombreRol)) {
         const credencialesData = {
           Usuario: form.Usuario,
           Contrasena: form.Contrasena,
@@ -466,6 +466,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
                 { value: "Mandatario", label: "Mandatario" },
                 { value: "Descarga", label: "Descarga" },
                 { value: "Consulta", label: "Consulta" },
+                { value: "Generación Auto", label: "Generación Auto" },
               ]}
             />
 
@@ -499,7 +500,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
                 )}
               </div>
             )}
-            {["Administrador", "Consulta", "Auxiliar", "Descarga"].includes(form.NombreRol) && (
+            {["Administrador", "Auxiliar", "Descarga", "Consulta", "Generación Auto"].includes(form.NombreRol) && (
               <div>
                 <label className="text-sm font-medium block mb-1">
                   Usuario <span className="text-red-500">*</span>
@@ -514,10 +515,10 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
 
                   <input
                     type="password"
-                    value={form.Contrasena}
+                    value={form.Contrasena || ""}
                     onChange={(e) => handleChange("Contrasena", e.target.value)}
                     className="border rounded p-2 w-full"
-                    placeholder="Ingrese la contraseña"
+                    placeholder={mode === "edit" ? "Dejar vacío para conservar contraseña" : "Ingrese la contraseña"}
                   />
 
                 {errors.Contrasena && (

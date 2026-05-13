@@ -40,8 +40,8 @@ router.get("/mandatarios", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXIL
 router.get("/verificar/:NumeroIdentificacion", verificarIdentificacion);
 router.get("/verificar-correo/:correo", verificarCorreo);
 router.get("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerUsuarioPorId);
-router.put("/:IDUsuario", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarUsuario);
-router.delete("/:IDUsuario", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarUsuario);
+router.put("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarUsuario);
+router.delete("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarUsuario);
 router.patch("/:idUsuario/firma/estado", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarEstadoFirma);
 
 export default router;

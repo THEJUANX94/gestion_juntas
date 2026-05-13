@@ -7,7 +7,7 @@ export const Credenciales = sequelize.define("Credenciales", {
     field: "login"
   },
   numeroIdentificacion: {
-    type: DataTypes.UUID,
+    type: DataTypes.STRING,
     allowNull: false,
     references: {
       model: "usuarios",

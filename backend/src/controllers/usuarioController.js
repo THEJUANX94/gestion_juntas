@@ -230,7 +230,12 @@ export const obtenerUsuarios = async (req, res) => {
   try {
     const usuarios = await Usuario.findAll({
       include: [
-        { model: Rol, as: "RolInfo", attributes: ["NombreRol"] },
+        {
+          model: Rol,
+          as: "RolInfo",
+          attributes: ["NombreRol"],
+          where: { NombreRol: ["Administrador", "Auxiliar", "Generación Auto"] },
+        },
         { model: Firma, attributes: ["Ubicacion", "FechaCreacion"] },
       ],
     });
@@ -362,6 +367,8 @@ export const obtenerUsuarioPorId = async (req, res) => {
       include: [
         { model: Rol, as: "RolInfo", attributes: ["NombreRol"] },
         { model: Firma, attributes: ["Ubicacion", "FechaCreacion"] },
+        { model: TipoDocumento, attributes: ["NombreTipo"] },
+        { model: Credenciales, attributes: ["Login"] },
       ],
     });
 
@@ -429,7 +436,6 @@ export const actualizarUsuario = async (req, res) => {
       if (Contraseña) {
         const saltRounds = 10;
         datosCredenciales.Contraseña = await bcrypt.hash(Contraseña, saltRounds);
-        datosCredenciales.Contraseña = Contraseña;
       }
 
       const credenciales = await Credenciales.findOne({ where: { numeroIdentificacion: NumeroIdentificacion } });
@@ -519,6 +525,8 @@ export const eliminarUsuario = async (req, res) => {
     }
 
     const usuarioInfo = usuario.toJSON();
+
+    await Credenciales.destroy({ where: { numeroIdentificacion: NumeroIdentificacion } });
 
     const firmas = await Firma.findAll({ where: { NumeroIdentificacion } });
     let firmasEliminadas = 0;
