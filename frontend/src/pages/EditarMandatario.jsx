@@ -74,8 +74,13 @@ export default function EditarMandatario() {
         const idsSeleccionados = dataIntermedia.map(item => item.IDGrupoPoblacional);
 
         // 4. Lógica de lugar (Municipio/Departamento)
+        // El municipio puede tener como padre una Provincia o directamente un Departamento
         const municipioInfo = listaLugares.find(l => l.IDLugar === mand.expedido);
-        const deptoId = municipioInfo ? municipioInfo.IDOtroLugar : "";
+        let deptoId = "";
+        if (municipioInfo) {
+          const padre = listaLugares.find(l => l.IDLugar === municipioInfo.IDOtroLugar);
+          deptoId = padre?.TipoLugar === 'Provincia' ? padre.IDOtroLugar : municipioInfo.IDOtroLugar;
+        }
 
         // 5. Actualizar estados
         setLugares(listaLugares);
