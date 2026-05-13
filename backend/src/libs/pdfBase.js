@@ -120,7 +120,7 @@ export const addPDFHeader = async (doc, datosCertificado) => {
 
   // Logo (1200x700 px → ratio 1.714, renderizar 34x20mm para no deformar)
   if (resources.base64Logo) {
-    doc.addImage(resources.base64Logo, "PNG", margenIzq, 10, 34, 20);
+    doc.addImage(resources.base64Logo, "PNG", margenIzq, 10, 40, 20);
   }
 
   // Texto secretaría debajo del logo, centrado bajo él, tamaño reducido
