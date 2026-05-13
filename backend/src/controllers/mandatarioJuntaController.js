@@ -446,7 +446,6 @@ export const agregarMandatarioExistente = async (req, res) => {
     // ==============================
     if (!IDUsuario) return res.status(400).json({ message: "Falta el IDUsuario" });
     if (!Residencia) return res.status(400).json({ message: "Falta la Residencia" });
-    if (!Profesion) return res.status(400).json({ message: "Falta la profesión" });
     if (!fInicioPeriodo || !fFinPeriodo) {
       return res.status(400).json({
         message: "Debe ingresar Inicio y Fin del periodo."
@@ -488,7 +487,7 @@ export const agregarMandatarioExistente = async (req, res) => {
       NumeroIdentificacion: IDUsuario,
       IDJunta: idJunta,
       Residencia,
-      Profesion,
+      Profesion: ultimoMandato?.Profesion || Profesion || null,
       Expedido: ultimoMandato?.Expedido || null,
       IDCargo: IDCargo || null,
       IDComision: IDComision || null
