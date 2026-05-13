@@ -157,6 +157,100 @@ export const crearCertificado = async (req, res) => {
   }
 };
 
+export const previewCertificado = async (req, res) => {
+  try {
+    const { IDJunta } = req.body;
+
+    if (!IDJunta) {
+      return res.status(400).json({ error: 'Faltan parámetros: IDJunta es requerido' });
+    }
+
+    const junta = await Junta.findByPk(IDJunta);
+    if (!junta) {
+      return res.status(404).json({ error: 'No se encontró la junta proporcionada.' });
+    }
+
+    let nombreMunicipio = null;
+    try {
+      const lugar = await Lugar.findByPk(junta.IDMunicipio);
+      if (lugar && lugar.NombreLugar) nombreMunicipio = lugar.NombreLugar;
+    } catch (e) {
+      console.warn('No se pudo obtener el municipio:', e.message);
+    }
+
+    const mandatariosJunta = await MandatarioJunta.findAll({ where: { IDJunta: IDJunta } });
+    const dignatarios = [];
+
+    for (const m of mandatariosJunta) {
+      try {
+        const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
+        const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
+
+        let nombreComision = null;
+        if (m.IDComision) {
+          const com = await Comisiones.findByPk(m.IDComision);
+          if (com) nombreComision = com.Nombre;
+        }
+
+        let expedidoEn = null;
+        if (m.Expedido) {
+          const lugarExp = await Lugar.findByPk(m.Expedido);
+          if (lugarExp) expedidoEn = lugarExp.NombreLugar;
+        }
+
+        const nombre = u ? `${u.PrimerNombre || ''} ${u.SegundoNombre || ''} ${u.PrimerApellido || ''} ${u.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim() : null;
+
+        dignatarios.push({
+          cargo: c ? c.NombreCargo : null,
+          comision: nombreComision || null,
+          nombre: nombre || null,
+          cedula: m.NumeroIdentificacion,
+          expedidoEn: expedidoEn || null
+        });
+      } catch (e) {
+        console.warn('Error al obtener dignatario:', e.message);
+      }
+    }
+
+    let tipoNombre = null;
+    try {
+      if (junta.TipoJunta) {
+        const tipo = await TipoJunta.findByPk(junta.TipoJunta);
+        if (tipo && tipo.NombreTipoJunta) tipoNombre = tipo.NombreTipoJunta;
+      }
+    } catch (e) {
+      console.warn('Error al resolver TipoJunta:', e.message);
+    }
+
+    const ahora = new Date();
+    const datosCertificado = {
+      preview: true,
+      FechaCreacion: ahora,
+      IDCertificado: null,
+      NombreMunicipio: nombreMunicipio || null,
+      nombreOrganizacion: junta.RazonSocial || null,
+      personeriaNumero: junta.NumPersoneriaJuridica || null,
+      personeriaFecha: junta.FechaAsamblea || null,
+      periodoInicio: junta.FechaInicioPeriodo || null,
+      periodoFin: junta.FechaFinPeriodo || null,
+      dignatarios: dignatarios.length > 0 ? dignatarios : null,
+      TipoCertificado: tipoNombre || null,
+      fechaEleccion: junta.FechaAsamblea || null,
+      elaboradoPor: junta.UltimoEditor || null,
+      generadoPor: req.usuario?.nombre || null
+    };
+
+    const pdfBuffer = await generatePdf('autoresolutorio', datosCertificado);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename=preview_autoresolutorio.pdf');
+    res.send(Buffer.from(pdfBuffer));
+  } catch (err) {
+    console.error("Error al generar preview:", err);
+    res.status(500).json({ error: "Error al generar la vista previa.", detalle: err.message });
+  }
+};
+
 export const validarCertificado = async (req, res) => {
   try {
     const { IDCertificado } = req.params;

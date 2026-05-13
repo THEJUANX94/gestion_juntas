@@ -189,16 +189,19 @@ export default function DetalleJunta() {
       return;
     }
 
+    const isPreview = tipo === 'consulta';
     setLoadingDoc(tipo);
-    AlertMessage.toast('Generando documento', 'El documento se descargará en un momento...');
+    AlertMessage.toast(
+      isPreview ? 'Generando vista previa' : 'Generando documento',
+      isPreview ? 'El documento se abrirá en una nueva pestaña...' : 'El documento se descargará en un momento...'
+    );
 
     const API_BASE = import.meta.env.VITE_PATH || '';
-    const endpoint = `${API_BASE}/certificados`;
+    const endpoint = isPreview
+      ? `${API_BASE}/certificados/preview`
+      : `${API_BASE}/certificados`;
 
-    const payload = {
-      IDJunta,
-      tipo
-    };
+    const payload = isPreview ? { IDJunta } : { IDJunta, tipo };
 
     try {
       const res = await fetch(endpoint, {
@@ -219,14 +222,19 @@ export default function DetalleJunta() {
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a');
-      const filename = `certificado_junta_${IDJunta}_${tipo}.pdf`;
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
+
+      if (isPreview) {
+        window.open(url, '_blank');
+      } else {
+        const link = document.createElement('a');
+        const filename = `certificado_junta_${IDJunta}_${tipo}.pdf`;
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
     } catch (e) {
       console.error('Excepción al generar PDF para junta:', e);
       AlertMessage.error('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
