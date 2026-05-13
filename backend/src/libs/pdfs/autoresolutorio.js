@@ -139,8 +139,9 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const resources = await addPDFHeader(doc, datosCertificado);
 
   let yPos = 38;
-  const autoText = `AUTO No. ${datosCertificado.IDCertificado || '____'} DE ${formatDateSlash(datosCertificado.FechaCreacion)}`;
-  centerText(doc, autoText, yPos, 10, 'bold');
+  centerText(doc, `AUTO No. ${datosCertificado.IDCertificado || '____'}`, yPos, 10, 'bold');
+  yPos += 6;
+  centerText(doc, `(${formatDateSlash(datosCertificado.FechaCreacion)})`, yPos, 10, 'bold');
   yPos += 8;
   let result;
 
