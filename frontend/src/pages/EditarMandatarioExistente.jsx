@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { User, MapPin, Briefcase, Building2, Calendar } from "lucide-react";
+import { User, MapPin, Building2, Calendar } from "lucide-react";
 import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function EditarMandatarioExistente() {
@@ -8,120 +8,74 @@ export default function EditarMandatarioExistente() {
     const navigate = useNavigate();
 
     const [usuario, setUsuario] = useState(null);
-    const [municipios, setMunicipios] = useState([]);
     const [cargos, setCargos] = useState([]);
     const [comisiones, setComisiones] = useState([]);
     const [miembros, setMiembros] = useState([]);
+    const [modo, setModo] = useState("cargo");
+    const [loading, setLoading] = useState(true);
 
     const [form, setForm] = useState({
         Residencia: "",
-        Profesion: "",
         IDCargo: "",
         IDComision: "",
         fInicioPeriodo: "",
         fFinPeriodo: "",
     });
-    
+
     const CARGOS_UNICOS = ["Presidente", "Vicepresidente", "Tesorero", "Fiscal", "Secretario (a)"];
-    const [loading, setLoading] = useState(true);
     const cargosOcupados = miembros
         .filter(m => CARGOS_UNICOS.includes(m.cargo))
-        .map(m => m.cargo)
+        .map(m => m.cargo);
 
-    // ===============================
-    // Cargar datos iniciales
-    // ===============================
     useEffect(() => {
         const cargarTodo = async () => {
             try {
                 const auth = JSON.parse(localStorage.getItem("auth"));
                 const token = auth?.token;
+                const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
 
-                // 1. Cargar usuario
-                const resUsuario = await fetch(import.meta.env.VITE_PATH + `/usuarios/${idUsuario}`, {
-                    method: "GET",
-                    credentials: "include",
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                });
+                const [resUsuario, resCargos, resCom, resMiembros, resJunta] = await Promise.all([
+                    fetch(import.meta.env.VITE_PATH + `/usuarios/${idUsuario}`, { method: "GET", credentials: "include", headers }),
+                    fetch(import.meta.env.VITE_PATH + "/cargos"),
+                    fetch(import.meta.env.VITE_PATH + "/comisiones"),
+                    fetch(import.meta.env.VITE_PATH + `/mandatario/${idJunta}/miembros`),
+                    fetch(import.meta.env.VITE_PATH + `/juntas/${idJunta}`),
+                ]);
 
                 if (resUsuario.ok) {
-                    const dataUsu = await resUsuario.json();
-                    setUsuario(dataUsu);
+                    setUsuario(await resUsuario.json());
                 }
 
-                // 2. Cargar municipios
-                const resMunicipios = await fetch(import.meta.env.VITE_PATH + "/lugares", {
-                    credentials: "include",
-                    headers: { "Authorization": `Bearer ${token}` }
-                });
-
-                const dataMunicipios = await resMunicipios.json();
-                const soloMunicipios = dataMunicipios.filter(
-                    (l) => l.TipoLugar?.toLowerCase().trim() === "municipio"
-                );
-                setMunicipios(soloMunicipios);
-
-                // 3. Cargar cargos
-                const resCargos = await fetch(import.meta.env.VITE_PATH + "/cargos");
-                const dataCargos = await resCargos.json();
-                setCargos(dataCargos);
-
-                // 4. Cargar comisiones
-                const resCom = await fetch(import.meta.env.VITE_PATH + "/comisiones");
-                const dataCom = await resCom.json();
-                setComisiones(dataCom);
-
-                setLoading(false);
-
-                const resMiembros = await fetch(import.meta.env.VITE_PATH + `/mandatario/${idJunta}/miembros`);
-
+                setCargos(await resCargos.json());
+                setComisiones(await resCom.json());
                 setMiembros(await resMiembros.json());
+
+                const juntaData = await resJunta.json();
+                setForm(prev => ({
+                    ...prev,
+                    fInicioPeriodo: juntaData.FechaInicioPeriodo ? juntaData.FechaInicioPeriodo.split('T')[0] : "",
+                    fFinPeriodo: juntaData.FechaFinPeriodo ? juntaData.FechaFinPeriodo.split('T')[0] : "",
+                }));
             } catch (error) {
                 console.error("Error cargando datos:", error);
+            } finally {
                 setLoading(false);
             }
         };
 
         cargarTodo();
-    }, [idUsuario]);
+    }, [idUsuario, idJunta]);
 
-    // ===============================
-    // Manejo de cambios
-    // ===============================
     const handleChange = (e) => {
         const { name, value } = e.target;
-
-        if (name === "IDCargo") {
-            setForm((prev) => ({
-                ...prev,
-                IDCargo: value,
-                IDComision: value ? "" : prev.IDComision,
-            }));
-            return;
-        }
-
-        if (name === "IDComision") {
-            setForm((prev) => ({
-                ...prev,
-                IDComision: value,
-                IDCargo: value ? "" : prev.IDCargo,
-            }));
-            return;
-        }
-
-        setForm({
-            ...form,
-            [name]: value,
-        });
+        setForm(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleCambiarModo = (nuevoModo) => {
+        setModo(nuevoModo);
+        setForm(prev => ({ ...prev, IDCargo: "", IDComision: "" }));
+    };
 
-    // ===============================
-    // Enviar formulario
-    // ===============================
     const handleSubmit = async () => {
         try {
             const res = await fetch(
@@ -132,6 +86,7 @@ export default function EditarMandatarioExistente() {
                     body: JSON.stringify({
                         IDUsuario: idUsuario,
                         ...form,
+                        Profesion: usuario?.Profesion || "",
                     }),
                 }
             );
@@ -151,9 +106,6 @@ export default function EditarMandatarioExistente() {
         }
     };
 
-    // ===============================
-    // Loading
-    // ===============================
     if (loading) {
         return (
             <div className="p-10 text-center">
@@ -182,93 +134,88 @@ export default function EditarMandatarioExistente() {
                     </div>
                 </div>
 
-                {/* Formulario */}
                 <div className="space-y-6">
 
-                    {/* Residencia */}
+                    {/* Residencia — texto libre */}
                     <div>
                         <label className="font-semibold text-gray-700 flex items-center gap-2 mb-1">
                             <MapPin size={18} />
                             Residencia
                         </label>
-                        <select
-                            name="Residencia"
-                            value={form.Residencia}
-                            onChange={handleChange}
-                            className="w-full border rounded-lg p-3"
-                        >
-                            <option value="">Seleccione municipio</option>
-                            {municipios.map((m) => (
-                                <option key={m.IDLugar} value={m.IDLugar}>
-                                    {m.NombreLugar}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Profesión */}
-                    <div>
-                        <label className="font-semibold text-gray-700 flex items-center gap-2 mb-1">
-                            <Briefcase size={18} />
-                            Profesión
-                        </label>
                         <input
                             type="text"
-                            name="Profesion"
-                            placeholder="Ej: Ingeniero, Abogado, Agricultor"
-                            value={form.Profesion}
+                            name="Residencia"
+                            placeholder="Ej: Tunja, Boyacá"
+                            value={form.Residencia}
                             onChange={handleChange}
-                            className="w-full border rounded-lg p-3"
+                            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#009E76] outline-none"
                         />
                     </div>
 
-                    {/* Cargo */}
+                    {/* Switch Cargo / Comisión */}
                     <div>
-                        <label className="font-semibold text-gray-700 flex items-center gap-2 mb-1">
+                        <label className="font-semibold text-gray-700 flex items-center gap-2 mb-3">
                             <Building2 size={18} />
-                            Cargo
+                            Asignar como:
                         </label>
-                        <select
-                            name="IDCargo"
-                            value={form.IDCargo}
-                            onChange={handleChange}
-                            disabled={!!form.IDComision}
-                            className="w-full border rounded-lg p-3"
-                            options={cargos.map(c => ({
-                                value: c.IDCargo,
-                                label: c.NombreCargo + (cargosOcupados.includes(c.IDCargo) ? " (Ocupado)" : ""),
-                                disabled: cargosOcupados.includes(c.IDCargo)
-                            }))}
-                        >
-                            <option value="">Seleccione un cargo</option>
-                            {cargos.map((c) => (
-                                <option key={c.IDCargo} value={c.IDCargo}>
-                                    {c.NombreCargo}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                        <div className="flex gap-3 mb-4">
+                            <button
+                                type="button"
+                                onClick={() => handleCambiarModo("cargo")}
+                                className={`px-4 py-1.5 rounded-lg border font-medium transition-all ${
+                                    modo === "cargo"
+                                        ? "bg-[#009E76] text-white border-[#009E76]"
+                                        : "bg-white text-gray-700 border-gray-300 hover:border-[#009E76]"
+                                }`}
+                            >
+                                Cargo
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleCambiarModo("comision")}
+                                className={`px-4 py-1.5 rounded-lg border font-medium transition-all ${
+                                    modo === "comision"
+                                        ? "bg-[#009E76] text-white border-[#009E76]"
+                                        : "bg-white text-gray-700 border-gray-300 hover:border-[#009E76]"
+                                }`}
+                            >
+                                Comisión
+                            </button>
+                        </div>
 
-                    {/* Comisión */}
-                    <div>
-                        <label className="font-semibold text-gray-700 flex items-center gap-2 mb-1">
-                            <Building2 size={18} />
-                            Comisión
-                        </label>
-                        <select
-                            name="IDComision"
-                            value={form.IDComision}
-                            onChange={handleChange}
-                            disabled={!!form.IDCargo}
-                            className="w-full border rounded-lg p-3"
-                        >
-                            <option value="">Seleccione comisión</option>
-                            {comisiones.map((c) => (
-                                <option key={c.IDComision} value={c.IDComision}>
-                                    {c.Nombre}
-                                </option>
-                            ))}
-                        </select>
+                        {modo === "cargo" ? (
+                            <select
+                                name="IDCargo"
+                                value={form.IDCargo}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#009E76] outline-none"
+                            >
+                                <option value="">Seleccione un cargo</option>
+                                {cargos.map((c) => (
+                                    <option
+                                        key={c.IDCargo}
+                                        value={c.IDCargo}
+                                        disabled={cargosOcupados.includes(c.NombreCargo)}
+                                    >
+                                        {c.NombreCargo}{cargosOcupados.includes(c.NombreCargo) ? " (Ocupado)" : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <select
+                                name="IDComision"
+                                value={form.IDComision}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#009E76] outline-none"
+                            >
+                                <option value="">Seleccione una comisión</option>
+                                {comisiones.map((c) => (
+                                    <option key={c.IDComision} value={c.IDComision}>
+                                        {c.Nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
 
                     {/* Inicio del periodo */}
@@ -282,7 +229,7 @@ export default function EditarMandatarioExistente() {
                             name="fInicioPeriodo"
                             value={form.fInicioPeriodo}
                             onChange={handleChange}
-                            className="w-full border rounded-lg p-3"
+                            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#009E76] outline-none"
                         />
                     </div>
 
@@ -297,7 +244,7 @@ export default function EditarMandatarioExistente() {
                             name="fFinPeriodo"
                             value={form.fFinPeriodo}
                             onChange={handleChange}
-                            className="w-full border rounded-lg p-3"
+                            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#009E76] outline-none"
                         />
                     </div>
                 </div>
