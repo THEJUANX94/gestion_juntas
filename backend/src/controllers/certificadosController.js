@@ -453,7 +453,7 @@ export const reporteAutoresolutorios = async (req, res) => {
       SELECT l.nombrelugar AS municipio, COUNT(c.idcertificado)::int AS total
       FROM certificados c
       JOIN juntas j ON c.idjunta = j.idjunta
-      JOIN lugares l ON j.idmunicipio = l.idlugar
+      JOIN lugar l ON j.idmunicipio = l.idlugar
       GROUP BY l.nombrelugar
       ORDER BY total DESC
     `);
