@@ -384,7 +384,8 @@ export const enviarAutoresolutorio = async (req, res) => {
       periodoFin: junta.FechaFinPeriodo,
       dignatarios: dignatarios.length > 0 ? dignatarios : null,
       TipoCertificado: tipoNombre,
-      fechaEleccion: junta.FechaAsamblea
+      fechaEleccion: junta.FechaAsamblea,
+      generadoPor: 'Solicitud externa'
     };
 
     const pdfRaw = await generatePdf('autoresolutorio', datosCertificado);

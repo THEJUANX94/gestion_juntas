@@ -40,7 +40,12 @@ const formatDateLong = (date) => {
   return `${zdt.day} de ${mes.charAt(0).toUpperCase() + mes.slice(1)} de ${zdt.year}`;
 };
 
-const CARGO_ORDER = ['presidente', 'presidenta', 'vicepresidente', 'vicepresidenta', 'tesorero', 'tesorera', 'secretario', 'secretaria'];
+const CARGO_BASES = ['presidente', 'vicepresidente', 'tesorero', 'secretario'];
+
+const getCargoIndex = (cargo) => {
+  const lower = (cargo || '').toLowerCase().trim();
+  return CARGO_BASES.findIndex(base => lower.includes(base));
+};
 
 const generarCertificadoDirectivos = async (datosCertificado) => {
   const doc = createDoc();
@@ -101,12 +106,8 @@ const generarCertificadoDirectivos = async (datosCertificado) => {
 
   // ── TABLA DE DIGNATARIOS (presidente, vicepresidente, tesorero, secretario) ──
   const dignatariosTabla = (datosCertificado.dignatarios || [])
-    .filter(d => CARGO_ORDER.includes((d.cargo || '').toLowerCase().trim()))
-    .sort((a, b) => {
-      const ai = CARGO_ORDER.indexOf((a.cargo || '').toLowerCase().trim());
-      const bi = CARGO_ORDER.indexOf((b.cargo || '').toLowerCase().trim());
-      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-    });
+    .filter(d => getCargoIndex(d.cargo) !== -1)
+    .sort((a, b) => getCargoIndex(a.cargo) - getCargoIndex(b.cargo));
 
   if (dignatariosTabla.length > 0) {
     const colWidths = [35, 65, 25, 35];
