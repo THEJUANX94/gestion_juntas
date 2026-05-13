@@ -44,6 +44,19 @@ const getLugarTipo = (lugar) => lugar?.TipoLugar ?? lugar?.tipolugar ?? "";
  * Traduce las claves internas del frontend a los nombres de ruta del backend.
  * Esto evita acoplar la UI al naming de la API y centraliza el mapeo.
  */
+const AGE_RANGES = ["14-17", "18-25", "26-35", "36-45", "46-60", "60+"];
+
+const normalizeAgesData = (data) => {
+  if (!data) return null;
+  const seriesMap = Object.fromEntries(
+    (data.labels || []).map((label, i) => [label, data.series?.[i] ?? 0])
+  );
+  return {
+    labels: AGE_RANGES,
+    series: AGE_RANGES.map((r) => seriesMap[r] ?? 0),
+  };
+};
+
 const routeMap = {
   ages: "edades",
   commissions: "comisiones",
@@ -280,7 +293,7 @@ export default function InformesJuntas() {
         if (!res.ok) throw new Error(`Error ${res.status}`);
         const data = await res.json();
 
-        if (selectedReport === "ages") setAgesData(data);
+        if (selectedReport === "ages") setAgesData(normalizeAgesData(data));
         if (selectedReport === "commissions") setCommissionsData(data);
         if (selectedReport === "positions") setPositionsData(data);
         if (selectedReport === "gender") setGenderData(data);
