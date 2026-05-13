@@ -3,7 +3,7 @@ import {
   FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail,
   MapPin, Search, Filter, X, Trash2, CalendarPlus, AlertCircle, Check, ShieldAlert
 } from "lucide-react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import { crearNuevoPeriodoJunta } from '../services/juntasServices';
 import { useAuth } from '../context/AuthContext';
@@ -12,15 +12,19 @@ import { ROLES } from '../config/roles';
 export default function DetalleJunta() {
 
   const navigate = useNavigate();
-  const location = useLocation();
+  const { id } = useParams();
   const { user } = useAuth();
 
-  const juntaData = location.state?.junta || null;
-  const juntaIdFromRoute = juntaData?.IDJunta || id || null;
+  const [junta, setJunta] = useState(null);
   const [miembros, setMiembros] = useState([]);
   const [loadingDoc, setLoadingDoc] = useState(null);
 
-  const { id } = useParams();
+  useEffect(() => {
+    fetch(import.meta.env.VITE_PATH + `/juntas/${id}`)
+      .then(r => r.json())
+      .then(setJunta)
+      .catch(console.error);
+  }, [id]);
 
   useEffect(() => {
     const cargarMiembros = async () => {
@@ -320,7 +324,7 @@ export default function DetalleJunta() {
     setLoading(true);
     try {
       // Llamada al backend
-      const resultado = await crearNuevoPeriodoJunta(juntaIdFromRoute, {
+      const resultado = await crearNuevoPeriodoJunta(id, {
         ...formData,
         copiarDignatarios: formData.copiarDignatarios
       });
@@ -354,7 +358,7 @@ export default function DetalleJunta() {
               }
 
               const tipo = accion.action || 'autoresolutorio';
-              return generatePdfForJunta(juntaIdFromRoute, tipo);
+              return generatePdfForJunta(id, tipo);
             };
 
             const isGenerating = accion.action && loadingDoc === accion.action;
