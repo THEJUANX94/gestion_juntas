@@ -129,14 +129,16 @@ export const addPDFHeader = async (doc, datosCertificado) => {
   doc.text("Secretaría de Gobierno y", margenIzq + 38, 18);
   doc.text("Acción Comunal", margenIzq + 38, 23);
 
-  // QR a la derecha
-  try {
-    const qr = await makeQR(datosCertificado);
-    if (qr) {
-      doc.addImage(qr, "PNG", 170, 10, 25, 25);
+  // QR a la derecha (omitir en modo preview)
+  if (!datosCertificado.preview) {
+    try {
+      const qr = await makeQR(datosCertificado);
+      if (qr) {
+        doc.addImage(qr, "PNG", 170, 10, 25, 25);
+      }
+    } catch (e) {
+      console.warn('Error al agregar QR al header:', e.message);
     }
-  } catch (e) {
-    console.warn('Error al agregar QR al header:', e.message);
   }
 
   return resources; // Retorna recursos para reutilizarlos (especialmente firma)
