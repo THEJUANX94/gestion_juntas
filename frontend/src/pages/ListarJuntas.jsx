@@ -24,7 +24,7 @@ export default function ListarJuntas() {
         zona: "",
     });
 
-    const puedeVerInformes = user && PERMISOS.PUEDE_VER_INFORMES.includes(user.rol);
+    const puedeVerInformes = user && PERMISOS.PUEDE_VER_INFORMES.includes(user.IDRol);
 
     /* =========================
        CARGAR JUNTAS
