@@ -527,7 +527,7 @@ export const obtenerMandatario = async (req, res) => {
     const { idMandatario } = req.params;
 
     // 1. Buscar el mandatario por su PK
-    const mandatario = await MandatarioJunta.findByPk(idMandatario,
+    const mandatario = await MandatarioJunta.findByPk(idMandatario, {
       include: [
         {
           model: Usuario,
