@@ -635,7 +635,7 @@ export const actualizarMandatario = async (req, res) => {
       });
     }
 
-    if (!email || !email.includes("@")) {
+    if (email && !email.includes("@")) {
       return res.status(400).json({ message: "Email inválido" });
     }
 
