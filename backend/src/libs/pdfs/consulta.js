@@ -110,8 +110,8 @@ const generarConsulta = async (datosCertificado) => {
     const delegados = [];
     const comisionesAgrupadas = {
       'COMISION DE CONVIVENCIA Y CONCILIACION': [],
-      'COMISION EMPRESARIAL': [],
-      'COMISIONES DE TRABAJO': []
+      'COMISIONES DE TRABAJO': [],
+      'COMISION EMPRESARIAL': []
     };
 
     datosCertificado.dignatarios.forEach(d => {
