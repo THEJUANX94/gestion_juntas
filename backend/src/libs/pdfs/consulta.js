@@ -1,3 +1,4 @@
+import { Temporal } from 'temporal-polyfill';
 import {
   createDoc,
   addPDFHeader,
@@ -5,6 +6,31 @@ import {
   checkPageBreak,
   DEFAULTS
 } from '../pdfBase.js';
+
+const BOGOTA = 'America/Bogota';
+const MESES_ES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+const parseToBogota = (date) => {
+  if (!date) return null;
+  if (date instanceof Date) return Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
+  if (typeof date === 'number') return Temporal.Instant.fromEpochMilliseconds(date).toZonedDateTimeISO(BOGOTA);
+  try {
+    return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
+  } catch {
+    return Temporal.PlainDate.from(String(date)).toZonedDateTime({ timeZone: BOGOTA });
+  }
+};
+
+const formatDateLong = (date) => {
+  if (!date) return '____';
+  const zdt = parseToBogota(date);
+  if (!zdt) return '____';
+  const mes = MESES_ES[zdt.month - 1];
+  return `${zdt.day} DE ${mes.toUpperCase()} DE ${zdt.year}`;
+};
 
 const clasificarComision = (nombreComision) => {
   const n = (nombreComision || '').toLowerCase();
@@ -92,6 +118,8 @@ const generarConsulta = async (datosCertificado) => {
 
   const nombreOrg = datosCertificado.nombreOrganizacion || '';
   const municipio = datosCertificado.NombreMunicipio || '';
+  const personeriaNumero = datosCertificado.personeriaNumero || '____';
+  const personeriaFecha = datosCertificado.personeriaFecha ? formatDateLong(datosCertificado.personeriaFecha) : '____';
 
   if (nombreOrg) {
     centerText(doc, nombreOrg.toUpperCase(), yPos, 10, 'bold');
@@ -99,8 +127,10 @@ const generarConsulta = async (datosCertificado) => {
   }
   if (municipio) {
     centerText(doc, `Municipio de ${municipio}`, yPos, 10, 'normal');
-    yPos += 10;
+    yPos += 7;
   }
+  centerText(doc, `CON PERSONERIA N° ${personeriaNumero} DE FECHA ${personeriaFecha}`, yPos, 10, 'normal');
+  yPos += 10;
 
   const drawTable = makeTableDrawer(doc, anchoUtil, margenIzq);
 

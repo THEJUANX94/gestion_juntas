@@ -10,6 +10,7 @@ import { TipoJunta } from "../model/tipoJuntaModel.js";
 import { Op } from "sequelize";
 import { Comisiones } from "../model/comisionModel.js";
 import { sendMail } from "../utils/mailer.js";
+import { sequelize } from "../config/database.js";
 
 export const crearCertificado = async (req, res) => {
   let Cedula = null;
@@ -436,5 +437,37 @@ export const enviarAutoresolutorio = async (req, res) => {
       error: "Ocurrió un error al generar o enviar el documento.",
       detalle: error.message
     });
+  }
+};
+
+export const reporteAutoresolutorios = async (req, res) => {
+  try {
+    const total = await Certificados.count();
+
+    const ultimo = await Certificados.findOne({
+      order: [['IDCertificado', 'DESC']],
+      attributes: ['IDCertificado']
+    });
+
+    const [porMunicipio] = await sequelize.query(`
+      SELECT l.nombrelugar AS municipio, COUNT(c.idcertificado)::int AS total
+      FROM certificados c
+      JOIN juntas j ON c.idjunta = j.idjunta
+      JOIN lugares l ON j.idmunicipio = l.idlugar
+      GROUP BY l.nombrelugar
+      ORDER BY total DESC
+    `);
+
+    res.json({
+      total,
+      ultimo: ultimo?.IDCertificado ?? 0,
+      porMunicipio: {
+        labels: porMunicipio.map(r => r.municipio),
+        series: porMunicipio.map(r => Number(r.total))
+      }
+    });
+  } catch (err) {
+    console.error('Error en reporteAutoresolutorios:', err);
+    res.status(500).json({ error: 'Error al generar el reporte de autoresolutorios', detalle: err.message });
   }
 };
