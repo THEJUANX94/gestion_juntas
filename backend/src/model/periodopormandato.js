@@ -2,13 +2,13 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
 
 export const PeriodoPorMandato = sequelize.define("PeriodoPorMandato", {
-    IDPeriodoMandato: {
+  IDPeriodoMandato: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true,
     field: "idperiodomandato"
   },
-  
+
   IDPeriodo: {
     type: DataTypes.UUID,
     allowNull: false,
@@ -23,6 +23,11 @@ export const PeriodoPorMandato = sequelize.define("PeriodoPorMandato", {
     type: DataTypes.UUID,
     allowNull: false,
     field: "idjunta"
+  },
+  IDMandatarioJunta: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: "idmandatariojunta"
   }
 }, {
   tableName: "periodo_por_mandato",

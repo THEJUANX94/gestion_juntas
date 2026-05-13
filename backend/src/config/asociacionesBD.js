@@ -35,7 +35,7 @@ export const Asociaciones = () => {
     MandatarioJunta.belongsTo(Cargo, { foreignKey: "idcargo" });
     MandatarioJunta.belongsTo(Comisiones, { foreignKey: "idcomision", as: "Comision" });
     MandatarioJunta.belongsTo(Lugar, { as: "LugarExpedido", foreignKey: "expedido", targetKey: "IDLugar" });
-    MandatarioJunta.hasMany(PeriodoPorMandato, { foreignKey: "numeroidentificacion", sourceKey: "numeroidentificacion", as: "Periodos"});
+    MandatarioJunta.hasMany(PeriodoPorMandato, { foreignKey: "idmandatariojunta", sourceKey: "IDMandatarioJunta", as: "Periodos" });
 
     // ========================================
     // RELACIONES PARA JUNTA
@@ -64,8 +64,8 @@ export const Asociaciones = () => {
 
 
     PeriodoPorMandato.belongsTo(MandatarioJunta, {
-        foreignKey: "numeroidentificacion",
-        targetKey: "numeroidentificacion",
+        foreignKey: "idmandatariojunta",
+        targetKey: "IDMandatarioJunta",
         as: "Mandatario"
     });
 

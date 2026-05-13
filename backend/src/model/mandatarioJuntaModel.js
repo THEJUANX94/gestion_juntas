@@ -2,6 +2,13 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
 
 export const MandatarioJunta = sequelize.define("MandatarioJunta", {
+  IDMandatarioJunta: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+    field: "idmandatariojunta"
+  },
+
   NumeroIdentificacion: {
     type: DataTypes.TEXT,
     allowNull: false,
@@ -9,13 +16,12 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
       model: "usuarios",
       key: "numeroidentificacion"
     },
-    field: "numeroidentificacion",
-    primaryKey: true
+    field: "numeroidentificacion"
   },
 
   IDJunta: {
     type: DataTypes.UUID,
-    primaryKey: true,
+    allowNull: false,
     field: "idjunta",
     references: {
       model: "juntas",
@@ -50,14 +56,14 @@ export const MandatarioJunta = sequelize.define("MandatarioJunta", {
   },
 
   IDComision: {
-  type: DataTypes.UUID,
-  allowNull: true,
-  field: "idcomision",
-  references: {
-    model: "comisiones",
-    key: "idcomision"
-  }
-},
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: "idcomision",
+    references: {
+      model: "comisiones",
+      key: "idcomision"
+    }
+  },
 
   Profesion: {
     type: DataTypes.TEXT,

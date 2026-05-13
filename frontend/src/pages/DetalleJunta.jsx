@@ -33,6 +33,7 @@ export default function DetalleJunta() {
           const apellido = partesNombre.slice(2).join(" ");
 
           return {
+            idMandatario: m.idMandatario || "",
             cargo: m.cargo || "",
             comision: m.comision || "No aplica",
             periodo: m.periodoJunta || "",
@@ -244,7 +245,7 @@ export default function DetalleJunta() {
     }
   };
 
-  const handleEliminarMiembro = async (documento) => {
+  const handleEliminarMiembro = async (idMandatario) => {
     const result = await AlertMessage.confirm(
       "¿Eliminar mandatario?",
       "Esta acción no se puede deshacer. ¿Deseas continuar?"
@@ -253,7 +254,7 @@ export default function DetalleJunta() {
     if (!confirm) return;
 
     try {
-      const resp = await fetch(import.meta.env.VITE_PATH + `/mandatario/${documento}`, {
+      const resp = await fetch(import.meta.env.VITE_PATH + `/mandatario/${idMandatario}`, {
         method: "DELETE",
       });
 
@@ -265,8 +266,7 @@ export default function DetalleJunta() {
 
       AlertMessage.success("Eliminado", "El mandatario fue eliminado exitosamente");
 
-
-      setMiembros(prev => prev.filter(m => m.documento !== documento));
+      setMiembros(prev => prev.filter(m => m.idMandatario !== idMandatario));
 
     } catch (e) {
       AlertMessage.error("Error", "No se pudo comunicar con el servidor");
@@ -574,7 +574,7 @@ export default function DetalleJunta() {
                       </div>
                       <button
                         onClick={() =>
-                          navigate(`/juntas/mandatario/editar/${id}/${m.documento}`, { state: { miembro: m } })
+                          navigate(`/juntas/mandatario/editar/${id}/${m.idMandatario}`, { state: { miembro: m } })
                         }
                         className="bg-white/20 hover:bg-white/30 p-2.5 rounded-lg"
                       >
@@ -583,7 +583,7 @@ export default function DetalleJunta() {
 
                       {/* Botón eliminar */}
                       <button
-                        onClick={() => handleEliminarMiembro(m.documento)}
+                        onClick={() => handleEliminarMiembro(m.idMandatario)}
                         className="bg-white/20 hover:bg-red-500/40 p-2.5 rounded-lg transition"
                       >
                         <Trash2 size={20} className="text-white" />

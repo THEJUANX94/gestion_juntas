@@ -5,7 +5,7 @@ import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function EditarMandatario() {
   const navigate = useNavigate();
-  const { id, documento } = useParams();
+  const { id, idMandatario } = useParams();
 
   const [modo, setModo] = useState("cargo");
   const [tiposDocumento, setTiposDocumento] = useState([]);
@@ -51,7 +51,7 @@ export default function EditarMandatario() {
         const [resLugares, resGrupos, resMand, resTipoDoc, resCargos, resComisiones] = await Promise.all([
           fetch(import.meta.env.VITE_PATH + "/lugares"),
           fetch(import.meta.env.VITE_PATH + "/grupospoblacionales"),
-          fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`),
+          fetch(import.meta.env.VITE_PATH + `/mandatario/${idMandatario}/datos`),
           fetch(import.meta.env.VITE_PATH + "/tipodocumento"),
           fetch(import.meta.env.VITE_PATH + "/cargos"),
           fetch(import.meta.env.VITE_PATH + "/comisiones")
@@ -179,7 +179,7 @@ export default function EditarMandatario() {
     try {
       const payload = { ...formData, email: formData.email || null };
 
-      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/actualizar/${id}/${documento}`, {
+      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/actualizar/${idMandatario}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
