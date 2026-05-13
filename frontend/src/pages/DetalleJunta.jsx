@@ -221,7 +221,8 @@ export default function DetalleJunta() {
       }
 
       const blob = await res.blob();
-      const url = window.URL.createObjectURL(new Blob([blob]));
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(pdfBlob);
 
       if (isPreview) {
         window.open(url, '_blank');
