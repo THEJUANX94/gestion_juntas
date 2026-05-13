@@ -209,13 +209,15 @@ const generarCertificadoJAC = async (datosCertificado) => {
   centerText(doc, resources.cargoFirmante || 'CARGO FIRMANTE', yPos, 10, 'normal');
   yPos += 12;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text(
-    `Realizó:________________  Elaboro:________________  Fecha: ${formatDateSlash(datosCertificado.FechaCreacion)}  Hora: ${formatTimeFull(now)}`,
-    margenIzq, yPos
-  );
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text('Elaboró y generó:', margenIzq, yPos);
   yPos += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Elaboró: ${datosCertificado.elaboradoPor || '________________'}`, margenIzq, yPos);
+  yPos += 5;
+  doc.text(`Generó: ${datosCertificado.generadoPor || '________________'}`, margenIzq, yPos);
+  yPos += 8;
   doc.setFontSize(10);
 
   return doc.output('arraybuffer');

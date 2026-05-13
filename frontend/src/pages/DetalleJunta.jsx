@@ -127,7 +127,6 @@ export default function DetalleJunta() {
     { icon: FileText, label: "Consulta", color: "bg-[#009E76] hover:bg-[#007d5e]", action: 'consulta' },
     { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'autoresolutorio' },
     { icon: Award, label: "Certificado Existencia y Representacion Legal", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJAC' },
-    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJVC' },
     { icon: Database, label: "Organismo Comunal", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/${id}` },
     { icon: CalendarPlus, label: 'Nuevo periodo', color: 'bg-yellow-500 hover:bg-yellow-600', action: 'nuevo_periodo' }
   ];

@@ -123,11 +123,14 @@ export const addPDFHeader = async (doc, datosCertificado) => {
     doc.addImage(resources.base64Logo, "PNG", margenIzq, 10, 34, 20);
   }
 
-  // Texto secretaría (Gobernación de Boyacá ya va incluida en el logo)
-  doc.setFontSize(9);
+  // Texto secretaría debajo del logo, centrado bajo él, tamaño reducido
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
-  doc.text("Secretaría de Gobierno y", margenIzq + 38, 18);
-  doc.text("Acción Comunal", margenIzq + 38, 23);
+  const logoCenter = margenIzq + 17;
+  const linea1 = "Secretaría de Gobierno y";
+  const linea2 = "Acción Comunal";
+  doc.text(linea1, logoCenter - doc.getTextWidth(linea1) / 2, 33);
+  doc.text(linea2, logoCenter - doc.getTextWidth(linea2) / 2, 37);
 
   // QR a la derecha (omitir en modo preview)
   if (!datosCertificado.preview) {
