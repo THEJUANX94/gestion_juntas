@@ -665,10 +665,7 @@ export const eliminarJunta = async (req, res) => {
     // ------------------------------------------
     for (const m of mandatarios) {
       const periodosPorMandato = await PeriodoPorMandato.findAll({
-        where: {
-          IDJunta: id,
-          NumeroIdentificacion: m.NumeroIdentificacion
-        }
+        where: { IDMandatarioJunta: m.IDMandatarioJunta }
       });
 
       for (const pm of periodosPorMandato) {

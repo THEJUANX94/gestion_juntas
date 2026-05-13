@@ -66,7 +66,7 @@ export default function EditarMandatario() {
 
         // 2. PETICIÓN CLAVE: Traer la relación de la tabla intermedia
         // Asumiendo que tu endpoint para la intermedia filtra por el documento del mandatario
-        const resIntermedia = await fetch(import.meta.env.VITE_PATH + `/poblacionesporpersona/${documento}`);
+        const resIntermedia = await fetch(import.meta.env.VITE_PATH + `/poblacionesporpersona/${mand.documento}`);
         const dataIntermedia = await resIntermedia.json();
 
         // 3. Extraer solo los IDs de los grupos
@@ -97,7 +97,7 @@ export default function EditarMandatario() {
     };
 
     loadData();
-  }, [documento, id]);
+  }, [idMandatario, id]);
 
   // HANDLE CHANGE
   const handleChange = (e) => {
