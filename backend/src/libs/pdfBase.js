@@ -118,19 +118,10 @@ export const addPDFHeader = async (doc, datosCertificado) => {
   const resources = await loadResources();
   const { margenIzq } = DEFAULTS;
 
-  // Logo (1200x700 px → ratio 1.714, renderizar 34x20mm para no deformar)
+  // Logo
   if (resources.base64Logo) {
-    doc.addImage(resources.base64Logo, "PNG", margenIzq, 10, 40, 20);
+    doc.addImage(resources.base64Logo, "PNG", margenIzq, 8, 45, 28);
   }
-
-  // Texto secretaría debajo del logo, centrado bajo él, tamaño reducido
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'normal');
-  const logoCenter = margenIzq + 17;
-  const linea1 = "Secretaría de Gobierno y";
-  const linea2 = "Acción Comunal";
-  doc.text(linea1, logoCenter - doc.getTextWidth(linea1) / 2, 33);
-  doc.text(linea2, logoCenter - doc.getTextWidth(linea2) / 2, 37);
 
   // QR a la derecha (omitir en modo preview)
   if (!datosCertificado.preview) {
