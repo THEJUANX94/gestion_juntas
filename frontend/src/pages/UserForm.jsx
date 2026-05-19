@@ -206,7 +206,7 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
           const mes = hoy.getMonth() - nacimiento.getMonth();
           if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate()))
             edad--;
-          if (edad < 18) message = "Debe ser mayor de 18 años";
+          if (edad < 14) message = "Debe ser mayor de 14 años";
         }
         break;
       default:

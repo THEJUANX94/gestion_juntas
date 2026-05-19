@@ -585,19 +585,21 @@ export const actualizarJunta = async (req, res) => {
       ]
     });
 
+    const toDateOnly = (d) => new Date(d).toISOString().slice(0, 10);
+
     for (const mandatario of mandatariosConPeriodo) {
       for (const periodoPorMandato of mandatario.Periodos || []) {
         const periodo = periodoPorMandato.Periodo;
-        
-        if (periodo) {
-          const inicioPeriodo = new Date(periodo.FechaInicio);
-          const finPeriodo = new Date(periodo.FechaFin);
-          const nuevoInicio = new Date(fechaInicioPeriodo);
-          const nuevoFin = new Date(fechaFinPeriodo);
 
-          if (inicioPeriodo < nuevoInicio || finPeriodo > nuevoFin) {
+        if (periodo) {
+          const inicioPeriodoStr = toDateOnly(periodo.FechaInicio);
+          const finPeriodoStr    = toDateOnly(periodo.FechaFin);
+          const nuevoInicioStr   = String(fechaInicioPeriodo).slice(0, 10);
+          const nuevoFinStr      = String(fechaFinPeriodo).slice(0, 10);
+
+          if (inicioPeriodoStr < nuevoInicioStr || finPeriodoStr > nuevoFinStr) {
             return res.status(400).json({
-              message: `El periodo del mandatario con documento ${mandatario.NumeroIdentificacion} (${periodo.FechaInicio} - ${periodo.FechaFin}) está fuera del nuevo periodo de la junta`
+              message: `El periodo del mandatario con documento ${mandatario.NumeroIdentificacion} (${inicioPeriodoStr} - ${finPeriodoStr}) está fuera del nuevo periodo de la junta`
             });
           }
         }
@@ -665,10 +667,7 @@ export const eliminarJunta = async (req, res) => {
     // ------------------------------------------
     for (const m of mandatarios) {
       const periodosPorMandato = await PeriodoPorMandato.findAll({
-        where: {
-          IDJunta: id,
-          NumeroIdentificacion: m.NumeroIdentificacion
-        }
+        where: { IDMandatarioJunta: m.IDMandatarioJunta }
       });
 
       for (const pm of periodosPorMandato) {

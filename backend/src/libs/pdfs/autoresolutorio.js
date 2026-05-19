@@ -125,7 +125,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const municipio = (datosCertificado.NombreMunicipio || '').toUpperCase();
   const nombreOrganizacion = (datosCertificado.nombreOrganizacion || '').toUpperCase();
   const personeriaNumero = datosCertificado.personeriaNumero || '____';
-  const personeriaFecha = datosCertificado.personeriaFecha ? formatDateLong(datosCertificado.personeriaFecha) : '____';
+  const personeriaFecha = datosCertificado.personeriaFecha ? formatDateLong(datosCertificado.personeriaFecha).toUpperCase() : '____';
   const periodoInicio = datosCertificado.periodoInicio;
   const periodoFin = datosCertificado.periodoFin;
   const tipodocumento = (datosCertificado.TipoCertificado || 'JUNTA DE ACCIÓN COMUNAL').toUpperCase();
@@ -139,8 +139,9 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const resources = await addPDFHeader(doc, datosCertificado);
 
   let yPos = 38;
-  const autoText = `AUTO No. ${datosCertificado.IDCertificado || '____'} DE ${formatDateSlash(datosCertificado.FechaCreacion)}`;
-  centerText(doc, autoText, yPos, 10, 'bold');
+  centerText(doc, `AUTO No. ${datosCertificado.IDCertificado || '____'}`, yPos, 10, 'bold');
+  yPos += 6;
+  centerText(doc, `(${formatDateSlash(datosCertificado.FechaCreacion)})`, yPos, 10, 'bold');
   yPos += 8;
   let result;
 
@@ -307,8 +308,8 @@ const generarAutoresolutorio = async (datosCertificado) => {
   const delegados = [];
   const comisionesAgrupadas = {
     'COMISION DE CONVIVENCIA Y CONCILIACION': [],
-    'COMISION EMPRESARIAL': [],
-    'COMISIONES DE TRABAJO': []
+    'COMISIONES DE TRABAJO': [],
+    'COMISION EMPRESARIAL': []
   };
 
   datosCertificado.dignatarios.forEach(d => {
@@ -322,6 +323,8 @@ const generarAutoresolutorio = async (datosCertificado) => {
     if (comision) {
       const categoria = clasificarComision(comision);
       comisionesAgrupadas[categoria].push([cargo || comision, nombre, cedula, expedido]);
+    } else if (cargoLower.includes('conciliador')) {
+      comisionesAgrupadas['COMISION DE CONVIVENCIA Y CONCILIACION'].push([cargo, nombre, cedula, expedido]);
     } else if (cargoLower.includes('fiscal')) {
       fiscales.push([cargo, nombre, cedula, expedido]);
     } else if (cargoLower.includes('delegado')) {
@@ -331,7 +334,12 @@ const generarAutoresolutorio = async (datosCertificado) => {
     }
   });
 
-  directivos.sort((a, b) => a[0] === 'Presidente' ? -1 : b[0] === 'Presidente' ? 1 : 0);
+  const CARGO_ORDER = ['presidente', 'vicepresidente', 'tesorero', 'secretario'];
+  directivos.sort((a, b) => {
+    const ai = CARGO_ORDER.findIndex(o => a[0].toLowerCase().includes(o));
+    const bi = CARGO_ORDER.findIndex(o => b[0].toLowerCase().includes(o));
+    return (ai === -1 ? CARGO_ORDER.length : ai) - (bi === -1 ? CARGO_ORDER.length : bi);
+  });
 
   if (directivos.length > 0) {
     yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);

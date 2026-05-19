@@ -16,18 +16,11 @@ const MESES_ES = [
 
 const parseToBogota = (date) => {
   if (!date) return null;
-  // JS Date objects (TIMESTAMP columns via Sequelize/pg): epoch-based, convert from UTC
-  if (date instanceof Date) {
-    return Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
-  }
-  if (typeof date === 'number') {
-    return Temporal.Instant.fromEpochMilliseconds(date).toZonedDateTimeISO(BOGOTA);
-  }
+  if (date instanceof Date) return Temporal.Instant.fromEpochMilliseconds(date.getTime()).toZonedDateTimeISO(BOGOTA);
+  if (typeof date === 'number') return Temporal.Instant.fromEpochMilliseconds(date).toZonedDateTimeISO(BOGOTA);
   try {
-    // ISO strings with offset/Z: treat as instants
     return Temporal.Instant.from(date).toZonedDateTimeISO(BOGOTA);
   } catch {
-    // Plain date strings "YYYY-MM-DD" from pg DATE columns: these represent Bogota calendar dates
     return Temporal.PlainDate.from(String(date)).toZonedDateTime({ timeZone: BOGOTA });
   }
 };
@@ -39,11 +32,6 @@ const formatDateSlash = (date) => {
   return `${String(zdt.day).padStart(2, '0')}/${String(zdt.month).padStart(2, '0')}/${zdt.year}`;
 };
 
-const formatTimeFull = (zdt) => {
-  if (!zdt) return '00:00:00';
-  return `${String(zdt.hour).padStart(2, '0')}:${String(zdt.minute).padStart(2, '0')}:${String(zdt.second).padStart(2, '0')}`;
-};
-
 const formatDateLong = (date) => {
   if (!date) return '____';
   const zdt = parseToBogota(date);
@@ -52,7 +40,14 @@ const formatDateLong = (date) => {
   return `${zdt.day} de ${mes.charAt(0).toUpperCase() + mes.slice(1)} de ${zdt.year}`;
 };
 
-const generarCertificadoJAC = async (datosCertificado) => {
+const CARGO_BASES = ['presidente', 'vicepresidente', 'tesorero', 'secretario'];
+
+const getCargoIndex = (cargo) => {
+  const lower = (cargo || '').toLowerCase().trim();
+  return CARGO_BASES.findIndex(base => lower.includes(base));
+};
+
+const generarCertificadoDirectivos = async (datosCertificado) => {
   const doc = createDoc();
 
   const municipio = (datosCertificado.NombreMunicipio || '').toUpperCase();
@@ -63,10 +58,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
   const tipodocumento = (datosCertificado.TipoCertificado || 'JUNTA DE ACCIÓN COMUNAL').toUpperCase();
 
   const { margenIzq, margenDer } = DEFAULTS;
-  const anchoUtil = DEFAULTS.anchoPagina - margenIzq - margenDer;
-  const now = datosCertificado.FechaCreacion
-    ? parseToBogota(datosCertificado.FechaCreacion)
-    : Temporal.Now.zonedDateTimeISO(BOGOTA);
+  const anchoUtil = 210 - margenIzq - margenDer;
 
   const resources = await addPDFHeader(doc, datosCertificado);
 
@@ -109,14 +101,13 @@ const generarCertificadoJAC = async (datosCertificado) => {
   );
   yPos += 3;
 
-  yPos = writePara('Que el representante legal que fue inscrito en la Junta de Acción Comunal antes nombrada es:', yPos);
+  yPos = writePara('Que los dignatarios inscritos en la Junta de Acción Comunal antes nombrada son:', yPos);
   yPos += 5;
 
-  // ── TABLA DE DIGNATARIOS ──
-  const CARGOS_CERTIFICADO = ['presidente', 'presidenta'];
-  const dignatariosTabla = (datosCertificado.dignatarios || []).filter(d =>
-    CARGOS_CERTIFICADO.includes((d.cargo || '').toLowerCase().trim())
-  );
+  // ── TABLA DE DIGNATARIOS (presidente, vicepresidente, tesorero, secretario) ──
+  const dignatariosTabla = (datosCertificado.dignatarios || [])
+    .filter(d => getCargoIndex(d.cargo) !== -1)
+    .sort((a, b) => getCargoIndex(a.cargo) - getCargoIndex(b.cargo));
 
   if (dignatariosTabla.length > 0) {
     const colWidths = [35, 65, 25, 35];
@@ -176,7 +167,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
   }
 
   // ── TEXTOS FINALES ──
-  yPos = writePara(`Que el periodo del dignatario vence el ${formatDateLong(periodoFin)}`, yPos);
+  yPos = writePara(`Que el periodo de los dignatarios vence el ${formatDateLong(periodoFin)}`, yPos);
   yPos += 2;
   yPos = writePara('Esta constancia es válida por el termino de 6 (seis) meses.', yPos);
   yPos += 2;
@@ -192,10 +183,9 @@ const generarCertificadoJAC = async (datosCertificado) => {
   doc.text(`Dada en Tunja el día: ${formatDateSlash(datosCertificado.FechaCreacion)}`, margenIzq, yPos);
   yPos += 15;
 
-  // Firma
   const anchoFirma = 50;
   const altoFirma = 25;
-  const xFirma = (DEFAULTS.anchoPagina - anchoFirma) / 2;
+  const xFirma = (210 - anchoFirma) / 2;
 
   if (resources.base64Firma) {
     doc.addImage(resources.base64Firma, 'PNG', xFirma, yPos, anchoFirma, altoFirma);
@@ -223,4 +213,4 @@ const generarCertificadoJAC = async (datosCertificado) => {
   return doc.output('arraybuffer');
 };
 
-export default generarCertificadoJAC;
+export default generarCertificadoDirectivos;

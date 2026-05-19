@@ -87,12 +87,6 @@ export default function MainLayout() {
           {/* Logo + título */}
           <div className="flex items-center gap-3">
             <img src={logo} alt="Logo" className="h-16 w-auto" />
-            <h1
-              className="text-xl font-bold tracking-wide"
-              style={{ color: "var(--color-text-color-upper)" }}
-            >
-              Gobernación de Boyacá
-            </h1>
           </div>
 
           {/* Navbar con iconos */}

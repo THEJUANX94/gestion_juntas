@@ -5,7 +5,7 @@ import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function EditarMandatario() {
   const navigate = useNavigate();
-  const { id, documento } = useParams();
+  const { id, idMandatario } = useParams();
 
   const [modo, setModo] = useState("cargo");
   const [tiposDocumento, setTiposDocumento] = useState([]);
@@ -48,19 +48,25 @@ export default function EditarMandatario() {
     const loadData = async () => {
       try {
         // 1. Cargamos las listas maestras y el mandatario
-        const [resLugares, resGrupos, resMand] = await Promise.all([
+        const [resLugares, resGrupos, resMand, resTipoDoc, resCargos, resComisiones] = await Promise.all([
           fetch(import.meta.env.VITE_PATH + "/lugares"),
           fetch(import.meta.env.VITE_PATH + "/grupospoblacionales"),
-          fetch(import.meta.env.VITE_PATH + `/mandatario/${id}/${documento}`)
+          fetch(import.meta.env.VITE_PATH + `/mandatario/${idMandatario}/datos`),
+          fetch(import.meta.env.VITE_PATH + "/tipodocumento"),
+          fetch(import.meta.env.VITE_PATH + "/cargos"),
+          fetch(import.meta.env.VITE_PATH + "/comisiones")
         ]);
 
         const listaLugares = await resLugares.json();
         const listaGruposPob = await resGrupos.json();
         const mand = await resMand.json();
+        setTiposDocumento(await resTipoDoc.json());
+        setCargos(await resCargos.json());
+        setComisiones(await resComisiones.json());
 
         // 2. PETICIÓN CLAVE: Traer la relación de la tabla intermedia
         // Asumiendo que tu endpoint para la intermedia filtra por el documento del mandatario
-        const resIntermedia = await fetch(import.meta.env.VITE_PATH + `/poblacionesporpersona/${documento}`);
+        const resIntermedia = await fetch(import.meta.env.VITE_PATH + `/poblacionesporpersona/${mand.documento}`);
         const dataIntermedia = await resIntermedia.json();
 
         // 3. Extraer solo los IDs de los grupos
@@ -68,8 +74,13 @@ export default function EditarMandatario() {
         const idsSeleccionados = dataIntermedia.map(item => item.IDGrupoPoblacional);
 
         // 4. Lógica de lugar (Municipio/Departamento)
+        // El municipio puede tener como padre una Provincia o directamente un Departamento
         const municipioInfo = listaLugares.find(l => l.IDLugar === mand.expedido);
-        const deptoId = municipioInfo ? municipioInfo.IDOtroLugar : "";
+        let deptoId = "";
+        if (municipioInfo) {
+          const padre = listaLugares.find(l => l.IDLugar === municipioInfo.IDOtroLugar);
+          deptoId = padre?.TipoLugar === 'Provincia' ? padre.IDOtroLugar : municipioInfo.IDOtroLugar;
+        }
 
         // 5. Actualizar estados
         setLugares(listaLugares);
@@ -91,7 +102,7 @@ export default function EditarMandatario() {
     };
 
     loadData();
-  }, [documento, id]);
+  }, [idMandatario, id]);
 
   // HANDLE CHANGE
   const handleChange = (e) => {
@@ -173,7 +184,7 @@ export default function EditarMandatario() {
     try {
       const payload = { ...formData, email: formData.email || null };
 
-      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/actualizar/${id}/${documento}`, {
+      const res = await fetch(import.meta.env.VITE_PATH + `/mandatario/actualizar/${idMandatario}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

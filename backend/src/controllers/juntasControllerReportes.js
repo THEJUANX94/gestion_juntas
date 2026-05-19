@@ -200,6 +200,7 @@ const getEdadesData = async ({ filtro = [] } = {}) => {
   const now = new Date();
 
   const ranges = {
+    "14-17": 0,
     "18-25": 0,
     "26-35": 0,
     "36-45": 0,
@@ -218,7 +219,8 @@ const getEdadesData = async ({ filtro = [] } = {}) => {
     const dayDiff = now.getDate() - nacimiento.getDate();
     if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) edad -= 1;
 
-    if (edad <= 25) ranges["18-25"] += 1;
+    if (edad <= 17) ranges["14-17"] += 1;
+    else if (edad <= 25) ranges["18-25"] += 1;
     else if (edad <= 35) ranges["26-35"] += 1;
     else if (edad <= 45) ranges["36-45"] += 1;
     else if (edad <= 60) ranges["46-60"] += 1;
@@ -601,6 +603,7 @@ const getAgeRangeFromDate = (fechaNacimiento) => {
   const dayDiff = now.getDate() - nacimiento.getDate();
   if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) edad -= 1;
 
+  if (edad <= 17) return "14-17";
   if (edad <= 25) return "18-25";
   if (edad <= 35) return "26-35";
   if (edad <= 45) return "36-45";

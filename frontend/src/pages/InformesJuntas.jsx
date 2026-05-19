@@ -44,6 +44,19 @@ const getLugarTipo = (lugar) => lugar?.TipoLugar ?? lugar?.tipolugar ?? "";
  * Traduce las claves internas del frontend a los nombres de ruta del backend.
  * Esto evita acoplar la UI al naming de la API y centraliza el mapeo.
  */
+const AGE_RANGES = ["14-17", "18-25", "26-35", "36-45", "46-60", "60+"];
+
+const normalizeAgesData = (data) => {
+  if (!data) return null;
+  const seriesMap = Object.fromEntries(
+    (data.labels || []).map((label, i) => [label, data.series?.[i] ?? 0])
+  );
+  return {
+    labels: AGE_RANGES,
+    series: AGE_RANGES.map((r) => seriesMap[r] ?? 0),
+  };
+};
+
 const routeMap = {
   ages: "edades",
   commissions: "comisiones",
@@ -61,7 +74,8 @@ const tabs = [
   { key: "positions", label: "Cargos" },
   { key: "gender", label: "Genero" },
   { key: "province", label: "Provincias" },
-  { key: "municipality", label: "Municipio" }
+  { key: "municipality", label: "Municipio" },
+  { key: "autoresolutorios", label: "Número de Autoresolutorios" }
 ];
 
 /**
@@ -168,6 +182,7 @@ export default function InformesJuntas() {
   const [genderData, setGenderData] = useState(null);
   const [provinceData, setProvinceData] = useState(null);
   const [municipalityData, setMunicipalityData] = useState(null);
+  const [autoresolutoriosData, setAutoresolutoriosData] = useState(null);
 
   const [provincias, setProvincias] = useState([]);
   const [municipios, setMunicipios] = useState([]);
@@ -267,7 +282,8 @@ export default function InformesJuntas() {
       commissions: "/juntas/reports/comisiones",
       active: "/juntas/reports/activas",
       positions: "/juntas/reports/cargos",
-      gender: "/juntas/reports/genero"
+      gender: "/juntas/reports/genero",
+      autoresolutorios: "/certificados/reports/autoresolutorios"
     };
     const endpoint = endpointMap[selectedReport];
     if (!endpoint) return;
@@ -280,10 +296,11 @@ export default function InformesJuntas() {
         if (!res.ok) throw new Error(`Error ${res.status}`);
         const data = await res.json();
 
-        if (selectedReport === "ages") setAgesData(data);
+        if (selectedReport === "ages") setAgesData(normalizeAgesData(data));
         if (selectedReport === "commissions") setCommissionsData(data);
         if (selectedReport === "positions") setPositionsData(data);
         if (selectedReport === "gender") setGenderData(data);
+        if (selectedReport === "autoresolutorios") setAutoresolutoriosData(data);
         if (selectedReport === "active") {
           setActiveData({ activas: data.series?.[0] ?? 0, inactivas: data.series?.[1] ?? 0 });
         }
@@ -684,6 +701,76 @@ export default function InformesJuntas() {
                         ))}
                       </div>
                     </>
+                  )}
+                </div>
+              )}
+
+              {selectedReport === "autoresolutorios" && (
+                <div>
+                  <h2 className="mb-6 text-xl font-bold text-gray-800">Número de Autoresolutorios</h2>
+
+                  {autoresolutoriosData ? (
+                    <>
+                      {/* Tarjetas de resumen */}
+                      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="rounded-xl border-2 border-[#009E76] bg-gradient-to-br from-[#009E76]/10 to-[#64AF59]/10 p-6 text-center">
+                          <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-[#009E76]">
+                            Último consecutivo
+                          </p>
+                          <p className="text-6xl font-extrabold text-[#009E76]">
+                            {autoresolutoriosData.ultimo}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border-2 border-gray-300 bg-gray-50 p-6 text-center">
+                          <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500">
+                            Total generados
+                          </p>
+                          <p className="text-6xl font-extrabold text-gray-700">
+                            {autoresolutoriosData.total}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Gráfico por municipio */}
+                      {autoresolutoriosData.porMunicipio?.labels?.length > 0 && (
+                        <div>
+                          <h3 className="mb-4 text-base font-semibold text-gray-700">
+                            Distribución por municipio
+                          </h3>
+                          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <div className="flex justify-center">
+                              <PieChart
+                                series={[
+                                  {
+                                    data: autoresolutoriosData.porMunicipio.labels.map((label, i) => ({
+                                      id: i,
+                                      value: autoresolutoriosData.porMunicipio.series[i],
+                                      label
+                                    })),
+                                    arcLabel: (item) => `${item.value}`,
+                                    arcLabelMinAngle: 20
+                                  }
+                                ]}
+                                sx={{
+                                  [`& .${pieArcLabelClasses.root}`]: { fontWeight: "bold", fill: "white", fontSize: 11 }
+                                }}
+                                width={420}
+                                height={320}
+                              />
+                            </div>
+                            <Table
+                              headers={["Municipio", "Autoresolutorios"]}
+                              rows={autoresolutoriosData.porMunicipio.labels.map((label, i) => [
+                                label,
+                                autoresolutoriosData.porMunicipio.series[i]
+                              ])}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-gray-400">Sin datos disponibles</p>
                   )}
                 </div>
               )}

@@ -90,7 +90,7 @@ export default function App() {
               <Route element={<RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]} />}>
                 <Route path="/juntas/crear" element={<CrearJunta />} />
                 <Route path="/juntas/:id/mandatario/crear" element={<CrearMandatario />} />
-                <Route path="/juntas/mandatario/editar/:id/:documento" element={<EditarMandatario />} />
+                <Route path="/juntas/mandatario/editar/:id/:idMandatario" element={<EditarMandatario />} />
                 <Route path="/juntas/:id/mandatario/buscar" element={<BuscarMandatario />} />
                 <Route path="/juntas/:idJunta/mandatario/editar-datos/:idUsuario" element={<EditarMandatarioExistente />} />
                 <Route path="/cargos/update/:id" element={<EditarCargo />} />

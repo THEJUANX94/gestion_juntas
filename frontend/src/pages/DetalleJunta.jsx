@@ -3,7 +3,7 @@ import {
   FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail,
   MapPin, Search, Filter, X, Trash2, CalendarPlus, AlertCircle, Check, ShieldAlert
 } from "lucide-react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
 import { crearNuevoPeriodoJunta } from '../services/juntasServices';
 import { useAuth } from '../context/AuthContext';
@@ -12,15 +12,19 @@ import { ROLES } from '../config/roles';
 export default function DetalleJunta() {
 
   const navigate = useNavigate();
-  const location = useLocation();
+  const { id } = useParams();
   const { user } = useAuth();
 
-  const juntaData = location.state?.junta || null;
-  const juntaIdFromRoute = juntaData?.IDJunta || null;
+  const [junta, setJunta] = useState(null);
   const [miembros, setMiembros] = useState([]);
   const [loadingDoc, setLoadingDoc] = useState(null);
 
-  const { id } = useParams();
+  useEffect(() => {
+    fetch(import.meta.env.VITE_PATH + `/juntas/${id}`)
+      .then(r => r.json())
+      .then(setJunta)
+      .catch(console.error);
+  }, [id]);
 
   useEffect(() => {
     const cargarMiembros = async () => {
@@ -33,6 +37,7 @@ export default function DetalleJunta() {
           const apellido = partesNombre.slice(2).join(" ");
 
           return {
+            idMandatario: m.idMandatario || "",
             cargo: m.cargo || "",
             comision: m.comision || "No aplica",
             periodo: m.periodoJunta || "",
@@ -88,7 +93,6 @@ export default function DetalleJunta() {
   const [alertaRolesCerrada, setAlertaRolesCerrada] = useState(false);
 
   useEffect(() => {
-    console.log("Cargos recibidos:", miembros.map(m => m.cargo));
     const cargosActivos = miembros.map(m => m.cargo?.trim());
     const ausentes = ROLES_REQUERIDOS.filter(rol => !cargosActivos.includes(rol));
     setRolesAusentes(ausentes);
@@ -123,7 +127,7 @@ export default function DetalleJunta() {
     { icon: FileText, label: "Consulta", color: "bg-[#009E76] hover:bg-[#007d5e]", action: 'consulta' },
     { icon: ClipboardCheck, label: "Autoresolutorio", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'autoresolutorio' },
     { icon: Award, label: "Certificado Existencia y Representacion Legal", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJAC' },
-    { icon: Award, label: "Certificado JVC", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoJVC' },
+    { icon: Award, label: "Certificado Vigencia", color: "bg-[#64AF59] hover:bg-[#52934a]", action: 'certificadoDirectivos' },
     { icon: Database, label: "Organismo Comunal", color: "bg-[#E43440] hover:bg-[#52934a]", ruta: `/juntas/datos-junta/${id}` },
     { icon: CalendarPlus, label: 'Nuevo periodo', color: 'bg-yellow-500 hover:bg-yellow-600', action: 'nuevo_periodo' }
   ];
@@ -244,16 +248,16 @@ export default function DetalleJunta() {
     }
   };
 
-  const handleEliminarMiembro = async (documento) => {
+  const handleEliminarMiembro = async (idMandatario) => {
     const result = await AlertMessage.confirm(
       "¿Eliminar mandatario?",
       "Esta acción no se puede deshacer. ¿Deseas continuar?"
     );
 
-    if (!confirm) return;
+    if (!result) return;
 
     try {
-      const resp = await fetch(import.meta.env.VITE_PATH + `/mandatario/${documento}`, {
+      const resp = await fetch(import.meta.env.VITE_PATH + `/mandatario/${idMandatario}`, {
         method: "DELETE",
       });
 
@@ -265,8 +269,7 @@ export default function DetalleJunta() {
 
       AlertMessage.success("Eliminado", "El mandatario fue eliminado exitosamente");
 
-
-      setMiembros(prev => prev.filter(m => m.documento !== documento));
+      setMiembros(prev => prev.filter(m => m.idMandatario !== idMandatario));
 
     } catch (e) {
       AlertMessage.error("Error", "No se pudo comunicar con el servidor");
@@ -320,16 +323,16 @@ export default function DetalleJunta() {
     setLoading(true);
     try {
       // Llamada al backend
-      const resultado = await crearNuevoPeriodoJunta(juntaIdFromRoute, {
+      const resultado = await crearNuevoPeriodoJunta(id, {
         ...formData,
         copiarDignatarios: formData.copiarDignatarios
       });
 
-      alert(`Éxito: ${resultado.message}`);
+      AlertMessage.success("Nuevo periodo creado correctamente");
       setIsModalOpen(false);
-      window.location.reload();
+      navigate(0);
     } catch (error) {
-      alert(`Error: ${error.message}`);
+      AlertMessage.error(error.message || "Error al crear el nuevo periodo");
     } finally {
       setLoading(false);
     }
@@ -354,7 +357,7 @@ export default function DetalleJunta() {
               }
 
               const tipo = accion.action || 'autoresolutorio';
-              return generatePdfForJunta(juntaIdFromRoute, tipo);
+              return generatePdfForJunta(id, tipo);
             };
 
             const isGenerating = accion.action && loadingDoc === accion.action;
@@ -574,7 +577,7 @@ export default function DetalleJunta() {
                       </div>
                       <button
                         onClick={() =>
-                          navigate(`/juntas/mandatario/editar/${id}/${m.documento}`, { state: { miembro: m } })
+                          navigate(`/juntas/mandatario/editar/${id}/${m.idMandatario}`, { state: { miembro: m } })
                         }
                         className="bg-white/20 hover:bg-white/30 p-2.5 rounded-lg"
                       >
@@ -583,7 +586,7 @@ export default function DetalleJunta() {
 
                       {/* Botón eliminar */}
                       <button
-                        onClick={() => handleEliminarMiembro(m.documento)}
+                        onClick={() => handleEliminarMiembro(m.idMandatario)}
                         className="bg-white/20 hover:bg-red-500/40 p-2.5 rounded-lg transition"
                       >
                         <Trash2 size={20} className="text-white" />
