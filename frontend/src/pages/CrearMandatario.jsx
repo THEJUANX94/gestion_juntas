@@ -337,8 +337,8 @@ export default function AgregarMandatario() {
                     onChange={handleChange}
                     options={cargos.map(c => ({
                       value: c.IDCargo,
-                      label: c.NombreCargo + (cargosOcupados.includes(c.IDCargo) ? " (Ocupado)" : ""),
-                      disabled: cargosOcupados.includes(c.IDCargo)
+                      label: c.NombreCargo + (cargosOcupados.includes(c.NombreCargo) ? " (Ocupado)" : ""),
+                      disabled: cargosOcupados.includes(c.NombreCargo)
                     }))}
                     disabled={modo === "comision"}
                   />

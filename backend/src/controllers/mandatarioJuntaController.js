@@ -11,14 +11,22 @@ import { Op } from "sequelize";
 import { PoblacionesPorPersona } from "../model/poblacionesporpersonaModel.js";
 import { sequelize } from "../config/database.js";
 
-export const validarPeriodoMandato = (junta, inicio, fin) => {
-  const inicioJunta = new Date(junta.FechaInicioPeriodo);
-  const finJunta = new Date(junta.FechaFinPeriodo);
+const soloFechaUTC = (d) => {
+  const dt = new Date(d);
+  dt.setUTCHours(0, 0, 0, 0);
+  return dt;
+};
 
-  if (inicio < inicioJunta || fin > finJunta) {
-    return `El periodo del mandatario (${inicio.toISOString()} - ${fin.toISOString()})
+export const validarPeriodoMandato = (junta, inicio, fin) => {
+  const inicioJunta = soloFechaUTC(junta.FechaInicioPeriodo);
+  const finJunta    = soloFechaUTC(junta.FechaFinPeriodo);
+  const inicioNorm  = soloFechaUTC(inicio);
+  const finNorm     = soloFechaUTC(fin);
+
+  if (inicioNorm < inicioJunta || finNorm > finJunta) {
+    return `El periodo del mandatario (${inicioNorm.toISOString().split('T')[0]} - ${finNorm.toISOString().split('T')[0]})
             debe estar dentro del periodo de la junta
-            (${junta.FechaInicioPeriodo} - ${junta.FechaFinPeriodo}).`;
+            (${inicioJunta.toISOString().split('T')[0]} - ${finJunta.toISOString().split('T')[0]}).`;
   }
   return null;
 };
@@ -176,8 +184,8 @@ export const crearMandatario = async (req, res) => {
         // (Útil si estás actualizando un usuario que ya tenía grupos)
         await PoblacionesPorPersona.destroy({
           where: { numeroidentificacion: documento },
-
-        }, { transaction: t });
+          transaction: t,
+        });
 
         // 2. Crear las nuevas asociaciones
         const nuevasAsociaciones = gruposPoblacionales.map(idGrupo => ({
@@ -422,6 +430,7 @@ export const validarMandatarioEnJunta = async (req, res) => {
 
 
 export const agregarMandatarioExistente = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { idJunta } = req.params;
 
@@ -438,37 +447,32 @@ export const agregarMandatarioExistente = async (req, res) => {
     // ==============================
     // VALIDACIONES BÁSICAS
     // ==============================
-    if (!IDUsuario) return res.status(400).json({ message: "Falta el IDUsuario" });
-    if (!Residencia) return res.status(400).json({ message: "Falta la Residencia" });
+    if (!IDUsuario) { await t.rollback(); return res.status(400).json({ message: "Falta el IDUsuario" }); }
+    if (!Residencia) { await t.rollback(); return res.status(400).json({ message: "Falta la Residencia" }); }
     if (!fInicioPeriodo || !fFinPeriodo) {
-      return res.status(400).json({
-        message: "Debe ingresar Inicio y Fin del periodo."
-      });
+      await t.rollback();
+      return res.status(400).json({ message: "Debe ingresar Inicio y Fin del periodo." });
     }
 
     // usuario y junta
     const usuario = await Usuario.findByPk(IDUsuario);
-    if (!usuario) return res.status(404).json({ message: "El usuario no existe" });
+    if (!usuario) { await t.rollback(); return res.status(404).json({ message: "El usuario no existe" }); }
 
     const junta = await Junta.findByPk(idJunta);
-    if (!junta) return res.status(404).json({ message: "La junta no existe" });
+    if (!junta) { await t.rollback(); return res.status(404).json({ message: "La junta no existe" }); }
 
     const inicioMandato = new Date(fInicioPeriodo);
     const finMandato = new Date(fFinPeriodo);
 
-    // Validar periodo usando función global
     const errorPeriodo = validarPeriodoMandato(junta, inicioMandato, finMandato);
-    if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
-
+    if (errorPeriodo) { await t.rollback(); return res.status(400).json({ message: errorPeriodo }); }
 
     const errorCargoUnico = await validarCargoUnico(IDCargo, idJunta);
-    if (errorCargoUnico) return res.status(400).json({ message: errorCargoUnico });
+    if (errorCargoUnico) { await t.rollback(); return res.status(400).json({ message: errorCargoUnico }); }
 
-    // Validar presidente único usando tu función
     const errorCargo = await validarPresidenteUnico(IDUsuario, IDCargo, idJunta);
-    if (errorCargo) return res.status(400).json({ message: errorCargo });
+    if (errorCargo) { await t.rollback(); return res.status(400).json({ message: errorCargo }); }
 
-    // Obtener último EXPEDIDO registrado
     const ultimoMandato = await MandatarioJunta.findOne({
       where: { NumeroIdentificacion: IDUsuario },
       order: [['IDJunta', 'DESC']]
@@ -485,17 +489,18 @@ export const agregarMandatarioExistente = async (req, res) => {
       Expedido: ultimoMandato?.Expedido || null,
       IDCargo: IDCargo || null,
       IDComision: IDComision || null
-    });
+    }, { transaction: t });
 
-    // Crear periodo vinculado
     const nuevoPeriodo = await crearPeriodoYVinculo(
       IDUsuario,
       idJunta,
       fInicioPeriodo,
       fFinPeriodo,
-      null,
+      t,
       mandatario.IDMandatarioJunta
     );
+
+    await t.commit();
 
     res.json({
       message: "Mandatario agregado correctamente",
@@ -504,6 +509,7 @@ export const agregarMandatarioExistente = async (req, res) => {
     });
 
   } catch (error) {
+    await t.rollback();
     console.error(error);
     res.status(500).json({
       message: "Error al agregar el mandatario",
@@ -599,6 +605,7 @@ export const obtenerMandatario = async (req, res) => {
 
 
 export const actualizarMandatario = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
     const { idMandatario } = req.params;
 
@@ -621,57 +628,40 @@ export const actualizarMandatario = async (req, res) => {
       comision
     } = req.body;
 
-    // ✅ Validar campos obligatorios
     if (!primernombre || !primerapellido) {
-      return res.status(400).json({
-        message: "Primer nombre y primer apellido son obligatorios"
-      });
+      await t.rollback();
+      return res.status(400).json({ message: "Primer nombre y primer apellido son obligatorios" });
     }
 
     if (email && !email.includes("@")) {
+      await t.rollback();
       return res.status(400).json({ message: "Email inválido" });
     }
 
     if (!fInicioPeriodo || !fFinPeriodo) {
-      return res.status(400).json({
-        message: "Debe ingresar fecha de inicio y fin del periodo"
-      });
+      await t.rollback();
+      return res.status(400).json({ message: "Debe ingresar fecha de inicio y fin del periodo" });
     }
 
-    // Buscar el mandatario por su PK
     const mandatario = await MandatarioJunta.findByPk(idMandatario);
-
     if (!mandatario) {
-      return res.status(404).json({
-        message: "El mandatario no existe en esta junta"
-      });
+      await t.rollback();
+      return res.status(404).json({ message: "El mandatario no existe en esta junta" });
     }
 
     const { IDJunta: idJunta, NumeroIdentificacion: documento } = mandatario;
 
-    // Validar que la junta exista
     const junta = await Junta.findByPk(idJunta);
-    if (!junta) return res.status(404).json({ message: "La junta no existe" });
+    if (!junta) { await t.rollback(); return res.status(404).json({ message: "La junta no existe" }); }
 
-    // Validar periodo dentro del periodo de la junta
-    const errorPeriodo = validarPeriodoMandato(
-      junta,
-      new Date(fInicioPeriodo),
-      new Date(fFinPeriodo)
-    );
+    const errorPeriodo = validarPeriodoMandato(junta, new Date(fInicioPeriodo), new Date(fFinPeriodo));
+    if (errorPeriodo) { await t.rollback(); return res.status(400).json({ message: errorPeriodo }); }
 
-    if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
-
-    // Validar presidente único
     const errorCargo = await validarPresidenteUnico(documento, cargo, idJunta);
-    if (errorCargo) return res.status(400).json({ message: errorCargo });
+    if (errorCargo) { await t.rollback(); return res.status(400).json({ message: errorCargo }); }
 
-    // Actualizar datos del usuario
     const usuario = await Usuario.findByPk(documento);
-
-    if (!usuario) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
-    }
+    if (!usuario) { await t.rollback(); return res.status(404).json({ message: "Usuario no encontrado" }); }
 
     await usuario.update({
       IDTipoDocumento: tipoDocumento,
@@ -684,42 +674,38 @@ export const actualizarMandatario = async (req, res) => {
       Residencia: residencia,
       Celular: telefono,
       Correo: email
-    });
+    }, { transaction: t });
 
-    // Actualizar datos del mandatario
     await mandatario.update({
       IDCargo: cargo || null,
       IDComision: comision || null,
       Residencia: residencia,
       Expedido: expedido,
       Profesion: profesion
-    });
+    }, { transaction: t });
 
-    // ✅ Actualizar o crear periodo
     const periodoMandato = await PeriodoPorMandato.findOne({
-      where: { IDMandatarioJunta: idMandatario }
+      where: { IDMandatarioJunta: idMandatario },
+      transaction: t
     });
 
     if (periodoMandato) {
-      const periodo = await Periodo.findByPk(periodoMandato.IDPeriodo);
+      const periodo = await Periodo.findByPk(periodoMandato.IDPeriodo, { transaction: t });
       if (periodo) {
-        await periodo.update({
-          FechaInicio: fInicioPeriodo,
-          FechaFin: fFinPeriodo
-        });
+        await periodo.update({ FechaInicio: fInicioPeriodo, FechaFin: fFinPeriodo }, { transaction: t });
       }
     } else {
-
-      await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, null, idMandatario);
+      await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, t, idMandatario);
     }
 
-    await junta.update({ UltimoEditor: req.usuario.nombre });
+    await junta.update({ UltimoEditor: req.usuario.nombre }, { transaction: t });
 
-    return res.json({
-      message: "Mandatario actualizado correctamente"
-    });
+    await t.commit();
+
+    return res.json({ message: "Mandatario actualizado correctamente" });
 
   } catch (error) {
+    await t.rollback();
     console.error(error);
     return res.status(500).json({
       message: "Error al actualizar mandatario",

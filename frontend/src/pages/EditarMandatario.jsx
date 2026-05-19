@@ -158,17 +158,17 @@ export default function EditarMandatario() {
   const handleSubmit = async () => {
     // Validaciones (mismas que en crear)
     if (!/^\d{6,10}$/.test(formData.documento)) {
-      AlertMessage.success("El documento debe tener entre 6 y 10 números");
+      AlertMessage.warning("El documento debe tener entre 6 y 10 números");
       return;
     }
 
     if (!/^\d{10}$/.test(formData.telefono)) {
-      AlertMessage.success("El teléfono debe tener exactamente 10 dígitos");
+      AlertMessage.warning("El teléfono debe tener exactamente 10 dígitos");
       return;
     }
 
     if (formData.email && !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(formData.email)) {
-      AlertMessage.success("El correo debe tener un dominio válido, como usuario@correo.com");
+      AlertMessage.warning("El correo debe tener un dominio válido, como usuario@correo.com");
       return;
     }
 
@@ -176,7 +176,7 @@ export default function EditarMandatario() {
     const camposNombre = ["primernombre", "primerapellido"];
     for (let campo of camposNombre) {
       if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/.test(formData[campo])) {
-        AlertMessage.success(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
+        AlertMessage.warning(`El campo "${campo.toUpperCase()}" solo debe contener letras`);
         return;
       }
     }

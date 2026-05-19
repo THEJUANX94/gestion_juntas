@@ -330,7 +330,7 @@ export default function DetalleJunta() {
 
       AlertMessage.success("Nuevo periodo creado correctamente");
       setIsModalOpen(false);
-      navigate(0);
+      navigate(`/juntas/detalle-junta/${resultado.junta.IDJunta}`);
     } catch (error) {
       AlertMessage.error(error.message || "Error al crear el nuevo periodo");
     } finally {
