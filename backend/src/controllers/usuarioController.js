@@ -398,7 +398,8 @@ export const obtenerUsuarioPorId = async (req, res) => {
 export const actualizarUsuario = async (req, res) => {
   const userAdmin = req.user || {};
   const { NumeroIdentificacion } = req.params;
-  const { Login, Contraseña, ...datosUsuario } = req.body;
+  const { Login, Contraseña, Contrasena, ...datosUsuario } = req.body;
+  const passwordPlano = Contraseña || Contrasena;
 
   let credencialesActualizadas = null;
 
@@ -426,16 +427,16 @@ export const actualizarUsuario = async (req, res) => {
 
     const actualizado = await usuario.update(datosUsuario);
 
-    if (Login || Contraseña) {
+    if (Login || passwordPlano) {
       const datosCredenciales = {};
 
       if (Login) {
         datosCredenciales.Login = Login;
       }
 
-      if (Contraseña) {
+      if (passwordPlano) {
         const saltRounds = 10;
-        datosCredenciales.Contraseña = await bcrypt.hash(Contraseña, saltRounds);
+        datosCredenciales.Contraseña = await bcrypt.hash(passwordPlano, saltRounds);
       }
 
       const credenciales = await Credenciales.findOne({ where: { numeroIdentificacion: NumeroIdentificacion } });
@@ -445,7 +446,7 @@ export const actualizarUsuario = async (req, res) => {
         credencialesActualizadas = {
           NumeroIdentificacion,
           Login: credencialesActualizadasData.Login,
-          Contraseña: Contraseña ? 'ACTUALIZADA' : 'NO_CAMBIO'
+          Contraseña: passwordPlano ? 'ACTUALIZADA' : 'NO_CAMBIO'
         };
       } else {
         logOperation(
