@@ -26,7 +26,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
   const ciudadExpedicion = "Tunja";
 
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
-  const anchoUtil = 210 - margenIzq - margenDer; 
+  const anchoUtil = DEFAULTS.anchoPagina - margenIzq - margenDer;
 
   let yPos = 50; // Posición vertical inicial
 
@@ -91,7 +91,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
   doc.text("EXPEDIDO EN", colExp, yPos);
   
   yPos += 2;
-  doc.line(margenIzq, yPos, 210 - margenDer, yPos); // Línea separadora
+  doc.line(margenIzq, yPos, DEFAULTS.anchoPagina - margenDer, yPos); // Línea separadora
   yPos += 5;
 
   doc.setFont('helvetica', 'normal');

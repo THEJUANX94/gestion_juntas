@@ -7,8 +7,8 @@ import { getUltimaFirmaData } from "../controllers/firmasController.js";
 export const DEFAULTS = {
   margenIzq: 25,
   margenDer: 25,
-  anchoPagina: 210,
-  altoPagina: 297,
+  anchoPagina: 216,
+  altoPagina: 330,
   margenInf: 25,
 };
 
@@ -17,7 +17,7 @@ export const createDoc = (options = {}) => {
   return new jsPDF({
     orientation: 'p',
     unit: 'mm',
-    format: 'a4',
+    format: [216, 330],
     ...options
   });
 };

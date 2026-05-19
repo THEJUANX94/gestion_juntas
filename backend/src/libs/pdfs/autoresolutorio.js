@@ -134,7 +134,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
     : '____';
 
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
-  const anchoUtil = 210 - margenIzq - margenDer;
+  const anchoUtil = DEFAULTS.anchoPagina - margenIzq - margenDer;
 
   const resources = await addPDFHeader(doc, datosCertificado);
 
@@ -385,7 +385,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   // Firma
   const anchoFirma = 50;
   const altoFirma = 25;
-  const xFirma = (210 - anchoFirma) / 2;
+  const xFirma = (DEFAULTS.anchoPagina - anchoFirma) / 2;
 
   if (resources.base64Firma) {
     doc.addImage(resources.base64Firma, 'PNG', xFirma, yPos, anchoFirma, altoFirma);

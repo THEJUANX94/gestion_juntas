@@ -63,7 +63,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
   const tipodocumento = (datosCertificado.TipoCertificado || 'JUNTA DE ACCIÓN COMUNAL').toUpperCase();
 
   const { margenIzq, margenDer } = DEFAULTS;
-  const anchoUtil = 210 - margenIzq - margenDer;
+  const anchoUtil = DEFAULTS.anchoPagina - margenIzq - margenDer;
   const now = datosCertificado.FechaCreacion
     ? parseToBogota(datosCertificado.FechaCreacion)
     : Temporal.Now.zonedDateTimeISO(BOGOTA);
@@ -195,7 +195,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
   // Firma
   const anchoFirma = 50;
   const altoFirma = 25;
-  const xFirma = (210 - anchoFirma) / 2;
+  const xFirma = (DEFAULTS.anchoPagina - anchoFirma) / 2;
 
   if (resources.base64Firma) {
     doc.addImage(resources.base64Firma, 'PNG', xFirma, yPos, anchoFirma, altoFirma);

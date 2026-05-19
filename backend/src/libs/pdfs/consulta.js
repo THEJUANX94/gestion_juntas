@@ -15,7 +15,7 @@ const generarConsulta = async (datosCertificado) => {
 
   let yPos = 50;
   const { margenIzq, margenDer, altoPagina, margenInf } = DEFAULTS;
-  const anchoUtil = 210 - margenIzq - margenDer;
+  const anchoUtil = DEFAULTS.anchoPagina - margenIzq - margenDer;
 
   // Contenido placeholder (estructura mínima)
   doc.setFontSize(12);
