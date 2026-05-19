@@ -18,6 +18,7 @@ export const createDoc = (options = {}) => {
     orientation: 'p',
     unit: 'mm',
     format: [216, 330],
+    compress: true,
     ...options
   });
 };
