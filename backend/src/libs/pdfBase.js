@@ -133,7 +133,7 @@ export const addPDFHeader = async (doc, datosCertificado) => {
 
   // Logo
   if (resources.base64Logo) {
-    doc.addImage(resources.base64Logo, "PNG", margenIzq, 8, 48, 28);
+    doc.addImage(resources.base64Logo, "PNG", margenIzq, 8, 48, 16);
   }
 
   // QR a la derecha (omitir en modo preview)
