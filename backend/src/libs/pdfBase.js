@@ -23,7 +23,16 @@ export const createDoc = (options = {}) => {
 };
 
 // --- CARGAR RECURSOS (Logo y Firma) ---
+let cachedResources = null;
+let lastCacheTime = 0;
+const CACHE_TTL = 1000 * 60 * 60; // 1 hora de caché
+
 export const loadResources = async () => {
+  // Retornar recursos desde caché si aún es válido
+  if (cachedResources && (Date.now() - lastCacheTime < CACHE_TTL)) {
+    return cachedResources;
+  }
+
   let base64Logo = '';
   let base64Firma = '';
   // Valores por defecto en caso de que no haya nadie activo
@@ -55,7 +64,11 @@ export const loadResources = async () => {
     console.error('Error crítico al cargar recursos de firma:', e.message);
   }
 
-  return { base64Logo, base64Firma, nombreFirmante, cargoFirmante };
+  // Guardar en caché
+  cachedResources = { base64Logo, base64Firma, nombreFirmante, cargoFirmante };
+  lastCacheTime = Date.now();
+
+  return cachedResources;
 };
 
 // --- GENERAR QR ---

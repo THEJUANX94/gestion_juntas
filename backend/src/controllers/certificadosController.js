@@ -104,21 +104,29 @@ export const crearCertificado = async (req, res) => {
     // Preferimos registrar el warning y usar 'DESCONOCIDO' a insertar datos de relleno que confundan
     const tipoCertificadoValue = tipoNombre || 'DESCONOCIDO';
 
-    // --- Crear el certificado en BD (necesita campos obligatorios del modelo) ---
+    // Tipo de PDF: puede venir en el body; por defecto 'autoresolutorio'
+    const { tipo } = req.body;
+    const isAutoresolutorio = (!tipo || tipo === 'autoresolutorio');
+
+    // --- Crear el certificado en BD (solo si es autoresolutorio) ---
     const ahora = new Date();
-    const nuevoCertificado = await Certificados.create({
-      FechaCreacion: ahora,
-      IDJunta: junta.IDJunta,
-      NombreCertificado: junta.RazonSocial || `Certificado_${ahora.toISOString()}`,
-      TipoCertificado: tipoCertificadoValue,
-      ElaboradoPor: elaboradoPor,
-      GeneradoPor: generadoPor
-    });
+    let nuevoCertificado = null;
+
+    if (isAutoresolutorio) {
+      nuevoCertificado = await Certificados.create({
+        FechaCreacion: ahora,
+        IDJunta: junta.IDJunta,
+        NombreCertificado: junta.RazonSocial || `Certificado_${ahora.toISOString()}`,
+        TipoCertificado: tipoCertificadoValue,
+        ElaboradoPor: elaboradoPor,
+        GeneradoPor: generadoPor
+      });
+    }
 
     // Preparar datos para el PDF (solo con valores reales; si falta algo, se deja undefined/null)
     const datosCertificado = {
       FechaCreacion: ahora,
-      IDCertificado: nuevoCertificado.IDCertificado,
+      IDCertificado: nuevoCertificado ? nuevoCertificado.IDCertificado : null,
       NombreMunicipio: nombreMunicipio || null,
       nombreOrganizacion: junta.RazonSocial || null,
       personeriaNumero: junta.NumPersoneriaJuridica || null,
@@ -132,20 +140,17 @@ export const crearCertificado = async (req, res) => {
       generadoPor
     };
 
-    // Tipo de PDF: puede venir en el body; por defecto 'autoresolutorio'
-    const { tipo } = req.body;
-
     // Generar el PDF con la fábrica de generadores. Los generadores deben manejar valores faltantes.
     const pdfBuffer = await generatePdf(tipo || 'autoresolutorio', datosCertificado);
 
     logOperation(
-      "Certificado Creado y Generado",
-      { IDJunta: IDJunta, IDCertificado: nuevoCertificado.IDCertificado },
+      "Certificado Generado",
+      { IDJunta: IDJunta, IDCertificado: nuevoCertificado ? nuevoCertificado.IDCertificado : 'N/A (No Autoresolutorio)', Tipo: tipo || 'autoresolutorio' },
       'info'
     );
 
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=certificado_${nuevoCertificado.IDCertificado || 'documento'}.pdf`);
+    res.setHeader('Content-Disposition', `attachment; filename=certificado_${nuevoCertificado ? nuevoCertificado.IDCertificado : (tipo || 'documento')}.pdf`);
     res.send(Buffer.from(pdfBuffer));
   } catch (err) {
     console.error("Error al generar certificado:", err);
