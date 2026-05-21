@@ -291,18 +291,21 @@ export const resetPassword = async (req, res) => {
 
 export const ChangePassword = async (req, res) => {
     // El frontend ahora envía estos datos en el cuerpo de la solicitud (req.body)
-    const { numeroIdentificacion, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body;
+    
+    // Obtenemos el numero de identificacion del token JWT (middleware verificarAuth)
+    const numeroIdentificacion = req.usuario ? req.usuario.id : null;
 
-    console.log(`[RESET] Solicitud de restablecimiento directa para ID: ${numeroIdentificacion}`);
+    console.log(`[CHANGE-PASS] Solicitud de cambio directo para ID: ${numeroIdentificacion}`);
 
     // 1. Validaciones de entrada
     if (!numeroIdentificacion) {
-        return res.status(400).json({ message: 'El número de identificación es requerido.' });
+        return res.status(401).json({ message: 'No autorizado. Debe iniciar sesión.' });
     }
 
-    if (!newPassword || newPassword.length < 8) {
-        console.error("[RESET] Error: Contraseña no cumple el mínimo de 8 caracteres.");
-        return res.status(400).json({ message: 'La contraseña debe tener al menos 8 caracteres.' });
+    if (!oldPassword || !newPassword || newPassword.length < 8) {
+        console.error("[CHANGE-PASS] Error: Datos incompletos o contraseña corta.");
+        return res.status(400).json({ message: 'Datos incompletos o la contraseña nueva debe tener al menos 8 caracteres.' });
     }
 
     try {
@@ -312,13 +315,20 @@ export const ChangePassword = async (req, res) => {
         });
 
         if (!credencial) {
-            console.error(`[RESET] Error: Credencial no encontrada para IDUsuario: ${numeroIdentificacion}`);
+            console.error(`[CHANGE-PASS] Error: Credencial no encontrada para IDUsuario: ${numeroIdentificacion}`);
             return res.status(404).json({ message: 'Usuario no encontrado en el sistema.' });
         }
 
-        console.log(`[RESET] Credencial encontrada. Hasheando nueva contraseña...`);
+        // 3. Verificar que la contraseña actual (oldPassword) coincida
+        const isMatch = await bcrypt.compare(oldPassword, credencial.Contraseña);
+        if (!isMatch) {
+            console.error(`[CHANGE-PASS] Error: Contraseña actual incorrecta para IDUsuario: ${numeroIdentificacion}`);
+            return res.status(400).json({ message: 'La contraseña actual es incorrecta.' });
+        }
 
-        // 3. Hashear la nueva contraseña
+        console.log(`[CHANGE-PASS] Credencial validada. Hasheando nueva contraseña...`);
+
+        // 4. Hashear la nueva contraseña
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 

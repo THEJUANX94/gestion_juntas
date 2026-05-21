@@ -78,8 +78,14 @@ export const crearUsuario = async (req, res) => {
 
     console.log('Looking for role:', NombreRol);
 
+    const strippedRolName = NombreRol.normalize('NFD').replace(/[̀-ͯ]/g, '');
     const rol = await Rol.findOne({
-      where: { NombreRol: NombreRol }
+      where: {
+        [Op.or]: [
+          { NombreRol: NombreRol },
+          { NombreRol: { [Op.iLike]: strippedRolName } }
+        ]
+      }
     });
 
     if (!rol) {
@@ -154,7 +160,7 @@ export const crearUsuario = async (req, res) => {
 
     // 3. Lógica para Credenciales (Administrador, Descarga, Consulta, Auxiliar)
     // -----------------------------------------------------------------------
-    const rolesConCredenciales = ["Administrador", "Descarga", "Consulta", "Auxiliar"];
+    const rolesConCredenciales = ["Administrador", "Descarga", "Consulta", "Auxiliar", "Generación Auto", "Generacion Auto"];
 
     if (rolesConCredenciales.includes(NombreRol)) {
       try {

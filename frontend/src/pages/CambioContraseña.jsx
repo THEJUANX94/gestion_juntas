@@ -33,6 +33,7 @@ export default function ChangePassword() {
       const response = await fetch(`${import.meta.env.VITE_PATH}/login/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           oldPassword: formData.oldPassword,
           newPassword: formData.newPassword
