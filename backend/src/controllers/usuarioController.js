@@ -247,7 +247,7 @@ export const obtenerUsuarios = async (req, res) => {
           model: Rol,
           as: "RolInfo",
           attributes: ["NombreRol"],
-          where: { NombreRol: ["Administrador", "Auxiliar", "GeneraciónAuto"] },
+          where: { NombreRol: ["Administrador", "Auxiliar", "GeneracionAuto"] },
         },
         { model: Firma, attributes: ["Ubicacion", "FechaCreacion"] },
       ],
