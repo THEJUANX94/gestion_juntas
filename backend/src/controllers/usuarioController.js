@@ -3,6 +3,18 @@ import { Rol } from "../model/rolModel.js";
 import { Firma } from "../model/firmaModel.js";
 import { logOperation } from "../utils/logger.js";
 import { Op } from "sequelize";
+import { ROLES } from "../config/roles.js";
+
+// Map frontend display names → UUID (bypasses DB string spelling)
+const ROLE_NAME_TO_ID = {
+  "Administrador":    ROLES.ADMIN,
+  "Auxiliar":         ROLES.AUXILIAR,
+  "Consulta":         ROLES.CONSULTA,
+  "Descarga":         ROLES.DESCARGA,
+  "Generación Auto":  ROLES.GENERACION_AUTO,
+  "Generacion Auto":  ROLES.GENERACION_AUTO,
+  "GeneracionAuto":   ROLES.GENERACION_AUTO,
+};
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import { Credenciales } from "../model/credencialesModel.js";
@@ -78,15 +90,10 @@ export const crearUsuario = async (req, res) => {
 
     console.log('Looking for role:', NombreRol);
 
-    const strippedRolName = NombreRol.normalize('NFD').replace(/[̀-ͯ]/g, '');
-    const rol = await Rol.findOne({
-      where: {
-        [Op.or]: [
-          { NombreRol: NombreRol },
-          { NombreRol: { [Op.iLike]: strippedRolName } }
-        ]
-      }
-    });
+    const knownRolId = ROLE_NAME_TO_ID[NombreRol];
+    const rol = knownRolId
+      ? await Rol.findByPk(knownRolId)
+      : await Rol.findOne({ where: { NombreRol: NombreRol } }); // Mandatario fallback
 
     if (!rol) {
       return res.status(400).json({ message: `Rol no válido` });
