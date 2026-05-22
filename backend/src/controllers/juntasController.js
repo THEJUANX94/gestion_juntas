@@ -387,7 +387,7 @@ export const cambiarPeriodoJunta = async (req, res) => {
     }
 
     // 2. BUSCAR LA JUNTA ORIGINAL
-    const juntaOriginal = await Junta.findByPk(id);
+    const juntaOriginal = await Junta.findByPk(id, { transaction: t });
 
     if (!juntaOriginal) {
       await t.rollback();
@@ -421,7 +421,8 @@ export const cambiarPeriodoJunta = async (req, res) => {
 
     if (copiarDignatarios === true || copiarDignatarios === 'true') {
       const mandatariosAnteriores = await MandatarioJunta.findAll({
-        where: { IDJunta: id }
+        where: { IDJunta: id },
+        transaction: t
       });
 
       if (mandatariosAnteriores.length > 0) {

@@ -6,10 +6,16 @@ dotenv.config();
 export const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: "postgres",
   protocol: "postgres",
-  logging: false, 
-      define: {
-      freezeTableName: true,
-      underscored: false 
-    },
+  logging: false,
+  pool: {
+    max: 20,
+    min: 2,
+    acquire: 30000,
+    idle: 10000
+  },
+  define: {
+    freezeTableName: true,
+    underscored: false
+  },
 });
 
