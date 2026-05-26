@@ -44,8 +44,11 @@ export const crearCertificado = async (req, res) => {
       console.warn('No se pudo obtener el municipio:', e.message);
     }
 
-    // Obtener dignatarios de la junta
-    const mandatariosJunta = await MandatarioJunta.findAll({ where: { IDJunta: IDJunta } });
+    // Obtener dignatarios de la junta (orden estable por fecha de inserción)
+    const mandatariosJunta = await MandatarioJunta.findAll({
+      where: { IDJunta: IDJunta },
+      order: [['IDMandatarioJunta', 'ASC']]
+    });
     const dignatarios = [];
 
     for (const m of mandatariosJunta) {
@@ -184,7 +187,10 @@ export const previewCertificado = async (req, res) => {
       console.warn('No se pudo obtener el municipio:', e.message);
     }
 
-    const mandatariosJunta = await MandatarioJunta.findAll({ where: { IDJunta: IDJunta } });
+    const mandatariosJunta = await MandatarioJunta.findAll({
+      where: { IDJunta: IDJunta },
+      order: [['IDMandatarioJunta', 'ASC']]
+    });
     const dignatarios = [];
 
     for (const m of mandatariosJunta) {
@@ -327,7 +333,10 @@ export const enviarAutoresolutorio = async (req, res) => {
     } catch (e) { console.warn('Warning Municipio:', e.message); }
 
     // --- Dignatarios ---
-    const mandatariosJunta = await MandatarioJunta.findAll({ where: { IDJunta: IDJunta } });
+    const mandatariosJunta = await MandatarioJunta.findAll({
+      where: { IDJunta: IDJunta },
+      order: [['IDMandatarioJunta', 'ASC']]
+    });
     const dignatarios = [];
 
     for (const m of mandatariosJunta) {
