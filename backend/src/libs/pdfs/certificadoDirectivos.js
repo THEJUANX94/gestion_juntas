@@ -40,12 +40,38 @@ const formatDateLong = (date) => {
   return `${zdt.day} de ${mes.charAt(0).toUpperCase() + mes.slice(1)} de ${zdt.year}`;
 };
 
-const CARGO_BASES = ['presidente', 'vicepresidente', 'tesorero', 'secretario'];
-
-const getCargoIndex = (cargo) => {
+const getCargoRank = (cargo) => {
   const lower = (cargo || '').toLowerCase().trim();
-  return CARGO_BASES.findIndex(base => lower.includes(base));
+  if (lower.includes('vicepresidente')) return 1;
+  if (lower.includes('presidente')) return 0;
+  if (lower.includes('tesorero')) return 2;
+  if (lower.includes('secretario')) return 3;
+  return -1;
 };
+
+const compareCargos = (cargoA, cargoB) => {
+  const lowerA = (cargoA || '').toLowerCase().trim();
+  const lowerB = (cargoB || '').toLowerCase().trim();
+
+  const rankA = getCargoRank(lowerA);
+  const rankB = getCargoRank(lowerB);
+
+  const rA = rankA === -1 ? 4 : rankA;
+  const rB = rankB === -1 ? 4 : rankB;
+
+  if (rA !== rB) {
+    return rA - rB;
+  }
+
+  const isSuplenteA = lowerA.includes('suplente');
+  const isSuplenteB = lowerB.includes('suplente');
+
+  if (isSuplenteA && !isSuplenteB) return 1;
+  if (!isSuplenteA && isSuplenteB) return -1;
+
+  return lowerA.localeCompare(lowerB, 'es', { sensitivity: 'base' });
+};
+
 
 const generarCertificadoDirectivos = async (datosCertificado) => {
   const doc = createDoc();
@@ -106,8 +132,8 @@ const generarCertificadoDirectivos = async (datosCertificado) => {
 
   // ── TABLA DE DIGNATARIOS (presidente, vicepresidente, tesorero, secretario) ──
   const dignatariosTabla = (datosCertificado.dignatarios || [])
-    .filter(d => getCargoIndex(d.cargo) !== -1)
-    .sort((a, b) => getCargoIndex(a.cargo) - getCargoIndex(b.cargo));
+    .filter(d => getCargoRank(d.cargo) !== -1)
+    .sort((a, b) => compareCargos(a.cargo, b.cargo));
 
   if (dignatariosTabla.length > 0) {
     const colWidths = [35, 65, 25, 35];

@@ -41,6 +41,38 @@ const clasificarComision = (nombreComision) => {
   return 'COMISIONES DE TRABAJO';
 };
 
+const getCargoRank = (cargo) => {
+  const lower = (cargo || '').toLowerCase().trim();
+  if (lower.includes('vicepresidente')) return 1;
+  if (lower.includes('presidente')) return 0;
+  if (lower.includes('tesorero')) return 2;
+  if (lower.includes('secretario')) return 3;
+  return -1;
+};
+
+const compareCargos = (cargoA, cargoB) => {
+  const lowerA = (cargoA || '').toLowerCase().trim();
+  const lowerB = (cargoB || '').toLowerCase().trim();
+
+  const rankA = getCargoRank(lowerA);
+  const rankB = getCargoRank(lowerB);
+
+  const rA = rankA === -1 ? 4 : rankA;
+  const rB = rankB === -1 ? 4 : rankB;
+
+  if (rA !== rB) {
+    return rA - rB;
+  }
+
+  const isSuplenteA = lowerA.includes('suplente');
+  const isSuplenteB = lowerB.includes('suplente');
+
+  if (isSuplenteA && !isSuplenteB) return 1;
+  if (!isSuplenteA && isSuplenteB) return -1;
+
+  return lowerA.localeCompare(lowerB, 'es', { sensitivity: 'base' });
+};
+
 const makeTableDrawer = (doc, anchoUtil, margenIzq) => {
   const colWidths = [35, 65, 25, 35];
   const totalW = colWidths.reduce((a, b) => a + b, 0);
@@ -166,12 +198,13 @@ const generarConsulta = async (datosCertificado) => {
       }
     });
 
-    const CARGO_ORDER = ['presidente', 'vicepresidente', 'tesorero', 'secretario'];
-    directivos.sort((a, b) => {
-      const ai = CARGO_ORDER.findIndex(o => a[0].toLowerCase().includes(o));
-      const bi = CARGO_ORDER.findIndex(o => b[0].toLowerCase().includes(o));
-      return (ai === -1 ? CARGO_ORDER.length : ai) - (bi === -1 ? CARGO_ORDER.length : bi);
+    const compareRows = (rowA, rowB) => compareCargos(rowA[0], rowB[0]);
+    directivos.sort(compareRows);
+    fiscales.sort(compareRows);
+    Object.keys(comisionesAgrupadas).forEach(key => {
+      comisionesAgrupadas[key].sort(compareRows);
     });
+    delegados.sort(compareRows);
 
     if (directivos.length > 0) {
       yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);
