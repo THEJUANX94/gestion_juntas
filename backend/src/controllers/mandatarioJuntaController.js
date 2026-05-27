@@ -475,8 +475,13 @@ export const agregarMandatarioExistente = async (req, res) => {
 
     const ultimoMandato = await MandatarioJunta.findOne({
       where: { NumeroIdentificacion: IDUsuario },
-      order: [['IDJunta', 'DESC']]
+      order: [['IDMandatarioJunta', 'DESC']]
     });
+
+    if (!Profesion) {
+      await t.rollback();
+      return res.status(400).json({ message: "Falta la Profesión" });
+    }
 
     // ==============================
     // Crear Mandatario
@@ -485,7 +490,7 @@ export const agregarMandatarioExistente = async (req, res) => {
       NumeroIdentificacion: IDUsuario,
       IDJunta: idJunta,
       Residencia,
-      Profesion: ultimoMandato?.Profesion || Profesion || null,
+      Profesion,
       Expedido: ultimoMandato?.Expedido || null,
       IDCargo: IDCargo || null,
       IDComision: IDComision || null
@@ -770,3 +775,25 @@ export const eliminarMandatario = async (req, res) => {
   }
 };
 
+
+
+// ======================================================
+//  OBTENER PROFESIÓN DE UN USUARIO (desde mandatos previos)
+// ======================================================
+export const getProfesionUsuario = async (req, res) => {
+  try {
+    const { idUsuario } = req.params;
+    const registro = await MandatarioJunta.findOne({
+      where: {
+        NumeroIdentificacion: idUsuario,
+        Profesion: { [Op.ne]: null }
+      },
+      order: [['IDMandatarioJunta', 'DESC']],
+      attributes: ['Profesion']
+    });
+    res.json({ Profesion: registro?.Profesion || null });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error obteniendo profesión" });
+  }
+};
