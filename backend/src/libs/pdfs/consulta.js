@@ -73,6 +73,25 @@ const compareCargos = (cargoA, cargoB) => {
   return lowerA.localeCompare(lowerB, 'es', { sensitivity: 'base' });
 };
 
+// Ordena delegados intercalando principal y suplente por número:
+// Delegado 1 → Delegado Suplente 1 → Delegado 2 → Delegado Suplente 2 ...
+const compareDelegados = (rowA, rowB) => {
+  const cargoA = (rowA[0] || '').toLowerCase();
+  const cargoB = (rowB[0] || '').toLowerCase();
+
+  const numA = parseInt((cargoA.match(/\d+/) || [0])[0], 10);
+  const numB = parseInt((cargoB.match(/\d+/) || [0])[0], 10);
+
+  if (numA !== numB) return numA - numB;
+
+  const isSuplenteA = cargoA.includes('suplente');
+  const isSuplenteB = cargoB.includes('suplente');
+  if (isSuplenteA && !isSuplenteB) return 1;
+  if (!isSuplenteA && isSuplenteB) return -1;
+
+  return cargoA.localeCompare(cargoB, 'es', { sensitivity: 'base' });
+};
+
 const makeTableDrawer = (doc, anchoUtil, margenIzq) => {
   const colWidths = [35, 65, 25, 35];
   const totalW = colWidths.reduce((a, b) => a + b, 0);
@@ -204,7 +223,7 @@ const generarConsulta = async (datosCertificado) => {
     Object.keys(comisionesAgrupadas).forEach(key => {
       comisionesAgrupadas[key].sort(compareRows);
     });
-    delegados.sort(compareRows);
+    delegados.sort(compareDelegados);
 
     if (directivos.length > 0) {
       yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);
