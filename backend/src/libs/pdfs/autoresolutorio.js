@@ -400,8 +400,9 @@ const generarAutoresolutorio = async (datosCertificado) => {
       yPos = drawTable(titulo, 'CARGO', rows, yPos);
     }
   });
-  if (delegados.length > 0) {
-    yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegados, yPos);
+  const delegadosIntercalados = intercalarDelegados(delegados);
+  if (delegadosIntercalados.length > 0) {
+    yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegadosIntercalados, yPos);
   }
 } else {
   doc.setFont('helvetica', 'normal');
