@@ -22,6 +22,11 @@ const handleUpdate = async (form) => {
     for (const [key, value] of form.entries()) {
       plainData[key] = value;
     }
+    // El backend espera 'Login' pero UserForm envía 'Usuario'
+    if (plainData.Usuario !== undefined) {
+      plainData.Login = plainData.Usuario;
+      delete plainData.Usuario;
+    }
 
     const response = await fetch(import.meta.env.VITE_PATH + `/usuarios/${IDUsuario}`, {
       method: "PUT",
@@ -40,7 +45,7 @@ const handleUpdate = async (form) => {
 
 
 
-    setTimeout(() => navigate("/"), 1500);
+    setTimeout(() => navigate("/usuarios/listar"), 1500);
 
     return updatedUser;
 
