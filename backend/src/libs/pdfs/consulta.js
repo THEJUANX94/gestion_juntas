@@ -73,23 +73,19 @@ const compareCargos = (cargoA, cargoB) => {
   return lowerA.localeCompare(lowerB, 'es', { sensitivity: 'base' });
 };
 
-// Ordena delegados intercalando principal y suplente por número:
-// Delegado 1 → Delegado Suplente 1 → Delegado 2 → Delegado Suplente 2 ...
-const compareDelegados = (rowA, rowB) => {
-  const cargoA = (rowA[0] || '').toLowerCase();
-  const cargoB = (rowB[0] || '').toLowerCase();
-
-  const numA = parseInt((cargoA.match(/\d+/) || [0])[0], 10);
-  const numB = parseInt((cargoB.match(/\d+/) || [0])[0], 10);
-
-  if (numA !== numB) return numA - numB;
-
-  const isSuplenteA = cargoA.includes('suplente');
-  const isSuplenteB = cargoB.includes('suplente');
-  if (isSuplenteA && !isSuplenteB) return 1;
-  if (!isSuplenteA && isSuplenteB) return -1;
-
-  return cargoA.localeCompare(cargoB, 'es', { sensitivity: 'base' });
+// Intercala delegados manteniendo el orden de inserción (IDMandatarioJunta ASC):
+// principal[0] → suplente[0] → principal[1] → suplente[1] ...
+// Resultado: Delegado → Delegado Suplente → Delegado → Delegado Suplente ...
+const intercalarDelegados = (rows) => {
+  const principales = rows.filter(r => !(r[0] || '').toLowerCase().includes('suplente'));
+  const suplentes = rows.filter(r => (r[0] || '').toLowerCase().includes('suplente'));
+  const out = [];
+  const max = Math.max(principales.length, suplentes.length);
+  for (let i = 0; i < max; i++) {
+    if (principales[i]) out.push(principales[i]);
+    if (suplentes[i]) out.push(suplentes[i]);
+  }
+  return out;
 };
 
 const makeTableDrawer = (doc, anchoUtil, margenIzq) => {
@@ -223,7 +219,7 @@ const generarConsulta = async (datosCertificado) => {
     Object.keys(comisionesAgrupadas).forEach(key => {
       comisionesAgrupadas[key].sort(compareRows);
     });
-    delegados.sort(compareDelegados);
+    const delegadosIntercalados = intercalarDelegados(delegados);
 
     if (directivos.length > 0) {
       yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);
@@ -236,8 +232,8 @@ const generarConsulta = async (datosCertificado) => {
         yPos = drawTable(titulo, 'CARGO', rows, yPos);
       }
     });
-    if (delegados.length > 0) {
-      yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegados, yPos);
+    if (delegadosIntercalados.length > 0) {
+      yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegadosIntercalados, yPos);
     }
   } else {
     doc.setFont('helvetica', 'normal');
