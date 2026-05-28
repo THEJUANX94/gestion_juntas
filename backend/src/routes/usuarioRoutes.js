@@ -35,13 +35,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post("/", upload.single("Firma"), crearUsuario);
-router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerUsuarios);
-router.get("/mandatarios", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerMandatarios);
+router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerUsuarios);
+router.get("/mandatarios", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerMandatarios);
 router.get("/verificar/:NumeroIdentificacion", verificarIdentificacion);
 router.get("/verificar-correo/:correo", verificarCorreo);
-router.get("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerUsuarioPorId);
-router.put("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarUsuario);
+router.get("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerUsuarioPorId);
+router.put("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), actualizarUsuario);
 router.delete("/:NumeroIdentificacion", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarUsuario);
-router.patch("/:idUsuario/firma/estado", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarEstadoFirma);
+router.patch("/:idUsuario/firma/estado", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), actualizarEstadoFirma);
 
 export default router;

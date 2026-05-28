@@ -438,6 +438,12 @@ export const actualizarUsuario = async (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
+    if (datosUsuario.NombreRol) {
+      const resolvedId = ROLE_NAME_TO_ID[datosUsuario.NombreRol];
+      if (resolvedId) datosUsuario.IDRol = resolvedId;
+      delete datosUsuario.NombreRol;
+    }
+
     const actualizado = await usuario.update(datosUsuario);
 
     if (Login || passwordPlano) {
