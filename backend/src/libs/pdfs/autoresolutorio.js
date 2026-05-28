@@ -429,7 +429,7 @@ const generarAutoresolutorio = async (datosCertificado) => {
   yPos += 5;
 
   // ── FOOTER ──
-  result = checkPageBreak(doc, yPos, 75);
+  result = checkPageBreak(doc, yPos, 90);
   yPos = result.yPos;
 
   doc.setFont('helvetica', 'normal');
@@ -458,14 +458,14 @@ const generarAutoresolutorio = async (datosCertificado) => {
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.text('Elaboró y generó:', margenIzq, yPos);
+  doc.text('Elaboró, Generó y Revisó:', margenIzq, yPos);
   yPos += 5;
   doc.setFont('helvetica', 'normal');
   doc.text(`Elaboró: ${datosCertificado.elaboradoPor || '________________'}`, margenIzq, yPos);
   yPos += 5;
   doc.text(`Generó: ${datosCertificado.generadoPor || '________________'}`, margenIzq, yPos);
-  yPos += 8;
-  doc.text(`Revisó: OLGA LUCIA SOTO GONZALEZ`, margenIzq, yPos);
+  yPos += 5;
+  doc.text('Revisó: OLGA LUCIA SOTO GONZALEZ', margenIzq, yPos);
   
 
   doc.setFontSize(10);
