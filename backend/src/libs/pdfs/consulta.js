@@ -204,7 +204,7 @@ const generarConsulta = async (datosCertificado) => {
     Object.keys(comisionesAgrupadas).forEach(key => {
       comisionesAgrupadas[key].sort(compareRows);
     });
-    delegados.sort(compareRows);
+    // Los delegados conservan el orden de inserción (Delegado - Suplente - Delegado - Suplente...)
 
     if (directivos.length > 0) {
       yPos = drawTable('DIRECTIVOS', 'CARGO', directivos, yPos);
