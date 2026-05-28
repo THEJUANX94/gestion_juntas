@@ -466,7 +466,6 @@ const generarAutoresolutorio = async (datosCertificado) => {
   doc.text(`Generó: ${datosCertificado.generadoPor || '________________'}`, margenIzq, yPos);
   yPos += 8;
   doc.text(`Revisó: OLGA LUCIA SOTO GONZALEZ`, margenIzq, yPos);
-  yPos += 5;
   
 
   doc.setFontSize(10);
