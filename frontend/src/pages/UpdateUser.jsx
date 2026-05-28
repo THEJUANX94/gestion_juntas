@@ -16,11 +16,18 @@ export default function EditUser() {
 
 const handleUpdate = async (form) => {
   try {
+    // form llega como FormData desde UserForm; hay que convertirlo a objeto plano
+    // para que JSON.stringify funcione (FormData serializa como {})
+    const plainData = {};
+    for (const [key, value] of form.entries()) {
+      plainData[key] = value;
+    }
+
     const response = await fetch(import.meta.env.VITE_PATH + `/usuarios/${IDUsuario}`, {
       method: "PUT",
       credentials: 'include',
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(plainData),
     });
 
     if (!response.ok) {

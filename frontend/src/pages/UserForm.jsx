@@ -292,7 +292,10 @@ export default function UserForm({ initialData = null, mode = "create", onSubmit
 
       await onSubmit(formData);
 
-      if (["Administrador", "Consulta", "Auxiliar", "Descarga", "Generación Auto"].includes(form.NombreRol)) {
+      // En modo edición NO llamar a /credenciales: esa ruta apunta a loginUsuario,
+      // lo que sobreescribiría la cookie auth_token del admin y lo expulsaría del sistema.
+      // Las credenciales en edición ya se actualizan dentro de actualizarUsuario (PUT /usuarios/:id).
+      if (mode === "create" && ["Administrador", "Consulta", "Auxiliar", "Descarga", "Generación Auto"].includes(form.NombreRol)) {
         const credencialesData = {
           Usuario: form.Usuario,
           Contrasena: form.Contrasena,
