@@ -4,6 +4,6 @@ import { obtenerGrupos } from "../controllers/gruposPoblacionales.js";
 import { ROLES } from "../config/roles.js";
 const router = Router();
 
-router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerGrupos);
+router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerGrupos);
 
 export default router;

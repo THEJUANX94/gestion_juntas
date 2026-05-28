@@ -6,8 +6,8 @@ import { ROLES } from "../config/roles.js";
 const router = Router();
 
 router.get("/", obtenerInstituciones);
-router.get("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerInstitucionPorId);
-router.put("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarInstitucion);
+router.get("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerInstitucionPorId);
+router.put("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), actualizarInstitucion);
 router.delete("/:idinstitucion",  verificarAuth, verificarRol([ROLES.ADMIN]), eliminarInstitucion);
-router.post("/crearinstitucion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), crearInstitucion);
+router.post("/crearinstitucion", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), crearInstitucion);
 export default router;
