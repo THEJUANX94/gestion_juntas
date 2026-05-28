@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { User, MapPin, Building2, Calendar } from "lucide-react";
+import { User, MapPin, Building2, Calendar, Briefcase } from "lucide-react";
 import { AlertMessage } from "../components/ui/AlertMessage";
 
 export default function EditarMandatarioExistente() {
@@ -16,6 +16,7 @@ export default function EditarMandatarioExistente() {
 
     const [form, setForm] = useState({
         Residencia: "",
+        Profesion: "",
         IDCargo: "",
         IDComision: "",
         fInicioPeriodo: "",
@@ -34,12 +35,13 @@ export default function EditarMandatarioExistente() {
                 const token = auth?.token;
                 const headers = { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
 
-                const [resUsuario, resCargos, resCom, resMiembros, resJunta] = await Promise.all([
+                const [resUsuario, resCargos, resCom, resMiembros, resJunta, resProfesion] = await Promise.all([
                     fetch(import.meta.env.VITE_PATH + `/usuarios/${idUsuario}`, { method: "GET", credentials: "include", headers }),
                     fetch(import.meta.env.VITE_PATH + "/cargos"),
                     fetch(import.meta.env.VITE_PATH + "/comisiones"),
                     fetch(import.meta.env.VITE_PATH + `/mandatario/${idJunta}/miembros`),
                     fetch(import.meta.env.VITE_PATH + `/juntas/${idJunta}`),
+                    fetch(import.meta.env.VITE_PATH + `/mandatario/profesion/${idUsuario}`, { method: "GET", credentials: "include", headers }),
                 ]);
 
                 if (resUsuario.ok) {
@@ -51,8 +53,11 @@ export default function EditarMandatarioExistente() {
                 setMiembros(await resMiembros.json());
 
                 const juntaData = await resJunta.json();
+                const profesionData = resProfesion.ok ? await resProfesion.json() : null;
+
                 setForm(prev => ({
                     ...prev,
+                    Profesion: profesionData?.Profesion || "",
                     fInicioPeriodo: juntaData.FechaInicioPeriodo ? juntaData.FechaInicioPeriodo.split('T')[0] : "",
                     fFinPeriodo: juntaData.FechaFinPeriodo ? juntaData.FechaFinPeriodo.split('T')[0] : "",
                 }));
@@ -86,7 +91,6 @@ export default function EditarMandatarioExistente() {
                     body: JSON.stringify({
                         IDUsuario: idUsuario,
                         ...form,
-                        Profesion: usuario?.Profesion || "",
                     }),
                 }
             );
@@ -148,6 +152,23 @@ export default function EditarMandatarioExistente() {
                             placeholder="Ej: Tunja, Boyacá"
                             value={form.Residencia}
                             onChange={handleChange}
+                            className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#009E76] outline-none"
+                        />
+                    </div>
+
+                    {/* Profesión */}
+                    <div>
+                        <label className="font-semibold text-gray-700 flex items-center gap-2 mb-1">
+                            <Briefcase size={18} />
+                            Profesión
+                        </label>
+                        <input
+                            type="text"
+                            name="Profesion"
+                            placeholder="Ej: Abogado, Ingeniero..."
+                            value={form.Profesion}
+                            onChange={handleChange}
+                            required
                             className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-[#009E76] outline-none"
                         />
                     </div>

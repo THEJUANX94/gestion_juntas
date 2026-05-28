@@ -73,6 +73,21 @@ const compareCargos = (cargoA, cargoB) => {
   return lowerA.localeCompare(lowerB, 'es', { sensitivity: 'base' });
 };
 
+// Intercala delegados manteniendo el orden de inserción (IDMandatarioJunta ASC):
+// principal[0] → suplente[0] → principal[1] → suplente[1] ...
+// Resultado: Delegado → Delegado Suplente → Delegado → Delegado Suplente ...
+const intercalarDelegados = (rows) => {
+  const principales = rows.filter(r => !(r[0] || '').toLowerCase().includes('suplente'));
+  const suplentes = rows.filter(r => (r[0] || '').toLowerCase().includes('suplente'));
+  const out = [];
+  const max = Math.max(principales.length, suplentes.length);
+  for (let i = 0; i < max; i++) {
+    if (principales[i]) out.push(principales[i]);
+    if (suplentes[i]) out.push(suplentes[i]);
+  }
+  return out;
+};
+
 const makeTableDrawer = (doc, anchoUtil, margenIzq) => {
   const colWidths = [35, 65, 25, 35];
   const totalW = colWidths.reduce((a, b) => a + b, 0);
@@ -217,8 +232,8 @@ const generarConsulta = async (datosCertificado) => {
         yPos = drawTable(titulo, 'CARGO', rows, yPos);
       }
     });
-    if (delegados.length > 0) {
-      yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegados, yPos);
+    if (delegadosIntercalados.length > 0) {
+      yPos = drawTable('DELEGADOS ANTE LA ORGANIZACION DE GRADO SUPERIOR', 'CARGO', delegadosIntercalados, yPos);
     }
   } else {
     doc.setFont('helvetica', 'normal');
