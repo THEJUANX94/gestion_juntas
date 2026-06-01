@@ -44,6 +44,7 @@ import CrearOrganismo from "./pages/CrearOrganismo";
 import EditarOrganismo from "./pages/EditarOrganismo";
 import SolicitarCertificadoJunta from "./pages/SolicitarCertificadoJunta";
 import InformesJuntas from "./pages/InformesJuntas";
+import ListarAutoresolutorios from "./pages/ListarAutoresolutorios";
 
 export default function App() {
   return (
@@ -111,6 +112,7 @@ export default function App() {
                 <Route path="usuarios/update/:id" element={<UpdateUser />} />
                 <Route path="configuracion" element={<Configuracion />} />
                 <Route path="/logs" element={<Logs />} />
+                <Route path="/juntas/autoresolutorios" element={<ListarAutoresolutorios />} />
               </Route>
 
               {/* -----------------------------------------------------

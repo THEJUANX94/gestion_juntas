@@ -11,6 +11,7 @@ import { Op } from "sequelize";
 import { Comisiones } from "../model/comisionModel.js";
 import { sendMail } from "../utils/mailer.js";
 import { sequelize } from "../config/database.js";
+import ExcelJS from "exceljs";
 
 export const crearCertificado = async (req, res) => {
   let Cedula = null;
@@ -484,5 +485,173 @@ export const reporteAutoresolutorios = async (req, res) => {
   } catch (err) {
     console.error('Error en reporteAutoresolutorios:', err);
     res.status(500).json({ error: 'Error al generar el reporte de autoresolutorios', detalle: err.message });
+  }
+};
+
+const LISTAR_CERTIFICADOS_SQL = `
+  SELECT
+    c.idcertificado,
+    c.fechacreacion,
+    c.idjunta,
+    c.nombrecertificado,
+    c.tipocertificado,
+    c.elaborado_por,
+    c.generado_por,
+    j.razonsocial,
+    l.nombrelugar AS municipio
+  FROM public.certificados c
+  INNER JOIN public.juntas j ON c.idjunta = j.idjunta
+  LEFT JOIN public.lugar l ON j.idmunicipio = l.idlugar
+  ORDER BY c.idcertificado DESC
+`;
+
+const mapCertificadoRow = (r) => ({
+  IDCertificado: r.idcertificado,
+  FechaCreacion: r.fechacreacion,
+  IDJunta: r.idjunta,
+  NombreCertificado: r.nombrecertificado,
+  TipoCertificado: r.tipocertificado,
+  ElaboradoPor: r.elaborado_por,
+  GeneradoPor: r.generado_por,
+  RazonSocial: r.razonsocial,
+  Municipio: r.municipio
+});
+
+export const listarCertificados = async (req, res) => {
+  try {
+    const [rows] = await sequelize.query(LISTAR_CERTIFICADOS_SQL);
+    return res.json(rows.map(mapCertificadoRow));
+  } catch (err) {
+    console.error('Error en listarCertificados:', err);
+    return res.status(500).json({ error: 'Error al listar los certificados', detalle: err.message });
+  }
+};
+
+const formatDateForExcel = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const dia = String(date.getDate()).padStart(2, "0");
+  const mes = String(date.getMonth() + 1).padStart(2, "0");
+  const anio = date.getFullYear();
+  const hora = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  return `${dia}/${mes}/${anio} ${hora}:${min}`;
+};
+
+export const exportarCertificadosExcel = async (req, res) => {
+  try {
+    const [rows] = await sequelize.query(LISTAR_CERTIFICADOS_SQL);
+    const data = rows.map(mapCertificadoRow);
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Autoresolutorios", {
+      views: [{ state: "frozen", ySplit: 4 }]
+    });
+
+    const headers = [
+      "ID",
+      "Fecha Creación",
+      "Razón Social",
+      "Municipio",
+      "Tipo Certificado",
+      "Nombre Certificado",
+      "Elaborado Por",
+      "Generado Por"
+    ];
+
+    const totalColumns = headers.length;
+    const lastColumn = String.fromCharCode(64 + totalColumns);
+
+    sheet.mergeCells(`A1:${lastColumn}1`);
+    sheet.getCell("A1").value = "Reporte de Autoresolutorios";
+    sheet.getCell("A1").font = { bold: true, size: 16, color: { argb: "FFFFFFFF" } };
+    sheet.getCell("A1").alignment = { vertical: "middle", horizontal: "center" };
+    sheet.getCell("A1").fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF009E76" }
+    };
+    sheet.getRow(1).height = 26;
+
+    sheet.mergeCells(`A2:${lastColumn}2`);
+    sheet.getCell("A2").value = `Total de registros: ${data.length}`;
+    sheet.getCell("A2").font = { italic: true, size: 11, color: { argb: "FF444444" } };
+    sheet.getCell("A2").alignment = { vertical: "middle", horizontal: "left" };
+    sheet.getRow(2).height = 22;
+
+    sheet.mergeCells(`A3:${lastColumn}3`);
+    sheet.getCell("A3").value = `Fecha de generación: ${formatDateForExcel(new Date())}`;
+    sheet.getCell("A3").font = { size: 10, color: { argb: "FF666666" } };
+    sheet.getCell("A3").alignment = { vertical: "middle", horizontal: "left" };
+    sheet.getRow(3).height = 18;
+
+    headers.forEach((header, index) => {
+      const cell = sheet.getCell(4, index + 1);
+      cell.value = header;
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF005F4B" }
+      };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFFFFFFF" } },
+        left: { style: "thin", color: { argb: "FFFFFFFF" } },
+        right: { style: "thin", color: { argb: "FFFFFFFF" } },
+        bottom: { style: "thin", color: { argb: "FFFFFFFF" } }
+      };
+    });
+    sheet.getRow(4).height = 22;
+
+    data.forEach((item, rowIndex) => {
+      const rowNumber = 5 + rowIndex;
+      const values = [
+        item.IDCertificado,
+        formatDateForExcel(item.FechaCreacion),
+        item.RazonSocial || "",
+        item.Municipio || "",
+        item.TipoCertificado || "",
+        item.NombreCertificado || "",
+        item.ElaboradoPor || "",
+        item.GeneradoPor || ""
+      ];
+      values.forEach((value, columnIndex) => {
+        const cell = sheet.getCell(rowNumber, columnIndex + 1);
+        cell.value = value ?? "";
+        cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFD6D6D6" } },
+          left: { style: "thin", color: { argb: "FFD6D6D6" } },
+          right: { style: "thin", color: { argb: "FFD6D6D6" } },
+          bottom: { style: "thin", color: { argb: "FFD6D6D6" } }
+        };
+        if (rowNumber % 2 === 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF7F9F8" }
+          };
+        }
+      });
+    });
+
+    const widths = [10, 20, 38, 22, 22, 38, 26, 26];
+    widths.forEach((w, i) => { sheet.getColumn(i + 1).width = w; });
+
+    sheet.autoFilter = {
+      from: { row: 4, column: 1 },
+      to: { row: 4, column: totalColumns }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const fileName = `autoresolutorios-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error('Error en exportarCertificadosExcel:', err);
+    res.status(500).json({ error: 'Error al exportar los certificados', detalle: err.message });
   }
 };
