@@ -12,7 +12,7 @@ import { ROLES } from "../config/roles.js";
 const router = Router();
 
 router.get("/", obtenerTiposJunta);
-router.get("/:idtipojunta",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerTipoJuntaPorId);
+router.get("/:idtipojunta",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerTipoJuntaPorId);
 router.delete("/:idtipojunta", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarTipoJunta);
 router.post("/creartipojunta", verificarAuth, verificarRol([ROLES.ADMIN]), crearTipoJunta);
 router.put("/:idtipojunta", verificarAuth, verificarRol([ROLES.ADMIN]), actualizarTipoJunta);

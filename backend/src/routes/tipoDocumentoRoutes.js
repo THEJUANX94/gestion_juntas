@@ -7,7 +7,7 @@ import { ROLES } from "../config/roles.js";
 
 const router = Router();
 
-router.get("/",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerTipoDocumento);
+router.get("/",  verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerTipoDocumento);
 
 
 export default router;

@@ -10,9 +10,9 @@ import { ROLES } from "../config/roles.js";
 
 const router = Router();
 
-router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerFirmas);
-router.get("/:IDFirma", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA]), obtenerFirmaPorId);
+router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerFirmas);
+router.get("/:IDFirma", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerFirmaPorId);
 router.delete("/:IDFirma", verificarAuth, verificarRol([ROLES.ADMIN]), eliminarFirma);
-router.patch("/:identificacion/firma/estado", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR]), actualizarEstadoFirma);
+router.patch("/:identificacion/firma/estado", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), actualizarEstadoFirma);
 
 export default router;
