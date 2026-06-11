@@ -98,7 +98,6 @@ export const validarCargoUnico = async (cargoID, idJunta) => {
 
 
 export const crearMandatario = async (req, res) => {
-  const t = await sequelize.transaction();
   try {
     const idJunta = req.params.id;
 
@@ -146,40 +145,42 @@ export const crearMandatario = async (req, res) => {
       return res.status(400).json({ message: "Esta persona ya tiene ese cargo en la junta" });
     }
 
-    // Crear o actualizar usuario
-    let usuario = await Usuario.findByPk(documento, { transaction: t });
-    if (!usuario) {
-      usuario = await Usuario.create({
+    // A partir de aquí empiezan las escrituras: transacción gestionada
+    // (commit/rollback automáticos según el callback resuelva o lance)
+    const { mandatario, periodo } = await sequelize.transaction(async (t) => {
+      // Crear o actualizar usuario
+      let usuario = await Usuario.findByPk(documento, { transaction: t });
+      if (!usuario) {
+        usuario = await Usuario.create({
+          NumeroIdentificacion: documento,
+          PrimerNombre: primernombre,
+          SegundoNombre: segundonombre,
+          PrimerApellido: primerapellido,
+          SegundoApellido: segundoapellido,
+          Sexo: genero,
+          FechaNacimiento: fNacimiento,
+          Residencia: residencia,
+          Celular: telefono,
+          Correo: email,
+          IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
+          IDTipoDocumento: tipoDocumento
+        }, { transaction: t });
+      }
+
+      // Crear mandatario
+      const mandatario = await MandatarioJunta.create({
         NumeroIdentificacion: documento,
-        PrimerNombre: primernombre,
-        SegundoNombre: segundonombre,
-        PrimerApellido: primerapellido,
-        SegundoApellido: segundoapellido,
-        Sexo: genero,
-        FechaNacimiento: fNacimiento,
+        IDJunta: idJunta,
+        IDCargo: cargo || null,
+        IDComision: comision || null,
         Residencia: residencia,
-        Celular: telefono,
-        Correo: email,
-        IDRol: "8d0784a1-7fc6-406a-903f-3b9bfd43ce16",
-        IDTipoDocumento: tipoDocumento
+        Expedido: expedido,
+        Profesion: profesion
       }, { transaction: t });
-    }
 
-    // Crear mandatario
-    const mandatario = await MandatarioJunta.create({
-      NumeroIdentificacion: documento,
-      IDJunta: idJunta,
-      IDCargo: cargo || null,
-      IDComision: comision || null,
-      Residencia: residencia,
-      Expedido: expedido,
-      Profesion: profesion
-    }, { transaction: t });
+      //Lógica para guardar Grupos Poblacionales
 
-    //Lógica para guardar Grupos Poblacionales
-
-    if (gruposPoblacionales && Array.isArray(gruposPoblacionales) && gruposPoblacionales.length > 0) {
-      try {
+      if (gruposPoblacionales && Array.isArray(gruposPoblacionales) && gruposPoblacionales.length > 0) {
         // 1. Opcional: Limpiar asociaciones previas si el usuario ya existía
         // (Útil si estás actualizando un usuario que ya tenía grupos)
         await PoblacionesPorPersona.destroy({
@@ -194,16 +195,14 @@ export const crearMandatario = async (req, res) => {
         }));
 
         await PoblacionesPorPersona.bulkCreate(nuevasAsociaciones, { transaction: t });
-      } catch (errorPoblacion) {
-        console.error("Error al guardar grupos poblacionales:", errorPoblacion);
       }
-    }
 
-    const periodo = await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, t, mandatario.IDMandatarioJunta);
+      const periodo = await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, t, mandatario.IDMandatarioJunta);
 
-    await junta.update({ UltimoEditor: req.usuario.nombre }, { transaction: t });
+      await junta.update({ UltimoEditor: req.usuario.nombre }, { transaction: t });
 
-    await t.commit();
+      return { mandatario, periodo };
+    });
 
     res.json({
       message: "Mandatario creado correctamente y grupos asociados",
@@ -213,7 +212,6 @@ export const crearMandatario = async (req, res) => {
     });
 
   } catch (error) {
-    if (t) await t.rollback();
     console.error(error);
     res.status(500).json({ message: "Error al crear mandatario", error: error.message });
   }
@@ -430,7 +428,6 @@ export const validarMandatarioEnJunta = async (req, res) => {
 
 
 export const agregarMandatarioExistente = async (req, res) => {
-  const t = await sequelize.transaction();
   try {
     const { idJunta } = req.params;
 
@@ -447,65 +444,65 @@ export const agregarMandatarioExistente = async (req, res) => {
     // ==============================
     // VALIDACIONES BÁSICAS
     // ==============================
-    if (!IDUsuario) { await t.rollback(); return res.status(400).json({ message: "Falta el IDUsuario" }); }
-    if (!Residencia) { await t.rollback(); return res.status(400).json({ message: "Falta la Residencia" }); }
+    if (!IDUsuario) return res.status(400).json({ message: "Falta el IDUsuario" });
+    if (!Residencia) return res.status(400).json({ message: "Falta la Residencia" });
     if (!fInicioPeriodo || !fFinPeriodo) {
-      await t.rollback();
       return res.status(400).json({ message: "Debe ingresar Inicio y Fin del periodo." });
     }
 
     // usuario y junta
     const usuario = await Usuario.findByPk(IDUsuario);
-    if (!usuario) { await t.rollback(); return res.status(404).json({ message: "El usuario no existe" }); }
+    if (!usuario) return res.status(404).json({ message: "El usuario no existe" });
 
     const junta = await Junta.findByPk(idJunta);
-    if (!junta) { await t.rollback(); return res.status(404).json({ message: "La junta no existe" }); }
+    if (!junta) return res.status(404).json({ message: "La junta no existe" });
 
     const inicioMandato = new Date(fInicioPeriodo);
     const finMandato = new Date(fFinPeriodo);
 
     const errorPeriodo = validarPeriodoMandato(junta, inicioMandato, finMandato);
-    if (errorPeriodo) { await t.rollback(); return res.status(400).json({ message: errorPeriodo }); }
+    if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
 
     const errorCargoUnico = await validarCargoUnico(IDCargo, idJunta);
-    if (errorCargoUnico) { await t.rollback(); return res.status(400).json({ message: errorCargoUnico }); }
+    if (errorCargoUnico) return res.status(400).json({ message: errorCargoUnico });
 
     const errorCargo = await validarPresidenteUnico(IDUsuario, IDCargo, idJunta);
-    if (errorCargo) { await t.rollback(); return res.status(400).json({ message: errorCargo }); }
+    if (errorCargo) return res.status(400).json({ message: errorCargo });
+
+    if (!Profesion) {
+      return res.status(400).json({ message: "Falta la Profesión" });
+    }
 
     const ultimoMandato = await MandatarioJunta.findOne({
       where: { NumeroIdentificacion: IDUsuario },
       order: [['IDMandatarioJunta', 'DESC']]
     });
 
-    if (!Profesion) {
-      await t.rollback();
-      return res.status(400).json({ message: "Falta la Profesión" });
-    }
-
     // ==============================
-    // Crear Mandatario
+    // Escrituras: transacción gestionada
     // ==============================
-    const mandatario = await MandatarioJunta.create({
-      NumeroIdentificacion: IDUsuario,
-      IDJunta: idJunta,
-      Residencia,
-      Profesion,
-      Expedido: ultimoMandato?.Expedido || null,
-      IDCargo: IDCargo || null,
-      IDComision: IDComision || null
-    }, { transaction: t });
+    const { mandatario, nuevoPeriodo } = await sequelize.transaction(async (t) => {
+      const mandatario = await MandatarioJunta.create({
+        NumeroIdentificacion: IDUsuario,
+        IDJunta: idJunta,
+        Residencia,
+        Profesion,
+        Expedido: ultimoMandato?.Expedido || null,
+        IDCargo: IDCargo || null,
+        IDComision: IDComision || null
+      }, { transaction: t });
 
-    const nuevoPeriodo = await crearPeriodoYVinculo(
-      IDUsuario,
-      idJunta,
-      fInicioPeriodo,
-      fFinPeriodo,
-      t,
-      mandatario.IDMandatarioJunta
-    );
+      const nuevoPeriodo = await crearPeriodoYVinculo(
+        IDUsuario,
+        idJunta,
+        fInicioPeriodo,
+        fFinPeriodo,
+        t,
+        mandatario.IDMandatarioJunta
+      );
 
-    await t.commit();
+      return { mandatario, nuevoPeriodo };
+    });
 
     res.json({
       message: "Mandatario agregado correctamente",
@@ -514,7 +511,6 @@ export const agregarMandatarioExistente = async (req, res) => {
     });
 
   } catch (error) {
-    await t.rollback();
     console.error(error);
     res.status(500).json({
       message: "Error al agregar el mandatario",
@@ -610,7 +606,6 @@ export const obtenerMandatario = async (req, res) => {
 
 
 export const actualizarMandatario = async (req, res) => {
-  const t = await sequelize.transaction();
   try {
     const { idMandatario } = req.params;
 
@@ -634,83 +629,79 @@ export const actualizarMandatario = async (req, res) => {
     } = req.body;
 
     if (!primernombre || !primerapellido) {
-      await t.rollback();
       return res.status(400).json({ message: "Primer nombre y primer apellido son obligatorios" });
     }
 
     if (email && !email.includes("@")) {
-      await t.rollback();
       return res.status(400).json({ message: "Email inválido" });
     }
 
     if (!fInicioPeriodo || !fFinPeriodo) {
-      await t.rollback();
       return res.status(400).json({ message: "Debe ingresar fecha de inicio y fin del periodo" });
     }
 
     const mandatario = await MandatarioJunta.findByPk(idMandatario);
     if (!mandatario) {
-      await t.rollback();
       return res.status(404).json({ message: "El mandatario no existe en esta junta" });
     }
 
     const { IDJunta: idJunta, NumeroIdentificacion: documento } = mandatario;
 
     const junta = await Junta.findByPk(idJunta);
-    if (!junta) { await t.rollback(); return res.status(404).json({ message: "La junta no existe" }); }
+    if (!junta) return res.status(404).json({ message: "La junta no existe" });
 
     const errorPeriodo = validarPeriodoMandato(junta, new Date(fInicioPeriodo), new Date(fFinPeriodo));
-    if (errorPeriodo) { await t.rollback(); return res.status(400).json({ message: errorPeriodo }); }
+    if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
 
     const errorCargo = await validarPresidenteUnico(documento, cargo, idJunta);
-    if (errorCargo) { await t.rollback(); return res.status(400).json({ message: errorCargo }); }
+    if (errorCargo) return res.status(400).json({ message: errorCargo });
 
     const usuario = await Usuario.findByPk(documento);
-    if (!usuario) { await t.rollback(); return res.status(404).json({ message: "Usuario no encontrado" }); }
+    if (!usuario) return res.status(404).json({ message: "Usuario no encontrado" });
 
-    await usuario.update({
-      IDTipoDocumento: tipoDocumento,
-      PrimerNombre: primernombre,
-      SegundoNombre: segundonombre || null,
-      PrimerApellido: primerapellido,
-      SegundoApellido: segundoapellido || null,
-      Sexo: genero,
-      FechaNacimiento: fNacimiento,
-      Residencia: residencia,
-      Celular: telefono,
-      Correo: email
-    }, { transaction: t });
+    // Escrituras: transacción gestionada (commit/rollback automáticos)
+    await sequelize.transaction(async (t) => {
+      await usuario.update({
+        IDTipoDocumento: tipoDocumento,
+        PrimerNombre: primernombre,
+        SegundoNombre: segundonombre || null,
+        PrimerApellido: primerapellido,
+        SegundoApellido: segundoapellido || null,
+        Sexo: genero,
+        FechaNacimiento: fNacimiento,
+        Residencia: residencia,
+        Celular: telefono,
+        Correo: email
+      }, { transaction: t });
 
-    await mandatario.update({
-      IDCargo: cargo || null,
-      IDComision: comision || null,
-      Residencia: residencia,
-      Expedido: expedido,
-      Profesion: profesion
-    }, { transaction: t });
+      await mandatario.update({
+        IDCargo: cargo || null,
+        IDComision: comision || null,
+        Residencia: residencia,
+        Expedido: expedido,
+        Profesion: profesion
+      }, { transaction: t });
 
-    const periodoMandato = await PeriodoPorMandato.findOne({
-      where: { IDMandatarioJunta: idMandatario },
-      transaction: t
-    });
+      const periodoMandato = await PeriodoPorMandato.findOne({
+        where: { IDMandatarioJunta: idMandatario },
+        transaction: t
+      });
 
-    if (periodoMandato) {
-      const periodo = await Periodo.findByPk(periodoMandato.IDPeriodo, { transaction: t });
-      if (periodo) {
-        await periodo.update({ FechaInicio: fInicioPeriodo, FechaFin: fFinPeriodo }, { transaction: t });
+      if (periodoMandato) {
+        const periodo = await Periodo.findByPk(periodoMandato.IDPeriodo, { transaction: t });
+        if (periodo) {
+          await periodo.update({ FechaInicio: fInicioPeriodo, FechaFin: fFinPeriodo }, { transaction: t });
+        }
+      } else {
+        await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, t, idMandatario);
       }
-    } else {
-      await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, t, idMandatario);
-    }
 
-    await junta.update({ UltimoEditor: req.usuario.nombre }, { transaction: t });
-
-    await t.commit();
+      await junta.update({ UltimoEditor: req.usuario.nombre }, { transaction: t });
+    });
 
     return res.json({ message: "Mandatario actualizado correctamente" });
 
   } catch (error) {
-    await t.rollback();
     console.error(error);
     return res.status(500).json({
       message: "Error al actualizar mandatario",

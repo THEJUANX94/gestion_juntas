@@ -360,88 +360,86 @@ export const obtenerJuntaPorId = async (req, res) => {
 //  CAMBIAR PERIODO DE LA JUNTA
 // ======================================================
 export const cambiarPeriodoJunta = async (req, res) => {
-  const t = await sequelize.transaction();
-
   try {
     const { id } = req.params;
     const {
       fechaInicioPeriodo,
       fechaFinPeriodo,
       fechaAsamblea,
-      copiarDignatarios, 
+      copiarDignatarios,
     } = req.body;
 
     // 1. VALIDAR DATOS DE ENTRADA (FECHAS)
     if (!fechaInicioPeriodo || !fechaFinPeriodo || !fechaAsamblea) {
-      await t.rollback();
       return res.status(400).json({
         message: "Debe proporcionar las fechas para el nuevo periodo (Inicio, Fin y Asamblea)."
       });
     }
 
     if (new Date(fechaInicioPeriodo) >= new Date(fechaFinPeriodo)) {
-      await t.rollback();
       return res.status(400).json({
         message: "La fecha de inicio del nuevo período debe ser menor que la fecha de fin."
       });
     }
 
     // 2. BUSCAR LA JUNTA ORIGINAL
-    const juntaOriginal = await Junta.findByPk(id, { transaction: t });
+    const juntaOriginal = await Junta.findByPk(id);
 
     if (!juntaOriginal) {
-      await t.rollback();
       return res.status(404).json({ message: "La junta original no existe." });
     }
 
-    // 3. CREAR LA NUEVA JUNTA (COPIAR DATOS)
-    const nuevaJunta = await Junta.create({
-      RazonSocial: juntaOriginal.RazonSocial, 
-      Direccion: juntaOriginal.Direccion,
-      NumPersoneriaJuridica: juntaOriginal.NumPersoneriaJuridica,
-      FechaCreacion: juntaOriginal.FechaCreacion,
-      FechaInicioPeriodo: fechaInicioPeriodo, 
-      FechaFinPeriodo: fechaFinPeriodo,       
-      FechaAsamblea: fechaAsamblea,           
-      Zona: juntaOriginal.Zona,
-      TipoJunta: juntaOriginal.TipoJunta,
-      IDMunicipio: juntaOriginal.IDMunicipio,
-      IDInstitucion: juntaOriginal.IDInstitucion,
-      IDReconocida: juntaOriginal.IDReconocida,
-      Correo: juntaOriginal.Correo
-    }, { transaction: t });
+    // 3. ESCRITURAS: transacción gestionada (commit/rollback automáticos)
+    const { nuevaJunta, mensajeDignatarios } = await sequelize.transaction(async (t) => {
+      // CREAR LA NUEVA JUNTA (COPIAR DATOS)
+      const nuevaJunta = await Junta.create({
+        RazonSocial: juntaOriginal.RazonSocial,
+        Direccion: juntaOriginal.Direccion,
+        NumPersoneriaJuridica: juntaOriginal.NumPersoneriaJuridica,
+        FechaCreacion: juntaOriginal.FechaCreacion,
+        FechaInicioPeriodo: fechaInicioPeriodo,
+        FechaFinPeriodo: fechaFinPeriodo,
+        FechaAsamblea: fechaAsamblea,
+        Zona: juntaOriginal.Zona,
+        TipoJunta: juntaOriginal.TipoJunta,
+        IDMunicipio: juntaOriginal.IDMunicipio,
+        IDInstitucion: juntaOriginal.IDInstitucion,
+        IDReconocida: juntaOriginal.IDReconocida,
+        Correo: juntaOriginal.Correo
+      }, { transaction: t });
 
-    //DESACTIVAR JUNTA ANTERIOR
-    await juntaOriginal.update({ 
-      Activo: false 
-    }, { transaction: t });
+      //DESACTIVAR JUNTA ANTERIOR
+      await juntaOriginal.update({
+        Activo: false
+      }, { transaction: t });
 
-    // 4. COPIAR DIGNATARIOS
-    let mensajeDignatarios = "No se copiaron dignatarios.";
+      // COPIAR DIGNATARIOS
+      let mensajeDignatarios = "No se copiaron dignatarios.";
 
-    if (copiarDignatarios === true || copiarDignatarios === 'true') {
-      const mandatariosAnteriores = await MandatarioJunta.findAll({
-        where: { IDJunta: id },
-        transaction: t
-      });
+      if (copiarDignatarios === true || copiarDignatarios === 'true') {
+        const mandatariosAnteriores = await MandatarioJunta.findAll({
+          where: { IDJunta: id },
+          transaction: t
+        });
 
-      if (mandatariosAnteriores.length > 0) {
-        const nuevosMandatariosData = mandatariosAnteriores.map(m => ({
-          IDJunta: nuevaJunta.IDJunta,
-          NumeroIdentificacion: m.NumeroIdentificacion,
-          Residencia: m.Residencia,
-          Profesion: m.Profesion,
-          Expedido: m.Expedido,
-          IDCargo: m.IDCargo,
-          IDComision: m.IDComision
-        }));
+        if (mandatariosAnteriores.length > 0) {
+          const nuevosMandatariosData = mandatariosAnteriores.map(m => ({
+            IDJunta: nuevaJunta.IDJunta,
+            NumeroIdentificacion: m.NumeroIdentificacion,
+            Residencia: m.Residencia,
+            Profesion: m.Profesion,
+            Expedido: m.Expedido,
+            IDCargo: m.IDCargo,
+            IDComision: m.IDComision
+          }));
 
-        await MandatarioJunta.bulkCreate(nuevosMandatariosData, { transaction: t });
-        mensajeDignatarios = `Se copiaron ${mandatariosAnteriores.length} dignatarios al nuevo periodo.`;
+          await MandatarioJunta.bulkCreate(nuevosMandatariosData, { transaction: t });
+          mensajeDignatarios = `Se copiaron ${mandatariosAnteriores.length} dignatarios al nuevo periodo.`;
+        }
       }
-    }
 
-    await t.commit();
+      return { nuevaJunta, mensajeDignatarios };
+    });
 
     return res.status(201).json({
       message: "Nuevo periodo creado y junta anterior desactivada exitosamente.",
@@ -450,7 +448,6 @@ export const cambiarPeriodoJunta = async (req, res) => {
     });
 
   } catch (error) {
-    await t.rollback();
     console.error("Error cambiando periodo de junta:", error);
     return res.status(500).json({
       message: "Error interno del servidor al cambiar periodo",
