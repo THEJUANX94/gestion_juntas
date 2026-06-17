@@ -835,13 +835,20 @@ export const reporteEdades = async (req, res) => {
     const usuarios = await Usuario.findAll({ attributes: ["FechaNacimiento"] });
 
     const hoy = new Date();
-    const rangos = { "18-25": 0, "26-35": 0, "36-45": 0, "46-60": 0, "60+": 0 };
+    const rangos = { "14-28": 0, "29-35": 0, "36-45": 0, "46-60": 0, "60+": 0 };
 
     usuarios.forEach(u => {
       if (!u.FechaNacimiento) return;
-      const edad = hoy.getFullYear() - new Date(u.FechaNacimiento).getFullYear();
-      if      (edad <= 25) rangos["18-25"]++;
-      else if (edad <= 35) rangos["26-35"]++;
+      const nacimiento = new Date(u.FechaNacimiento);
+      if (Number.isNaN(nacimiento.getTime())) return;
+
+      let edad = hoy.getFullYear() - nacimiento.getFullYear();
+      const monthDiff = hoy.getMonth() - nacimiento.getMonth();
+      const dayDiff = hoy.getDate() - nacimiento.getDate();
+      if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) edad -= 1;
+
+      if      (edad <= 28) rangos["14-28"]++;
+      else if (edad <= 35) rangos["29-35"]++;
       else if (edad <= 45) rangos["36-45"]++;
       else if (edad <= 60) rangos["46-60"]++;
       else                 rangos["60+"]++;

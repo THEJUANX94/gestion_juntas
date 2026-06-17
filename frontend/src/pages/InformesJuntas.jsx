@@ -44,7 +44,7 @@ const getLugarTipo = (lugar) => lugar?.TipoLugar ?? lugar?.tipolugar ?? "";
  * Traduce las claves internas del frontend a los nombres de ruta del backend.
  * Esto evita acoplar la UI al naming de la API y centraliza el mapeo.
  */
-const AGE_RANGES = ["14-17", "18-25", "26-35", "36-45", "46-60", "60+"];
+const AGE_RANGES = ["14-28", "29-35", "36-45", "46-60", "60+"];
 
 const normalizeAgesData = (data) => {
   if (!data) return null;
