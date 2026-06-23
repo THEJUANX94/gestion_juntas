@@ -8,6 +8,8 @@ import {
   obtenerTodasLasJuntas,
   exportarJuntasExcel,
   cambiarPeriodoJunta,
+  obtenerPeriodosJunta,
+  reactivarJunta,
   reporteEdades,
   reporteComisiones,
   reporteJuntasActivas,
@@ -56,6 +58,8 @@ router.get("/", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.
 router.get("/all", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.DESCARGA, ROLES.GENERACION_AUTO]), obtenerTodasLasJuntas);
 router.get("/export/excel", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), exportarJuntasExcel);
 router.post("/:id/cambiar-periodo", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), cambiarPeriodoJunta);
+router.get("/:id/periodos", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.DESCARGA, ROLES.GENERACION_AUTO]), obtenerPeriodosJunta);
+router.patch("/:id/reactivar", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), reactivarJunta);
 
 router.get("/:id", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.CONSULTA, ROLES.GENERACION_AUTO]), obtenerJuntaPorId);
 router.put("/:id", verificarAuth, verificarRol([ROLES.ADMIN, ROLES.AUXILIAR, ROLES.GENERACION_AUTO]), actualizarJunta);

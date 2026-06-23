@@ -337,7 +337,8 @@ export const obtenerJuntaPorId = async (req, res) => {
       IDReconocida: junta.IDReconocida,
       NumeroAfiliados: numeroAfiliados,
       Correo: junta.Correo,
-      
+      Activo: junta.Activo,
+
       // Datos relacionados
       Municipio: junta.Lugar,
       TipoJunta: junta.TipoJuntum,
@@ -448,10 +449,111 @@ export const cambiarPeriodoJunta = async (req, res) => {
     });
 
   } catch (error) {
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(409).json({
+        message:
+          "Ya existe un periodo de esta junta con esas mismas fechas. Usa fechas diferentes para el nuevo periodo.",
+      });
+    }
     console.error("Error cambiando periodo de junta:", error);
     return res.status(500).json({
       message: "Error interno del servidor al cambiar periodo",
       error: error.message
+    });
+  }
+};
+
+// ======================================================
+//  OBTENER LOS PERIODOS (HISTÓRICO) DE UNA JUNTA
+//  Devuelve todas las juntas del mismo "linaje":
+//  misma personería jurídica + municipio + tipo de junta.
+// ======================================================
+export const obtenerPeriodosJunta = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const junta = await Junta.findByPk(id);
+    if (!junta) {
+      return res.status(404).json({ message: "La junta no existe." });
+    }
+
+    const periodos = await Junta.findAll({
+      where: {
+        NumPersoneriaJuridica: junta.NumPersoneriaJuridica,
+        IDMunicipio: junta.IDMunicipio,
+        TipoJunta: junta.TipoJunta,
+      },
+      attributes: [
+        "IDJunta",
+        "RazonSocial",
+        "FechaInicioPeriodo",
+        "FechaFinPeriodo",
+        "FechaAsamblea",
+        "Activo",
+      ],
+      order: [["FechaInicioPeriodo", "DESC"]],
+    });
+
+    return res.json(periodos);
+  } catch (error) {
+    console.error("Error obteniendo periodos de la junta:", error);
+    return res.status(500).json({
+      message: "Error interno del servidor al obtener los periodos",
+      error: error.message,
+    });
+  }
+};
+
+// ======================================================
+//  REACTIVAR UNA JUNTA (PERIODO)
+//  Marca esta junta como activa y desactiva cualquier otro
+//  periodo activo del mismo linaje (solo uno activo a la vez).
+// ======================================================
+export const reactivarJunta = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const junta = await Junta.findByPk(id);
+    if (!junta) {
+      return res.status(404).json({ message: "La junta no existe." });
+    }
+
+    if (junta.Activo === true) {
+      return res.status(200).json({
+        message: "Este periodo ya se encuentra activo.",
+        junta,
+      });
+    }
+
+    await sequelize.transaction(async (t) => {
+      // Desactivar otros periodos activos del mismo linaje
+      await Junta.update(
+        { Activo: false },
+        {
+          where: {
+            NumPersoneriaJuridica: junta.NumPersoneriaJuridica,
+            IDMunicipio: junta.IDMunicipio,
+            TipoJunta: junta.TipoJunta,
+            Activo: true,
+            IDJunta: { [Op.ne]: id },
+          },
+          transaction: t,
+        }
+      );
+
+      // Activar este periodo
+      await junta.update({ Activo: true }, { transaction: t });
+    });
+
+    return res.json({
+      message: "Periodo reactivado correctamente.",
+      junta,
+    });
+  } catch (error) {
+    console.error("Error reactivando la junta:", error);
+    return res.status(500).json({
+      message: "Error interno del servidor al reactivar el periodo",
+      error: error.message,
     });
   }
 };
@@ -629,6 +731,12 @@ export const actualizarJunta = async (req, res) => {
     });
 
   } catch (error) {
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(409).json({
+        message:
+          "Ya existe otro periodo de esta junta con esas mismas fechas. Cambia las fechas, o si querías trabajar sobre ese periodo, búscalo en el selector de periodos.",
+      });
+    }
     console.error("Error actualizando junta:", error);
     return res.status(500).json({
       message: "Error interno del servidor",
@@ -652,6 +760,15 @@ export const eliminarJunta = async (req, res) => {
         message: "La junta no existe"
       });
     }
+
+    // Guardamos datos del "linaje" y si estaba activa, para poder
+    // reactivar el periodo anterior una vez eliminada esta junta.
+    const eraActiva = junta.Activo === true;
+    const lineage = {
+      NumPersoneriaJuridica: junta.NumPersoneriaJuridica,
+      IDMunicipio: junta.IDMunicipio,
+      TipoJunta: junta.TipoJunta,
+    };
 
     // ------------------------------------------
     // OBTENER TODOS LOS MANDATARIOS DE ESA JUNTA
@@ -691,8 +808,31 @@ export const eliminarJunta = async (req, res) => {
       where: { IDJunta: id }
     });
 
+    // ------------------------------------------
+    // SI LA JUNTA ELIMINADA ERA LA ACTIVA, REACTIVAR
+    // EL PERIODO ANTERIOR MÁS RECIENTE DEL MISMO LINAJE
+    // ------------------------------------------
+    let juntaReactivada = null;
+    if (eraActiva) {
+      const periodoAnterior = await Junta.findOne({
+        where: lineage,
+        order: [["FechaInicioPeriodo", "DESC"]],
+      });
+
+      if (periodoAnterior) {
+        await periodoAnterior.update({ Activo: true });
+        juntaReactivada = {
+          IDJunta: periodoAnterior.IDJunta,
+          RazonSocial: periodoAnterior.RazonSocial,
+        };
+      }
+    }
+
     return res.json({
-      message: "Junta eliminada correctamente junto con todos sus mandatarios y periodos"
+      message: juntaReactivada
+        ? "Junta eliminada. Se reactivó automáticamente el periodo anterior."
+        : "Junta eliminada correctamente junto con todos sus mandatarios y periodos",
+      juntaReactivada,
     });
 
   } catch (error) {

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Building2, Calendar, Users, Save, FileText } from "lucide-react";
+import { Building2, Calendar, Users, Save, FileText, Lock, RotateCcw } from "lucide-react";
 import Select from "react-select";
 import { AlertMessage } from "../components/ui/AlertMessage";
+import { reactivarJunta } from "../services/juntasServices";
 
 export default function EditarJunta() {
 
@@ -29,6 +30,10 @@ export default function EditarJunta() {
   const [instituciones, setInstituciones] = useState([]);
   const [tiposJunta, setTiposJunta] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activo, setActivo] = useState(true);
+  const [reactivando, setReactivando] = useState(false);
+
+  const isInactiva = activo === false;
 
   const opcionesMunicipios = lugares.map(l => ({
     value: l.IDLugar,
@@ -75,6 +80,7 @@ export default function EditarJunta() {
         });
 
         setNumeroAfiliados(juntaData.NumeroAfiliados || 0);
+        setActivo(juntaData.Activo !== false);
 
       } catch (error) {
         console.error("Error cargando datos:", error);
@@ -138,6 +144,13 @@ export default function EditarJunta() {
 
 
   const handleSubmit = async () => {
+    if (isInactiva) {
+      AlertMessage.warning(
+        "Periodo histórico",
+        "Este es un periodo histórico de solo lectura. Para editarlo, reactívalo primero."
+      );
+      return;
+    }
     try {
       const resp = await fetch(import.meta.env.VITE_PATH + `/juntas/${id}`, {
         method: "PUT",
@@ -148,7 +161,7 @@ export default function EditarJunta() {
       const data = await resp.json();
 
       if (!resp.ok) {
-        AlertMessage.error(`Error: ${data.message}`);
+        AlertMessage.error("No se pudo actualizar", data.message || "Ocurrió un problema");
         return;
       }
 
@@ -156,6 +169,25 @@ export default function EditarJunta() {
 
     } catch (e) {
       AlertMessage.error("Error de conexión con el servidor");
+    }
+  };
+
+  const handleReactivar = async () => {
+    const ok = await AlertMessage.confirm(
+      "¿Reactivar este periodo?",
+      "Este periodo pasará a ser el vigente y el que esté activo actualmente quedará como histórico."
+    );
+    if (!ok) return;
+
+    setReactivando(true);
+    try {
+      await reactivarJunta(id);
+      setActivo(true);
+      AlertMessage.success("Periodo reactivado", "Ya puedes editar este periodo.");
+    } catch (error) {
+      AlertMessage.error("Error", error.message || "No se pudo reactivar el periodo");
+    } finally {
+      setReactivando(false);
     }
   };
 
@@ -190,6 +222,32 @@ export default function EditarJunta() {
           </div>
           <p className="text-gray-500">Modifique la información de la junta</p>
         </div>
+
+        {/* Banner de periodo histórico */}
+        {isInactiva && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-4 shadow-sm">
+            <div className="shrink-0 bg-amber-100 p-2 rounded-lg">
+              <Lock size={22} className="text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-800 mb-1">
+                Periodo histórico (solo lectura)
+              </p>
+              <p className="text-sm text-amber-700">
+                Este periodo está inactivo. Para evitar modificar datos históricos por error,
+                la edición está deshabilitada. Si realmente necesitas editarlo, reactívalo.
+              </p>
+            </div>
+            <button
+              onClick={handleReactivar}
+              disabled={reactivando}
+              className="shrink-0 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RotateCcw size={16} className={reactivando ? "animate-spin" : ""} />
+              {reactivando ? "Reactivando..." : "Reactivar periodo"}
+            </button>
+          </div>
+        )}
 
         <div className="space-y-6">
 
@@ -432,7 +490,9 @@ export default function EditarJunta() {
             </button>
             <button
               onClick={handleSubmit}
-              className="flex items-center gap-2 bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white font-semibold px-8 py-3 rounded-lg shadow-md transition-all"
+              disabled={isInactiva}
+              title={isInactiva ? "Periodo histórico de solo lectura. Reactívalo para editar." : undefined}
+              className="flex items-center gap-2 bg-gradient-to-r from-[#009E76] to-[#64AF59] hover:from-[#007d5e] hover:to-[#52934a] text-white font-semibold px-8 py-3 rounded-lg shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save size={20} />
               Actualizar Junta

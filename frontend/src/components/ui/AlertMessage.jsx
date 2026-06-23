@@ -48,7 +48,7 @@ export const AlertMessage = {
   },
 
   info: (title = "Información", text = "") => {
-    MySwal.fire({
+    return MySwal.fire({
       ...baseConfig,
       icon: "info",
       title,

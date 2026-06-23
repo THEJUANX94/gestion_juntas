@@ -22,3 +22,33 @@ export const crearNuevoPeriodoJunta = async (id, datos) => {
 
   return data;
 };
+
+// Obtiene todos los periodos (histórico) del mismo linaje de junta
+export const obtenerPeriodosJunta = async (id) => {
+  const response = await fetch(`${API_URL}/${id}/periodos`, {
+    credentials: 'include',
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Error al obtener los periodos');
+  }
+
+  return data;
+};
+
+// Reactiva un periodo (junta) y desactiva los demás del mismo linaje
+export const reactivarJunta = async (id) => {
+  const response = await fetch(`${API_URL}/${id}/reactivar`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Error al reactivar el periodo');
+  }
+
+  return data;
+};

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, ExternalLink, FileSearch, Trash2 } from "lucide-react";
+import { Search, Filter, ExternalLink, FileSearch, Trash2, RotateCcw } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom"; // 1. Importar useNavigate
 import { AlertMessage } from "../components/ui/AlertMessage";
+import { reactivarJunta } from "../services/juntasServices";
 import Select from "react-select";
 
 export default function ConsultarJunta() {
@@ -121,11 +122,55 @@ export default function ConsultarJunta() {
                 return AlertMessage.error("Error", data.message || "No se pudo eliminar");
             }
 
-            AlertMessage.success("Eliminada", "La junta fue eliminada exitosamente");
-            setJuntas(prev => prev.filter(j => j.IDJunta !== idJunta));
+            const reactivada = data.juntaReactivada;
+            setJuntas(prev =>
+                prev
+                    .filter(j => j.IDJunta !== idJunta)
+                    .map(j =>
+                        reactivada && j.IDJunta === reactivada.IDJunta
+                            ? { ...j, Activo: true }
+                            : j
+                    )
+            );
+
+            if (reactivada) {
+                AlertMessage.success(
+                    "Eliminada",
+                    "La junta fue eliminada y se reactivó automáticamente el periodo anterior."
+                );
+            } else {
+                AlertMessage.success("Eliminada", "La junta fue eliminada exitosamente");
+            }
 
         } catch (e) {
             AlertMessage.error("Error", "No se pudo comunicarse con el servidor");
+        }
+    };
+
+    // Reactivar un periodo histórico desde la lista.
+    // Si el usuario canceló antes la pregunta, puede volver a intentarlo aquí
+    // cuantas veces quiera; el botón permanece disponible mientras esté inactiva.
+    const handleReactivarJunta = async (junta) => {
+        const ok = await AlertMessage.confirm(
+            "¿Reactivar este periodo?",
+            "Este periodo pasará a ser el vigente y el periodo activo actual de esta junta quedará como histórico."
+        );
+        if (!ok) return; // Si cancela, no pasa nada y el botón sigue disponible
+
+        try {
+            await reactivarJunta(junta.IDJunta);
+
+            // Mantener la regla "solo uno activo": el reactivado queda activo y
+            // los demás periodos de la misma junta (misma personería) quedan históricos.
+            setJuntas(prev => prev.map(j => {
+                if (j.IDJunta === junta.IDJunta) return { ...j, Activo: true };
+                if (j.NumPersoneriaJuridica === junta.NumPersoneriaJuridica) return { ...j, Activo: false };
+                return j;
+            }));
+
+            AlertMessage.success("Reactivada", "El periodo ahora es el vigente.");
+        } catch (e) {
+            AlertMessage.error("Error", e.message || "No se pudo reactivar el periodo");
         }
     };
 
@@ -280,6 +325,17 @@ export default function ConsultarJunta() {
                                                                 Ver detalles
                                                                 <ExternalLink size={16} />
                                                             </button>
+
+                                                            {/* Reactivar (solo periodos históricos) */}
+                                                            {isInactive && (
+                                                                <button
+                                                                    onClick={() => handleReactivarJunta(junta)}
+                                                                    className="text-amber-600 hover:text-amber-800 transition-colors"
+                                                                    title="Reactivar periodo (volver a ponerlo como vigente)"
+                                                                >
+                                                                    <RotateCcw size={18} />
+                                                                </button>
+                                                            )}
 
                                                             {/* Eliminar */}
                                                             <button

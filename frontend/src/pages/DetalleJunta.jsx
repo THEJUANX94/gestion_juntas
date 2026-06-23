@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import {
   FileText, Award, ClipboardCheck, Database, UserPlus, Edit2, Phone, Mail,
-  MapPin, Search, Filter, X, Trash2, CalendarPlus, AlertCircle, Check, ShieldAlert
+  MapPin, Search, Filter, X, Trash2, CalendarPlus, AlertCircle, Check, ShieldAlert,
+  CheckCircle2, History, RotateCcw, Lock
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AlertMessage } from "../components/ui/AlertMessage";
-import { crearNuevoPeriodoJunta } from '../services/juntasServices';
+import { crearNuevoPeriodoJunta, obtenerPeriodosJunta, reactivarJunta } from '../services/juntasServices';
 import { useAuth } from '../context/AuthContext';
 import { ROLES } from '../config/roles';
 
@@ -18,6 +19,11 @@ export default function DetalleJunta() {
   const [junta, setJunta] = useState(null);
   const [miembros, setMiembros] = useState([]);
   const [loadingDoc, setLoadingDoc] = useState(null);
+  const [periodos, setPeriodos] = useState([]);
+  const [reactivando, setReactivando] = useState(false);
+
+  // ¿Este periodo está inactivo (histórico)?
+  const isInactiva = junta?.Activo === false;
 
   useEffect(() => {
     fetch(import.meta.env.VITE_PATH + `/juntas/${id}`)
@@ -25,6 +31,39 @@ export default function DetalleJunta() {
       .then(setJunta)
       .catch(console.error);
   }, [id]);
+
+  // Cargar todos los periodos del mismo linaje (para el selector y el aviso)
+  useEffect(() => {
+    obtenerPeriodosJunta(id)
+      .then(setPeriodos)
+      .catch(() => setPeriodos([]));
+  }, [id]);
+
+  // El periodo actualmente activo del linaje (para enlazar desde uno histórico)
+  const periodoActivo = periodos.find(p => p.Activo === true);
+
+  const handleReactivar = async () => {
+    const ok = await AlertMessage.confirm(
+      "¿Reactivar este periodo?",
+      "Este periodo pasará a ser el vigente y el que esté activo actualmente quedará como histórico."
+    );
+    if (!ok) return;
+
+    setReactivando(true);
+    try {
+      await reactivarJunta(id);
+      AlertMessage.success("Periodo reactivado", "Este periodo ahora es el vigente.");
+      // Recargar junta y periodos para reflejar el nuevo estado
+      const data = await fetch(import.meta.env.VITE_PATH + `/juntas/${id}`).then(r => r.json());
+      setJunta(data);
+      const ps = await obtenerPeriodosJunta(id);
+      setPeriodos(ps);
+    } catch (error) {
+      AlertMessage.error("Error", error.message || "No se pudo reactivar el periodo");
+    } finally {
+      setReactivando(false);
+    }
+  };
 
   useEffect(() => {
     const cargarMiembros = async () => {
@@ -83,6 +122,13 @@ export default function DetalleJunta() {
     const f = new Date(fecha);
     return `${f.getDate().toString().padStart(2, "0")}/${(f.getMonth() + 1)
       .toString().padStart(2, "0")}/${f.getFullYear()}`;
+  };
+
+  // Etiqueta corta de un periodo para el selector, ej: "2024 - 2028"
+  const etiquetaPeriodo = (p) => {
+    const ini = p.FechaInicioPeriodo ? new Date(p.FechaInicioPeriodo).getFullYear() : "?";
+    const fin = p.FechaFinPeriodo ? new Date(p.FechaFinPeriodo).getFullYear() : "?";
+    return `${ini} - ${fin}`;
   };
 
   // ──────────────────────────────────────────────────────────────
@@ -328,8 +374,11 @@ export default function DetalleJunta() {
         copiarDignatarios: formData.copiarDignatarios
       });
 
-      AlertMessage.success("Nuevo periodo creado correctamente");
       setIsModalOpen(false);
+      await AlertMessage.info(
+        "Te llevamos al nuevo periodo",
+        "Se creó el nuevo periodo y ahora es el vigente. El periodo anterior quedó guardado como histórico. A partir de aquí editas el periodo NUEVO."
+      );
       navigate(`/juntas/detalle-junta/${resultado.junta.IDJunta}`);
     } catch (error) {
       AlertMessage.error(error.message || "Error al crear el nuevo periodo");
@@ -352,6 +401,13 @@ export default function DetalleJunta() {
               if (accion.ruta) return navigate(accion.ruta);
 
               if (accion.action === 'nuevo_periodo') {
+                if (isInactiva) {
+                  AlertMessage.warning(
+                    "Periodo histórico",
+                    "Solo puedes crear un nuevo periodo desde el periodo vigente. Ve al periodo activo y créalo desde allí."
+                  );
+                  return;
+                }
                 setIsModalOpen(true);
                 return;
               }
@@ -361,13 +417,16 @@ export default function DetalleJunta() {
             };
 
             const isGenerating = accion.action && loadingDoc === accion.action;
+            // En periodos históricos solo dejamos consultar/generar documentos
+            const bloqueada = isInactiva && accion.action === 'nuevo_periodo';
 
             return (
               <button
                 key={idx}
                 onClick={handleClick}
-                disabled={isGenerating}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white ${accion.color} transition-all shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed`}
+                disabled={isGenerating || bloqueada}
+                title={bloqueada ? "No disponible en periodos históricos" : undefined}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-white ${accion.color} transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <Icon size={20} className={isGenerating ? 'animate-spin' : ''} />
                 <span className="text-sm font-medium">
@@ -387,21 +446,99 @@ export default function DetalleJunta() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">Detalle de la Junta</h1>
-                <p className="text-gray-500 mt-1">Gestión de mandatarios y miembros</p>
+            <div className="flex justify-between items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800">Detalle de la Junta</h1>
+                  <p className="text-gray-500 mt-1">Gestión de mandatarios y miembros</p>
+                </div>
+                {/* Badge de estado del periodo */}
+                {junta && (
+                  isInactiva ? (
+                    <span className="inline-flex items-center gap-1.5 bg-gray-200 text-gray-700 px-3 py-1.5 rounded-full text-sm font-semibold">
+                      <History size={16} /> Periodo histórico
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-semibold">
+                      <CheckCircle2 size={16} /> Periodo vigente
+                    </span>
+                  )
+                )}
               </div>
-              <button
-                onClick={() => navigate(`/juntas/${id}/mandatario/buscar`)}
-                className="flex items-center gap-2 bg-[#64AF59] hover:bg-[#52934a] text-white px-5 py-3 rounded-lg font-medium shadow-md transition-all"
-              >
-                <UserPlus size={20} />
-                Nuevo Mandatario
-              </button>
 
+              <div className="flex items-center gap-3">
+                {/* Selector de periodos del mismo linaje */}
+                {periodos.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-600">Periodo:</label>
+                    <select
+                      value={id}
+                      onChange={(e) => {
+                        if (e.target.value !== id) {
+                          navigate(`/juntas/detalle-junta/${e.target.value}`);
+                        }
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#009E76] outline-none bg-white"
+                    >
+                      {periodos.map((p) => (
+                        <option key={p.IDJunta} value={p.IDJunta}>
+                          {etiquetaPeriodo(p)} {p.Activo ? "(vigente)" : "(histórico)"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => navigate(`/juntas/${id}/mandatario/buscar`)}
+                  disabled={isInactiva}
+                  title={isInactiva ? "No puedes agregar mandatarios a un periodo histórico" : undefined}
+                  className="flex items-center gap-2 bg-[#64AF59] hover:bg-[#52934a] text-white px-5 py-3 rounded-lg font-medium shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <UserPlus size={20} />
+                  Nuevo Mandatario
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* ──────────────────────────────────────────────────────────────
+              BANNER DE PERIODO HISTÓRICO (INACTIVO)
+          ────────────────────────────────────────────────────────────── */}
+          {isInactiva && (
+            <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-4 shadow-sm">
+              <div className="shrink-0 bg-amber-100 p-2 rounded-lg">
+                <Lock size={22} className="text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-800 mb-1">
+                  Estás viendo un periodo histórico (inactivo)
+                </p>
+                <p className="text-sm text-amber-700">
+                  Los cambios en mandatarios o datos de este periodo no afectan al periodo vigente.
+                  Si necesitas editar, ve al periodo activo o reactiva este periodo.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 shrink-0">
+                {periodoActivo && periodoActivo.IDJunta !== id && (
+                  <button
+                    onClick={() => navigate(`/juntas/detalle-junta/${periodoActivo.IDJunta}`)}
+                    className="flex items-center gap-2 bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    Ir al periodo vigente
+                  </button>
+                )}
+                <button
+                  onClick={handleReactivar}
+                  disabled={reactivando}
+                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RotateCcw size={16} className={reactivando ? "animate-spin" : ""} />
+                  {reactivando ? "Reactivando..." : "Reactivar este periodo"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ──────────────────────────────────────────────────────────────
               ALERTA DE ROLES PRINCIPALES FALTANTES
@@ -579,7 +716,9 @@ export default function DetalleJunta() {
                         onClick={() =>
                           navigate(`/juntas/mandatario/editar/${id}/${m.idMandatario}`, { state: { miembro: m } })
                         }
-                        className="bg-white/20 hover:bg-white/30 p-2.5 rounded-lg"
+                        disabled={isInactiva}
+                        title={isInactiva ? "No puedes editar mandatarios de un periodo histórico" : undefined}
+                        className="bg-white/20 hover:bg-white/30 p-2.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/20"
                       >
                         <Edit2 size={20} className="text-white" />
                       </button>
@@ -587,7 +726,9 @@ export default function DetalleJunta() {
                       {/* Botón eliminar */}
                       <button
                         onClick={() => handleEliminarMiembro(m.idMandatario)}
-                        className="bg-white/20 hover:bg-red-500/40 p-2.5 rounded-lg transition"
+                        disabled={isInactiva}
+                        title={isInactiva ? "No puedes eliminar mandatarios de un periodo histórico" : undefined}
+                        className="bg-white/20 hover:bg-red-500/40 p-2.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/20"
                       >
                         <Trash2 size={20} className="text-white" />
                       </button>
@@ -709,8 +850,9 @@ export default function DetalleJunta() {
               <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-3">
                 <AlertCircle className="text-amber-600 shrink-0" size={20} />
                 <p className="text-xs text-amber-800 leading-relaxed">
-                  Esta acción creará una copia de la junta actual con nuevas fechas.
-                  Los periodos anteriores se mantendrán en el historial.
+                  <span className="font-bold">Esto crea un periodo NUEVO y te lleva a él.</span> El periodo
+                  actual pasará a histórico (quedará guardado de solo lectura) y a partir de ahí editarás
+                  el nuevo. No edites el periodo anterior después de crear este.
                 </p>
               </div>
 
@@ -787,7 +929,7 @@ export default function DetalleJunta() {
                   disabled={loading}
                   className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 shadow-lg shadow-yellow-200 transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'PROCESANDO...' : 'CONFIRMAR'}
+                  {loading ? 'PROCESANDO...' : 'CREAR E IR AL NUEVO PERIODO'}
                 </button>
               </div>
             </form>
