@@ -635,12 +635,17 @@ export const actualizarJunta = async (req, res) => {
     }
 
     // ------------------------------------------
-    // VALIDAR DUPLICADO DE RAZÓN SOCIAL (excluyendo la junta actual)
+    // VALIDAR DUPLICADO DE RAZÓN SOCIAL (excluyendo la junta actual
+    // y los demás periodos del mismo linaje).
+    // Los periodos de una misma junta comparten razón social y municipio,
+    // por lo que NO deben considerarse duplicados entre sí. Solo se bloquea
+    // una junta realmente distinta (otra personería jurídica).
     // ------------------------------------------
     const existeRazonLugar = await Junta.findOne({
       where: {
         RazonSocial: razonSocial,
         IDMunicipio: idMunicipio,
+        NumPersoneriaJuridica: { [Op.ne]: numPersoneriaJuridica }, // distinto linaje
         IDJunta: { [Op.ne]: id } // Excluir la junta actual
       }
     });
