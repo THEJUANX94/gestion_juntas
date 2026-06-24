@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, Filter, FileCheck, ArrowUp, ArrowDown, FileSpreadsheet, BarChart3, RotateCcw } from "lucide-react";
+import { Search, Filter, FileCheck, ArrowUp, ArrowDown, FileSpreadsheet, RotateCcw, Download } from "lucide-react";
 import Footer from "../components/ui/Footer";
 import { AlertMessage } from "../components/ui/AlertMessage";
 
@@ -77,8 +77,8 @@ export default function ListarAutoresolutorios() {
   const [page, setPage] = useState(1);
   const perPage = 10;
 
-  const [showGrafica, setShowGrafica] = useState(false);
   const [graficaModo, setGraficaModo] = useState("usuario"); // "usuario" | "mes"
+  const [descargandoId, setDescargandoId] = useState(null);
 
   useEffect(() => {
     const fetchCertificados = async () => {
@@ -211,6 +211,31 @@ export default function ListarAutoresolutorios() {
 
   const descargarExcel = () => {
     window.open(import.meta.env.VITE_PATH + "/certificados/export/excel", "_blank");
+  };
+
+  const descargarAutoresolutorio = async (cert) => {
+    try {
+      setDescargandoId(cert.IDCertificado);
+      const res = await fetch(
+        import.meta.env.VITE_PATH + "/certificados/descargar/" + cert.IDCertificado,
+        { method: "GET", credentials: "include" }
+      );
+      if (!res.ok) throw new Error("Error al descargar el autoresolutorio");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `certificado_${cert.IDCertificado}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      AlertMessage.error("Error", "No se pudo descargar el autoresolutorio.");
+    } finally {
+      setDescargandoId(null);
+    }
   };
 
   const datosGrafica = useMemo(() => {
@@ -346,18 +371,19 @@ export default function ListarAutoresolutorios() {
                     )}
                   </th>
                 ))}
+                <th className="px-4 py-2 text-center align-top font-semibold">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={COLUMNAS.length} className="text-center py-10 text-gray-500 italic">
+                  <td colSpan={COLUMNAS.length + 1} className="text-center py-10 text-gray-500 italic">
                     Cargando autoresolutorios...
                   </td>
                 </tr>
               ) : paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={COLUMNAS.length} className="text-center py-10 text-gray-500 italic">
+                  <td colSpan={COLUMNAS.length + 1} className="text-center py-10 text-gray-500 italic">
                     No se encontraron autoresolutorios con los filtros aplicados.
                   </td>
                 </tr>
@@ -380,6 +406,17 @@ export default function ListarAutoresolutorios() {
                     <td className="px-4 py-3">{c.NombreCertificado || "—"}</td>
                     <td className="px-4 py-3">{c.ElaboradoPor || "—"}</td>
                     <td className="px-4 py-3 font-semibold">{c.GeneradoPor || "—"}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => descargarAutoresolutorio(c)}
+                        disabled={descargandoId === c.IDCertificado}
+                        title="Descargar autoresolutorio"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-700 text-white rounded hover:bg-green-800 text-xs disabled:opacity-50"
+                      >
+                        <Download className="h-4 w-4" />
+                        {descargandoId === c.IDCertificado ? "Descargando..." : "Descargar"}
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -433,18 +470,10 @@ export default function ListarAutoresolutorios() {
           >
             <FileSpreadsheet className="h-4 w-4" /> Exportar Excel
           </button>
-          <button
-            onClick={() => setShowGrafica((v) => !v)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-          >
-            <BarChart3 className="h-4 w-4" />
-            {showGrafica ? "Ocultar gráfica" : "Ver gráfica"}
-          </button>
         </div>
       </div>
 
-      {showGrafica && (
-        <div className="mt-4 rounded-xl border bg-white shadow-sm p-4">
+      <div className="mt-4 rounded-xl border bg-white shadow-sm p-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <h2 className="text-lg font-semibold text-gray-700">
               Autoresolutorios {graficaModo === "usuario" ? "por usuario generador" : "por mes"}
@@ -477,7 +506,6 @@ export default function ListarAutoresolutorios() {
             color={graficaModo === "usuario" ? "bg-green-600" : "bg-blue-500"}
           />
         </div>
-      )}
 
       <Footer />
     </div>

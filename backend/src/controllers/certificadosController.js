@@ -264,6 +264,115 @@ export const previewCertificado = async (req, res) => {
   }
 };
 
+export const descargarCertificado = async (req, res) => {
+  try {
+    const { IDCertificado } = req.params;
+
+    if (!IDCertificado) {
+      return res.status(400).json({ error: 'Faltan parámetros: IDCertificado es requerido' });
+    }
+
+    // Buscar el certificado ya generado (NO se crea uno nuevo ni se aumenta el contador)
+    const certificado = await Certificados.findByPk(IDCertificado);
+    if (!certificado) {
+      return res.status(404).json({ error: 'No se encontró el autoresolutorio solicitado.' });
+    }
+
+    const junta = await Junta.findByPk(certificado.IDJunta);
+    if (!junta) {
+      return res.status(404).json({ error: 'No se encontró la junta asociada al autoresolutorio.' });
+    }
+
+    let nombreMunicipio = null;
+    try {
+      const lugar = await Lugar.findByPk(junta.IDMunicipio);
+      if (lugar && lugar.NombreLugar) nombreMunicipio = lugar.NombreLugar;
+    } catch (e) {
+      console.warn('No se pudo obtener el municipio:', e.message);
+    }
+
+    const mandatariosJunta = await MandatarioJunta.findAll({
+      where: { IDJunta: certificado.IDJunta },
+      order: [['IDMandatarioJunta', 'ASC']]
+    });
+    const dignatarios = [];
+
+    for (const m of mandatariosJunta) {
+      try {
+        const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
+        const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
+
+        let nombreComision = null;
+        if (m.IDComision) {
+          const com = await Comisiones.findByPk(m.IDComision);
+          if (com) nombreComision = com.Nombre;
+        }
+
+        let expedidoEn = null;
+        if (m.Expedido) {
+          const lugarExp = await Lugar.findByPk(m.Expedido);
+          if (lugarExp) expedidoEn = lugarExp.NombreLugar;
+        }
+
+        const nombre = u ? `${u.PrimerNombre || ''} ${u.SegundoNombre || ''} ${u.PrimerApellido || ''} ${u.SegundoApellido || ''}`.replace(/\s+/g, ' ').trim() : null;
+
+        dignatarios.push({
+          cargo: c ? c.NombreCargo : null,
+          comision: nombreComision || null,
+          nombre: nombre || null,
+          cedula: m.NumeroIdentificacion,
+          expedidoEn: expedidoEn || null
+        });
+      } catch (e) {
+        console.warn('Error al obtener dignatario:', e.message);
+      }
+    }
+
+    let tipoNombre = null;
+    try {
+      if (junta.TipoJunta) {
+        const tipo = await TipoJunta.findByPk(junta.TipoJunta);
+        if (tipo && tipo.NombreTipoJunta) tipoNombre = tipo.NombreTipoJunta;
+      }
+    } catch (e) {
+      console.warn('Error al resolver TipoJunta:', e.message);
+    }
+
+    // Reutilizar los datos guardados del certificado original (fecha, ID, autoría)
+    const datosCertificado = {
+      FechaCreacion: certificado.FechaCreacion,
+      IDCertificado: certificado.IDCertificado,
+      NombreMunicipio: nombreMunicipio || null,
+      nombreOrganizacion: junta.RazonSocial || null,
+      personeriaNumero: junta.NumPersoneriaJuridica || null,
+      personeriaFecha: junta.FechaCreacion || null,
+      periodoInicio: junta.FechaInicioPeriodo || null,
+      periodoFin: junta.FechaFinPeriodo || null,
+      dignatarios: dignatarios.length > 0 ? dignatarios : null,
+      TipoCertificado: tipoNombre || null,
+      fechaEleccion: junta.FechaAsamblea || null,
+      elaboradoPor: certificado.ElaboradoPor || null,
+      generadoPor: certificado.GeneradoPor || null
+    };
+
+    const pdfBuffer = await generatePdf('autoresolutorio', datosCertificado);
+
+    logOperation(
+      'Autoresolutorio Descargado',
+      { IDCertificado: certificado.IDCertificado, IDJunta: certificado.IDJunta },
+      'info'
+    );
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=certificado_${certificado.IDCertificado}.pdf`);
+    res.send(Buffer.from(pdfBuffer));
+  } catch (err) {
+    console.error("Error al descargar certificado:", err);
+    logOperation('Error al Descargar Certificado', { error: err.message }, 'error');
+    res.status(500).json({ error: "Error al descargar el autoresolutorio.", detalle: err.message });
+  }
+};
+
 export const validarCertificado = async (req, res) => {
   try {
     const { IDCertificado } = req.params;
