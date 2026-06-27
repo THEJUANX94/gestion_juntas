@@ -25,58 +25,36 @@ export const loginUsuario = async (req, res) => {
         }
 
         // 1. Llamar a la API de verificación de reCAPTCHA
-        //    Se envuelve en try/catch con timeout para degradar de forma elegante:
-        //    si Google es inalcanzable (red caída), el login continúa (fail-open)
-        //    en lugar de colgarse y devolver un 500 a todos los usuarios.
-        let captchaData = null;
-        try {
-            const captchaResponse = await fetch(
-                `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
-                { method: "POST", signal: AbortSignal.timeout(5000) }
-            );
+         const captchaResponse = await fetch(
+             `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`,
+             { method: "POST" }
+     );
 
-            captchaData = await captchaResponse.json();
-            console.log("Respuesta Completa de reCAPTCHA:", captchaData);
-        } catch (captchaError) {
-            // No se pudo contactar a Google (timeout / fetch failed / DNS).
-            // Se registra la advertencia y se permite continuar el login.
-            logOperation(
-                "LOGIN_CAPTCHA_DEGRADADO",
-                login,
-                {
-                    motivo: "No se pudo verificar reCAPTCHA (servicio externo inalcanzable). Login permitido en modo degradado.",
-                    error: captchaError.message,
-                    ip: req.ip || 'N/A'
-                },
-                "warn"
-            );
-        }
+        const captchaData = await captchaResponse.json();
 
-        // 2. VERIFICACIÓN DE RECAPTCHA V3 (Score y Success)
-        //    Solo se evalúa si SÍ obtuvimos respuesta de Google. Si captchaData es
-        //    null (red caída), se omite la verificación y el login sigue.
-        if (captchaData) {
-            // Se verifica que sea exitoso Y que la puntuación esté por encima del umbral.
-            const isHuman = captchaData.success && captchaData.score >= RECAPTCHA_THRESHOLD;
+         console.log("Respuesta Completa de reCAPTCHA:", captchaData);
+        
+         // 2. VERIFICACIÓN DE RECAPTCHA V3 (Score y Success)
+         // Se verifica que sea exitoso Y que la puntuación esté por encima del umbral.
+        const isHuman = captchaData.success && captchaData.score >= RECAPTCHA_THRESHOLD;
+        
+        // Opcional: Verificar la 'action' (si la envías desde el front-end)
+        const isActionCorrect = captchaData.action === 'login'; 
 
-            // Opcional: Verificar la 'action' (si la envías desde el front-end)
-            const isActionCorrect = captchaData.action === 'login';
+         if (!isHuman) { // || !isActionCorrect) {
+             logOperation(
+                 "LOGIN_FALLIDO",
+                 login,
+                 { 
+                     motivo: `Verificación Captcha v3 fallida. Score: ${captchaData.score || 'N/A'} (Umbral: ${RECAPTCHA_THRESHOLD})`, 
+                     ip: req.ip || 'N/A' 
+                 },
+                 "error"
+        );
 
-            if (!isHuman) { // || !isActionCorrect) {
-                logOperation(
-                    "LOGIN_FALLIDO",
-                    login,
-                    {
-                        motivo: `Verificación Captcha v3 fallida. Score: ${captchaData.score || 'N/A'} (Umbral: ${RECAPTCHA_THRESHOLD})`,
-                        ip: req.ip || 'N/A'
-                    },
-                    "error"
-                );
-
-                //      Se devuelve un error genérico para no dar pistas
-                return res.status(401).json({ error: "Verificación de seguridad fallida. Inténtalo de nuevo." });
-            }
-        }
+        //      Se devuelve un error genérico para no dar pistas
+             return res.status(401).json({ error: "Verificación de seguridad fallida. Inténtalo de nuevo." });
+         }
         // Fin de la verificación de reCAPTCHA V3
 
         const credencial = await Credenciales.findOne({
