@@ -9,6 +9,8 @@ import { TipoDocumento } from "../model/tipoDocumentoModel.js";
 import { Lugar } from "../model/lugarModel.js";
 import { Op } from "sequelize";
 import { PoblacionesPorPersona } from "../model/poblacionesporpersonaModel.js";
+import { Credenciales } from "../model/CredencialesModel.js";
+import { Firma } from "../model/firmaModel.js";
 import { sequelize } from "../config/database.js";
 
 const soloFechaUTC = (d) => {
@@ -610,6 +612,7 @@ export const actualizarMandatario = async (req, res) => {
     const { idMandatario } = req.params;
 
     const {
+      documento,
       tipoDocumento,
       expedido,
       primernombre,
@@ -645,7 +648,25 @@ export const actualizarMandatario = async (req, res) => {
       return res.status(404).json({ message: "El mandatario no existe en esta junta" });
     }
 
-    const { IDJunta: idJunta, NumeroIdentificacion: documento } = mandatario;
+    const { IDJunta: idJunta, NumeroIdentificacion: documentoActual } = mandatario;
+
+    // Cédula que llega del formulario; si no viene, se conserva la actual
+    const documentoNuevo = (documento ?? documentoActual).toString().trim();
+    const cambiaCedula = documentoNuevo !== documentoActual;
+
+    if (cambiaCedula) {
+      // La cédula es la llave primaria del usuario: validamos formato
+      if (!/^\d{6,10}$/.test(documentoNuevo)) {
+        return res.status(400).json({ message: "La cédula debe tener entre 6 y 10 números" });
+      }
+      // No se puede corregir hacia una cédula que ya pertenece a otra persona
+      const ocupada = await Usuario.findByPk(documentoNuevo);
+      if (ocupada) {
+        return res.status(400).json({
+          message: `Ya existe un usuario registrado con la cédula ${documentoNuevo}. No es posible reasignarla.`
+        });
+      }
+    }
 
     const junta = await Junta.findByPk(idJunta);
     if (!junta) return res.status(404).json({ message: "La junta no existe" });
@@ -653,26 +674,65 @@ export const actualizarMandatario = async (req, res) => {
     const errorPeriodo = validarPeriodoMandato(junta, new Date(fInicioPeriodo), new Date(fFinPeriodo));
     if (errorPeriodo) return res.status(400).json({ message: errorPeriodo });
 
-    const errorCargo = await validarPresidenteUnico(documento, cargo, idJunta);
+    const errorCargo = await validarPresidenteUnico(documentoNuevo, cargo, idJunta);
     if (errorCargo) return res.status(400).json({ message: errorCargo });
 
-    const usuario = await Usuario.findByPk(documento);
+    const usuario = await Usuario.findByPk(documentoActual);
     if (!usuario) return res.status(404).json({ message: "Usuario no encontrado" });
 
     // Escrituras: transacción gestionada (commit/rollback automáticos)
     await sequelize.transaction(async (t) => {
-      await usuario.update({
-        IDTipoDocumento: tipoDocumento,
-        PrimerNombre: primernombre,
-        SegundoNombre: segundonombre || null,
-        PrimerApellido: primerapellido,
-        SegundoApellido: segundoapellido || null,
-        Sexo: genero,
-        FechaNacimiento: fNacimiento,
-        Residencia: residencia,
-        Celular: telefono,
-        Correo: email
-      }, { transaction: t });
+      if (cambiaCedula) {
+        // Cambiar la cédula = mover la PK del usuario y repuntar todas las
+        // tablas que la referencian. Se crea el usuario nuevo, se repuntan
+        // los hijos y se borra el viejo. El Correo (con restricción UNIQUE)
+        // se asigna al final para no chocar con el registro que aún existe.
+        await Usuario.create({
+          NumeroIdentificacion: documentoNuevo,
+          PrimerNombre: primernombre,
+          SegundoNombre: segundonombre || null,
+          PrimerApellido: primerapellido,
+          SegundoApellido: segundoapellido || null,
+          Sexo: genero,
+          FechaNacimiento: fNacimiento,
+          Celular: telefono,
+          Correo: null,
+          IDTipoDocumento: tipoDocumento,
+          IDRol: usuario.IDRol,
+          TipoSangre: usuario.TipoSangre,
+          Activo: usuario.Activo
+        }, { transaction: t });
+
+        // Repuntar las 5 tablas que referencian numeroidentificacion
+        const where = { where: { NumeroIdentificacion: documentoActual }, transaction: t };
+        await MandatarioJunta.update({ NumeroIdentificacion: documentoNuevo }, where);
+        await PeriodoPorMandato.update({ NumeroIdentificacion: documentoNuevo }, where);
+        await PoblacionesPorPersona.update({ NumeroIdentificacion: documentoNuevo }, where);
+        await Firma.update({ NumeroIdentificacion: documentoNuevo }, where);
+        await Credenciales.update(
+          { numeroIdentificacion: documentoNuevo },
+          { where: { numeroIdentificacion: documentoActual }, transaction: t }
+        );
+
+        // Borrar el usuario viejo (ya nadie lo referencia) y asignar el correo
+        await Usuario.destroy({ where: { NumeroIdentificacion: documentoActual }, transaction: t });
+        await Usuario.update(
+          { Correo: email },
+          { where: { NumeroIdentificacion: documentoNuevo }, transaction: t }
+        );
+      } else {
+        await usuario.update({
+          IDTipoDocumento: tipoDocumento,
+          PrimerNombre: primernombre,
+          SegundoNombre: segundonombre || null,
+          PrimerApellido: primerapellido,
+          SegundoApellido: segundoapellido || null,
+          Sexo: genero,
+          FechaNacimiento: fNacimiento,
+          Celular: telefono,
+          Correo: email
+        }, { transaction: t });
+      }
 
       await mandatario.update({
         IDCargo: cargo || null,
@@ -693,7 +753,7 @@ export const actualizarMandatario = async (req, res) => {
           await periodo.update({ FechaInicio: fInicioPeriodo, FechaFin: fFinPeriodo }, { transaction: t });
         }
       } else {
-        await crearPeriodoYVinculo(documento, idJunta, fInicioPeriodo, fFinPeriodo, t, idMandatario);
+        await crearPeriodoYVinculo(documentoNuevo, idJunta, fInicioPeriodo, fFinPeriodo, t, idMandatario);
       }
 
       await junta.update({ UltimoEditor: req.usuario.nombre }, { transaction: t });
