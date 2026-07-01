@@ -6,6 +6,7 @@ import { Reconocida } from "../model/reconocidaModel.js";
 import { PeriodoPorMandato } from "../model/periodopormandato.js";
 import { Periodo } from "../model/periodoModel.js";
 import { MandatarioJunta } from "../model/mandatarioJuntaModel.js";
+import { crearPeriodoYVinculo } from "./mandatarioJuntaController.js";
 import { Op } from "sequelize";
 import { sequelize } from "../config/database.js";
 import ExcelJS from "exceljs";
@@ -424,17 +425,27 @@ export const cambiarPeriodoJunta = async (req, res) => {
         });
 
         if (mandatariosAnteriores.length > 0) {
-          const nuevosMandatariosData = mandatariosAnteriores.map(m => ({
-            IDJunta: nuevaJunta.IDJunta,
-            NumeroIdentificacion: m.NumeroIdentificacion,
-            Residencia: m.Residencia,
-            Profesion: m.Profesion,
-            Expedido: m.Expedido,
-            IDCargo: m.IDCargo,
-            IDComision: m.IDComision
-          }));
+          for (const m of mandatariosAnteriores) {
+            const nuevoMandatario = await MandatarioJunta.create({
+              IDJunta: nuevaJunta.IDJunta,
+              NumeroIdentificacion: m.NumeroIdentificacion,
+              Residencia: m.Residencia,
+              Profesion: m.Profesion,
+              Expedido: m.Expedido,
+              IDCargo: m.IDCargo,
+              IDComision: m.IDComision
+            }, { transaction: t });
 
-          await MandatarioJunta.bulkCreate(nuevosMandatariosData, { transaction: t });
+            // Periodo del mandatario = periodo del nuevo periodo de la junta
+            await crearPeriodoYVinculo(
+              m.NumeroIdentificacion,
+              nuevaJunta.IDJunta,
+              fechaInicioPeriodo,
+              fechaFinPeriodo,
+              t,
+              nuevoMandatario.IDMandatarioJunta
+            );
+          }
           mensajeDignatarios = `Se copiaron ${mandatariosAnteriores.length} dignatarios al nuevo periodo.`;
         }
       }
@@ -672,62 +683,46 @@ export const actualizarJunta = async (req, res) => {
     }
 
     // ------------------------------------------
-    // VALIDAR QUE LOS PERIODOS DE MANDATARIOS ESTÉN DENTRO DEL NUEVO PERIODO
+    // ACTUALIZAR JUNTA Y SINCRONIZAR PERIODOS DE MANDATARIOS
+    // Al cambiar las fechas de la junta, todos los periodos de sus
+    // mandatarios se ajustan al nuevo periodo de la junta.
     // ------------------------------------------
-    const mandatariosConPeriodo = await MandatarioJunta.findAll({
-      where: { IDJunta: id },
-      include: [
-        {
-          model: PeriodoPorMandato,
-          as: "Periodos",
-          include: [
-            {
-              model: Periodo,
-              as: "Periodo"
-            }
-          ]
-        }
-      ]
-    });
+    await sequelize.transaction(async (t) => {
+      await junta.update({
+        RazonSocial: razonSocial,
+        Direccion: direccion,
+        NumPersoneriaJuridica: numPersoneriaJuridica,
+        FechaCreacion: fechaCreacion,
+        FechaInicioPeriodo: fechaInicioPeriodo,
+        FechaFinPeriodo: fechaFinPeriodo,
+        FechaAsamblea: fechaAsamblea,
+        Zona: zona,
+        TipoJunta: tipoJunta,
+        IDMunicipio: idMunicipio,
+        IDInstitucion: idInstitucion,
+        Correo: correo,
+        UltimoEditor: req.usuario.nombre
+      }, { transaction: t });
 
-    const toDateOnly = (d) => new Date(d).toISOString().slice(0, 10);
+      const mandatariosConPeriodo = await MandatarioJunta.findAll({
+        where: { IDJunta: id },
+        include: [{ model: PeriodoPorMandato, as: "Periodos" }],
+        transaction: t
+      });
 
-    for (const mandatario of mandatariosConPeriodo) {
-      for (const periodoPorMandato of mandatario.Periodos || []) {
-        const periodo = periodoPorMandato.Periodo;
-
-        if (periodo) {
-          const inicioPeriodoStr = toDateOnly(periodo.FechaInicio);
-          const finPeriodoStr    = toDateOnly(periodo.FechaFin);
-          const nuevoInicioStr   = String(fechaInicioPeriodo).slice(0, 10);
-          const nuevoFinStr      = String(fechaFinPeriodo).slice(0, 10);
-
-          if (inicioPeriodoStr < nuevoInicioStr || finPeriodoStr > nuevoFinStr) {
-            return res.status(400).json({
-              message: `El periodo del mandatario con documento ${mandatario.NumeroIdentificacion} (${inicioPeriodoStr} - ${finPeriodoStr}) está fuera del nuevo periodo de la junta`
-            });
-          }
+      const idsPeriodo = [];
+      for (const mandatario of mandatariosConPeriodo) {
+        for (const periodoPorMandato of mandatario.Periodos || []) {
+          idsPeriodo.push(periodoPorMandato.IDPeriodo);
         }
       }
-    }
 
-    // ------------------------------------------
-    // ACTUALIZAR JUNTA
-    // ------------------------------------------
-    await junta.update({
-      RazonSocial: razonSocial,
-      Direccion: direccion,
-      NumPersoneriaJuridica: numPersoneriaJuridica,
-      FechaCreacion: fechaCreacion,
-      FechaInicioPeriodo: fechaInicioPeriodo,
-      FechaFinPeriodo: fechaFinPeriodo,
-      FechaAsamblea: fechaAsamblea,
-      Zona: zona,
-      TipoJunta: tipoJunta,
-      IDMunicipio: idMunicipio,
-      IDInstitucion: idInstitucion,
-      Correo: correo,
-      UltimoEditor: req.usuario.nombre
+      if (idsPeriodo.length > 0) {
+        await Periodo.update(
+          { FechaInicio: fechaInicioPeriodo, FechaFin: fechaFinPeriodo },
+          { where: { IDPeriodo: { [Op.in]: idsPeriodo } }, transaction: t }
+        );
+      }
     });
 
     return res.json({
