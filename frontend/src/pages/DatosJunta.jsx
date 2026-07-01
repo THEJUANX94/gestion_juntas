@@ -32,6 +32,10 @@ export default function EditarJunta() {
   const [loading, setLoading] = useState(true);
   const [activo, setActivo] = useState(true);
   const [reactivando, setReactivando] = useState(false);
+  const [fechasOriginales, setFechasOriginales] = useState({
+    fechaInicioPeriodo: "",
+    fechaFinPeriodo: "",
+  });
 
   const isInactiva = activo === false;
 
@@ -77,6 +81,11 @@ export default function EditarJunta() {
           idMunicipio: juntaData.IDMunicipio,
           idInstitucion: juntaData.IDInstitucion,
           correo: juntaData.Correo
+        });
+
+        setFechasOriginales({
+          fechaInicioPeriodo: juntaData.FechaInicioPeriodo?.split("T")[0] || "",
+          fechaFinPeriodo: juntaData.FechaFinPeriodo?.split("T")[0] || "",
         });
 
         setNumeroAfiliados(juntaData.NumeroAfiliados || 0);
@@ -151,6 +160,20 @@ export default function EditarJunta() {
       );
       return;
     }
+
+    // Si cambian las fechas del periodo, se propagan a TODOS los mandatarios
+    const cambiaronFechas =
+      formData.fechaInicioPeriodo !== fechasOriginales.fechaInicioPeriodo ||
+      formData.fechaFinPeriodo !== fechasOriginales.fechaFinPeriodo;
+
+    if (cambiaronFechas) {
+      const ok = await AlertMessage.confirm(
+        "¿Cambiar las fechas del periodo?",
+        "El periodo de TODOS los mandatarios de esta junta se ajustará a las nuevas fechas. ¿Deseas continuar?"
+      );
+      if (!ok) return;
+    }
+
     try {
       const resp = await fetch(import.meta.env.VITE_PATH + `/juntas/${id}`, {
         method: "PUT",
@@ -164,6 +187,11 @@ export default function EditarJunta() {
         AlertMessage.error("No se pudo actualizar", data.message || "Ocurrió un problema");
         return;
       }
+
+      setFechasOriginales({
+        fechaInicioPeriodo: formData.fechaInicioPeriodo,
+        fechaFinPeriodo: formData.fechaFinPeriodo,
+      });
 
       AlertMessage.info("Junta actualizada correctamente");
 
