@@ -8,8 +8,8 @@ export const sequelize = new Sequelize(process.env.DATABASE_URL, {
   protocol: "postgres",
   logging: false,
   pool: {
-    max: 20,
-    min: 2,
+    max: 10,
+    min: 1,
     acquire: 30000,
     idle: 10000
   },
