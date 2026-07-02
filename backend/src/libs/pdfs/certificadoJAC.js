@@ -211,13 +211,15 @@ const generarCertificadoJAC = async (datosCertificado) => {
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.text('Elaboró y generó:', margenIzq, yPos);
+  doc.text('Elaboró, Generó y Revisó:', margenIzq, yPos);
   yPos += 5;
   doc.setFont('helvetica', 'normal');
   doc.text(`Elaboró: ${datosCertificado.elaboradoPor || '________________'}`, margenIzq, yPos);
   yPos += 5;
   doc.text(`Generó: ${datosCertificado.generadoPor || '________________'}`, margenIzq, yPos);
-  yPos += 8;
+  yPos += 5;
+  doc.text('Revisó: OLGA LUCIA SOTO GONZALEZ', margenIzq, yPos);
+
   doc.setFontSize(10);
 
   return doc.output('arraybuffer');

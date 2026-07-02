@@ -376,8 +376,8 @@ export default function CrearJunta() {
                   type="date"
                   name="fechaFinPeriodo"
                   value={formData.fechaFinPeriodo}
-                  readOnly
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-gray-100 cursor-not-allowed"
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#64AF59] focus:border-transparent outline-none transition-all"
                 />
 
               </div>
