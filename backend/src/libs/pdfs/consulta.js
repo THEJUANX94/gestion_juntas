@@ -197,7 +197,8 @@ const generarConsulta = async (datosCertificado) => {
       const comision = (d.comision || '').trim();
       const expedido = (d.expedidoEn || municipio || '').toUpperCase();
       const nombre = (d.nombre || '').toUpperCase();
-      const cedula = (d.cedula || '').toString();
+      const numeroDoc = (d.cedula || '').toString();
+      const cedula = d.tipoDocumento ? `${d.tipoDocumento} ${numeroDoc}` : numeroDoc;
 
       if (comision) {
         const categoria = clasificarComision(comision);

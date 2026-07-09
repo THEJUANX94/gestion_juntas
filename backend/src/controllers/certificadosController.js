@@ -7,6 +7,7 @@ import { Junta } from "../model/juntaModel.js";
 import { Lugar } from "../model/lugarModel.js";
 import { Cargo } from "../model/cargoModel.js";
 import { TipoJunta } from "../model/tipoJuntaModel.js";
+import { TipoDocumento } from "../model/tipoDocumentoModel.js";
 import { Op } from "sequelize";
 import { Comisiones } from "../model/comisionModel.js";
 import { sendMail } from "../utils/mailer.js";
@@ -54,7 +55,10 @@ export const crearCertificado = async (req, res) => {
 
     for (const m of mandatariosJunta) {
       try {
-        const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
+        const u = await Usuario.findOne({
+          where: { NumeroIdentificacion: m.NumeroIdentificacion },
+          include: [{ model: TipoDocumento, attributes: ['NombreTipo'] }]
+        });
 
         // Buscamos el Cargo (si tiene)
         const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
@@ -82,6 +86,7 @@ export const crearCertificado = async (req, res) => {
           comision: nombreComision || null,
           nombre: nombre || null,
           cedula: m.NumeroIdentificacion,
+          tipoDocumento: u ? u.TipoDocumento?.NombreTipo || null : null,
           expedidoEn: expedidoEn || null
         });
 
@@ -196,7 +201,10 @@ export const previewCertificado = async (req, res) => {
 
     for (const m of mandatariosJunta) {
       try {
-        const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
+        const u = await Usuario.findOne({
+          where: { NumeroIdentificacion: m.NumeroIdentificacion },
+          include: [{ model: TipoDocumento, attributes: ['NombreTipo'] }]
+        });
         const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
 
         let nombreComision = null;
@@ -218,6 +226,7 @@ export const previewCertificado = async (req, res) => {
           comision: nombreComision || null,
           nombre: nombre || null,
           cedula: m.NumeroIdentificacion,
+          tipoDocumento: u ? u.TipoDocumento?.NombreTipo || null : null,
           expedidoEn: expedidoEn || null
         });
       } catch (e) {
@@ -299,7 +308,10 @@ export const descargarCertificado = async (req, res) => {
 
     for (const m of mandatariosJunta) {
       try {
-        const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
+        const u = await Usuario.findOne({
+          where: { NumeroIdentificacion: m.NumeroIdentificacion },
+          include: [{ model: TipoDocumento, attributes: ['NombreTipo'] }]
+        });
         const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
 
         let nombreComision = null;
@@ -321,6 +333,7 @@ export const descargarCertificado = async (req, res) => {
           comision: nombreComision || null,
           nombre: nombre || null,
           cedula: m.NumeroIdentificacion,
+          tipoDocumento: u ? u.TipoDocumento?.NombreTipo || null : null,
           expedidoEn: expedidoEn || null
         });
       } catch (e) {
@@ -451,7 +464,10 @@ export const enviarAutoresolutorio = async (req, res) => {
 
     for (const m of mandatariosJunta) {
       try {
-        const u = await Usuario.findOne({ where: { NumeroIdentificacion: m.NumeroIdentificacion } });
+        const u = await Usuario.findOne({
+          where: { NumeroIdentificacion: m.NumeroIdentificacion },
+          include: [{ model: TipoDocumento, attributes: ['NombreTipo'] }]
+        });
         const c = m.IDCargo ? await Cargo.findByPk(m.IDCargo) : null;
 
         let nombreComision = null;
@@ -473,6 +489,7 @@ export const enviarAutoresolutorio = async (req, res) => {
           comision: nombreComision,
           nombre: nombre,
           cedula: m.NumeroIdentificacion,
+          tipoDocumento: u ? u.TipoDocumento?.NombreTipo || null : null,
           expedidoEn: expedidoEn || null
         });
       } catch (e) { console.warn('Warning Dignatario:', e.message); }

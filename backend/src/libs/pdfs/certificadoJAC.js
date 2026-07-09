@@ -147,7 +147,8 @@ const generarCertificadoJAC = async (datosCertificado) => {
     dignatariosTabla.forEach(d => {
       const cargo = (d.cargo || d.comision || '').toString();
       const nombre = (d.nombre || '').toUpperCase();
-      const cedula = (d.cedula || '').toString();
+      const numeroDoc = (d.cedula || '').toString();
+      const cedula = d.tipoDocumento ? `${d.tipoDocumento} ${numeroDoc}` : numeroDoc;
       const expedido = (d.expedidoEn || municipio || '').toUpperCase();
 
       const cells = [
