@@ -527,13 +527,15 @@ const JUNTA_EXPORT_INCLUDE = [
   }
 ];
 
+// Las fechas de periodo se guardan como medianoche UTC ("YYYY-MM-DD" del input),
+// por eso se formatea con getters UTC: los getters locales restan un dia en UTC-5.
 const formatDate = (value) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  const day = `${date.getDate()}`.padStart(2, "0");
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const year = date.getFullYear();
+  const day = `${date.getUTCDate()}`.padStart(2, "0");
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
+  const year = date.getUTCFullYear();
   return `${day}/${month}/${year}`;
 };
 

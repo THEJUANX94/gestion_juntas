@@ -53,14 +53,19 @@ export const validarPresidenteUnico = async (documento, cargoID, idJunta) => {
     include: [
       {
         model: Junta,
-        where: { TipoJunta: juntaActual.TipoJunta }
+        where: { TipoJunta: juntaActual.TipoJunta },
+        include: [{ model: Lugar, attributes: ["NombreLugar"], required: false }]
       }
     ]
   });
 
-  return presidente
-    ? `El usuario ya es presidente en otra junta del mismo tipo (${juntaActual.TipoJunta}).`
-    : null;
+  if (!presidente) return null;
+
+  const otraJunta = presidente.Juntum || presidente.Junta;
+  const nombreJunta = otraJunta?.RazonSocial || "desconocida";
+  const nombreMunicipio = otraJunta?.Lugar?.NombreLugar || "desconocido";
+
+  return `Este dignatario ya pertenece a la junta ${nombreJunta} del municipio ${nombreMunicipio}.`;
 };
 
 
