@@ -20,7 +20,8 @@ import {
 import {
   exportarReporte,
   reporteMunicipios,
-  reporteProvincias
+  reporteProvincias,
+  reporteDignatarios
 } from "../controllers/juntasControllerReportes.js";
 
 import { verificarAuth, verificarRol } from "../utils/authMiddleware.js";
@@ -44,6 +45,7 @@ router.get("/reports/genero", verificarAuth, verificarRol(ROLES_INFORMES), repor
 // Reportes JSON (del controlador nuevo)
 router.get("/reports/provincias", verificarAuth, verificarRol(ROLES_INFORMES), reporteProvincias);
 router.get("/reports/municipios", verificarAuth, verificarRol(ROLES_INFORMES), reporteMunicipios);
+router.get("/reports/dignatarios", verificarAuth, verificarRol(ROLES_INFORMES), reporteDignatarios);
 
 // Exportación de reportes (Excel, Word, PDF)
 router.get("/reports/:tipo/export", verificarAuth, verificarRol(ROLES_INFORMES), exportarReporte);

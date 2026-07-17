@@ -23,7 +23,8 @@ const REPORT_TITLES = {
   cargos: "Reporte de Cargos",
   genero: "Reporte de Genero",
   provincias: "Reporte de Provincias de Boyaca",
-  municipios: "Reporte de Municipios de Boyaca"
+  municipios: "Reporte de Municipios de Boyaca",
+  dignatarios: "Reporte de Dignatarios"
 };
 
 const normalizeText = (value = "") =>
@@ -496,6 +497,8 @@ const getReportData = async (tipo, query) => {
       return getProvinciasData({ provincias });
     case "municipios":
       return getMunicipiosData({ municipios });
+    case "dignatarios":
+      return buildDignatariosDataset();
     default:
       throw new Error("Tipo de reporte no soportado");
   }
@@ -875,6 +878,127 @@ const buildCargosExportDataset = async ({ filtro = [] } = {}) => {
 };
 
 /**
+ * Reporte de Dignatarios:
+ * - Listado persona-a-persona de todos los mandatarios/dignatarios de todas las juntas.
+ * - Incluye informacion personal, junta y municipio/provincia al que pertenece,
+ *   y el cargo que desempena.
+ *
+ * Se comparte entre el endpoint JSON (tabla del frontend) y la exportacion,
+ * por lo que devuelve directamente el formato tabular estandar {title, headers, rows}.
+ */
+const buildDignatariosDataset = async () => {
+  const registros = await MandatarioJunta.findAll({
+    attributes: [
+      "NumeroIdentificacion",
+      "IDJunta",
+      "IDCargo",
+      "Residencia",
+      "Profesion",
+      "Expedido"
+    ],
+    include: [
+      {
+        model: Cargo,
+        attributes: ["IDCargo", "NombreCargo"],
+        required: false
+      },
+      {
+        model: Usuario,
+        attributes: [
+          "NumeroIdentificacion",
+          "PrimerNombre",
+          "SegundoNombre",
+          "PrimerApellido",
+          "SegundoApellido",
+          "FechaNacimiento",
+          "Sexo",
+          "Celular",
+          "Correo"
+        ],
+        required: false
+      },
+      {
+        model: Lugar,
+        as: "LugarExpedido",
+        attributes: ["IDLugar", "NombreLugar"],
+        required: false
+      },
+      {
+        model: Junta,
+        as: "Juntum",
+        required: false,
+        include: JUNTA_EXPORT_INCLUDE
+      }
+    ]
+  });
+
+  const rows = registros
+    .map((registro) => {
+      const info = getJuntaInfo(getMandatarioJunta(registro) || {});
+      const usuario = registro.Usuario || {};
+      return {
+        cargo: registro.Cargo?.NombreCargo || "Sin Cargo",
+        documento: registro.NumeroIdentificacion || "",
+        nombre: getNombrePersona(usuario) || "Sin nombre",
+        fechaNacimiento: formatDate(usuario.FechaNacimiento),
+        sexo: getGeneroNombre(usuario.Sexo),
+        celular: usuario.Celular || "",
+        correo: usuario.Correo || "",
+        profesion: registro.Profesion || "",
+        residencia: registro.Residencia || "",
+        expedido: registro.LugarExpedido?.NombreLugar || "",
+        junta: info.razonSocial,
+        municipio: info.municipio || "Sin Municipio",
+        provincia: info.provincia || "Sin Provincia"
+      };
+    })
+    .sort(
+      (a, b) =>
+        compareText(a.provincia, b.provincia) ||
+        compareText(a.municipio, b.municipio) ||
+        compareText(a.junta, b.junta) ||
+        compareText(a.cargo, b.cargo) ||
+        compareText(a.nombre, b.nombre)
+    )
+    .map((r) => [
+      r.cargo,
+      r.documento,
+      r.nombre,
+      r.fechaNacimiento,
+      r.sexo,
+      r.celular,
+      r.correo,
+      r.profesion,
+      r.residencia,
+      r.expedido,
+      r.junta,
+      r.municipio,
+      r.provincia
+    ]);
+
+  return {
+    title: getReportTitle("dignatarios"),
+    subtitle: `Total de dignatarios: ${rows.length}`,
+    headers: [
+      "Cargo",
+      "Documento",
+      "Nombre Completo",
+      "Fecha Nacimiento",
+      "Sexo",
+      "Celular",
+      "Correo",
+      "Profesion",
+      "Residencia",
+      "Lugar de Expedicion",
+      "Junta",
+      "Municipio",
+      "Provincia"
+    ],
+    rows
+  };
+};
+
+/**
  * Dataset de genero con columnas de cantidad y porcentaje.
  */
 const buildGeneroExportDataset = async ({ filtro = [] } = {}) => {
@@ -1079,6 +1203,8 @@ const getExportDataset = async (tipo, query) => {
       return buildProvinciasExportDataset({ provincias });
     case "municipios":
       return buildMunicipiosExportDataset({ municipios });
+    case "dignatarios":
+      return buildDignatariosDataset();
     default:
       throw new Error("Tipo de reporte no soportado");
   }
@@ -1495,6 +1621,15 @@ export const reporteMunicipios = async (req, res) => {
       municipios: splitCsv(req.query?.municipios)
     });
 
+    return res.json(data);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const reporteDignatarios = async (_req, res) => {
+  try {
+    const data = await buildDignatariosDataset();
     return res.json(data);
   } catch (error) {
     return res.status(500).json({ message: error.message });

@@ -131,6 +131,67 @@ SELECT datname, usename, count(*) FROM pg_stat_activity GROUP BY datname, usenam
 
 Procedimiento general para conectar una base de datos nueva (o existente) a este PgBouncer. Reemplaza `<app>` por un nombre corto (ej. `notificaciones`) y `<basededatos>` por el nombre real de la base.
 
+### 11.0 Checklist rápido (referencia mental)
+
+> ⚠️ Este es el procedimiento **correcto y vigente**. Existió una versión anterior basada en `auth_query` + una función `pgbouncer_user_lookup()` por base + `pgbouncer_auth` — se descartó porque PgBouncer no puede usar solo un verificador SCRAM para autenticarse él mismo contra el backend (necesita la contraseña real). Esa función y ese rol quedaron como deuda técnica (sección 8), **no como parte del procedimiento a seguir**.
+
+1. Generar contraseña fuerte:
+   ```bash
+   openssl rand -base64 24
+   ```
+2. Crear el rol dedicado (no usar `postgres`):
+   ```sql
+   CREATE ROLE app_<app> WITH LOGIN PASSWORD 'LA_CONTRASEÑA' CONNECTION LIMIT 15;
+   ```
+3. (Opcional) Tope de gobernanza adicional a nivel de base:
+   ```sql
+   ALTER DATABASE <basededatos> CONNECTION LIMIT 30;
+   ```
+4. Otorgar permisos, conectado a `<basededatos>`:
+   ```sql
+   GRANT CONNECT ON DATABASE <basededatos> TO app_<app>;
+   GRANT USAGE ON SCHEMA public TO app_<app>;
+   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_<app>;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_<app>;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_<app>;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_<app>;
+   ```
+5. Sacar el verificador SCRAM y agregarlo a `userlist.txt` (no pegar el resultado en chats/tickets):
+   ```sql
+   SELECT usename, passwd FROM pg_shadow WHERE usename = 'app_<app>';
+   ```
+   ```bash
+   sudo tee -a /etc/pgbouncer/userlist.txt > /dev/null << 'EOF'
+   "app_<app>" "SCRAM-SHA-256$...pegar-verificador-aqui..."
+   EOF
+   sudo chown pgbouncer:pgbouncer /etc/pgbouncer/userlist.txt
+   sudo chmod 600 /etc/pgbouncer/userlist.txt
+   ```
+6. Agregar la entrada `[databases]` en `pgbouncer.ini`, con `user=`/`password=` explícitos (esto es lo que reemplaza al viejo paso de `auth_query`):
+   ```bash
+   sudo nano /etc/pgbouncer/pgbouncer.ini
+   ```
+   ```
+   <basededatos> = host=127.0.0.1 port=5432 dbname=<basededatos> user=app_<app> password=LA_CONTRASEÑA
+   ```
+7. Verificar permisos y **reiniciar** PgBouncer (no `reload` — no siempre remapea bien una base o `user=` nuevo):
+   ```bash
+   sudo chown pgbouncer:pgbouncer /etc/pgbouncer/pgbouncer.ini
+   sudo chmod 600 /etc/pgbouncer/pgbouncer.ini
+   sudo systemctl restart pgbouncer
+   sudo systemctl status pgbouncer --no-pager
+   ```
+8. Probar localmente:
+   ```bash
+   psql "host=127.0.0.1 port=6432 dbname=<basededatos> user=app_<app>" -c "SELECT current_database(), current_user;"
+   ```
+9. Actualizar el `.env` de la app real (contraseña codificada con `node -e "console.log(encodeURIComponent(process.argv[1]))" 'LA_CONTRASEÑA'`) y **reiniciar el proceso** de la app.
+10. Confirmar con el log de PgBouncer o `SHOW CLIENTS` que la app real (no una prueba manual) está conectando — ver sección 10.
+
+Ningún paso de estos toca las bases que ya existen — sí escala limpio, con este procedimiento.
+
+### Tutorial detallado (mismo contenido, paso a paso explicado)
+
 ### Paso 1 — Generar una contraseña fuerte
 
 En el servidor `bdqa`, por SSH:

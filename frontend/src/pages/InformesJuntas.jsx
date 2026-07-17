@@ -75,7 +75,8 @@ const tabs = [
   { key: "gender", label: "Genero" },
   { key: "province", label: "Provincias" },
   { key: "municipality", label: "Municipio" },
-  { key: "autoresolutorios", label: "Número de Autoresolutorios" }
+  { key: "autoresolutorios", label: "Número de Autoresolutorios" },
+  { key: "dignatarios", label: "Dignatarios" }
 ];
 
 /**
@@ -183,6 +184,7 @@ export default function InformesJuntas() {
   const [provinceData, setProvinceData] = useState(null);
   const [municipalityData, setMunicipalityData] = useState(null);
   const [autoresolutoriosData, setAutoresolutoriosData] = useState(null);
+  const [dignatariosData, setDignatariosData] = useState(null);
 
   const [provincias, setProvincias] = useState([]);
   const [municipios, setMunicipios] = useState([]);
@@ -283,7 +285,8 @@ export default function InformesJuntas() {
       active: "/juntas/reports/activas",
       positions: "/juntas/reports/cargos",
       gender: "/juntas/reports/genero",
-      autoresolutorios: "/certificados/reports/autoresolutorios"
+      autoresolutorios: "/certificados/reports/autoresolutorios",
+      dignatarios: "/juntas/reports/dignatarios"
     };
     const endpoint = endpointMap[selectedReport];
     if (!endpoint) return;
@@ -301,6 +304,7 @@ export default function InformesJuntas() {
         if (selectedReport === "positions") setPositionsData(data);
         if (selectedReport === "gender") setGenderData(data);
         if (selectedReport === "autoresolutorios") setAutoresolutoriosData(data);
+        if (selectedReport === "dignatarios") setDignatariosData(data);
         if (selectedReport === "active") {
           setActiveData({ activas: data.series?.[0] ?? 0, inactivas: data.series?.[1] ?? 0 });
         }
@@ -873,6 +877,38 @@ export default function InformesJuntas() {
                         }
                       />
                     </>
+                  )}
+                </div>
+              )}
+
+              {selectedReport === "dignatarios" && (
+                <div>
+                  <h2 className="mb-2 text-xl font-bold text-gray-800">Dignatarios</h2>
+                  <p className="mb-4 text-sm text-gray-600">
+                    Información personal de todos los dignatarios y mandatarios, con la junta y
+                    municipio al que pertenecen y el cargo que desempeñan.
+                  </p>
+
+                  {dignatariosData?.rows?.length ? (
+                    <>
+                      <div className="mb-4 inline-block rounded-lg border-2 border-[#009E76] bg-[#009E76]/10 px-5 py-3">
+                        <span className="text-3xl font-extrabold text-[#009E76]">
+                          {dignatariosData.rows.length}
+                        </span>{" "}
+                        <span className="text-sm font-semibold text-[#009E76]">
+                          dignatarios registrados
+                        </span>
+                      </div>
+
+                      <DownloadButtons
+                        onDownload={(format) => downloadReport("dignatarios", format)}
+                        compact
+                      />
+
+                      <Table headers={dignatariosData.headers} rows={dignatariosData.rows} />
+                    </>
+                  ) : (
+                    <p className="text-gray-400">Sin dignatarios registrados</p>
                   )}
                 </div>
               )}
