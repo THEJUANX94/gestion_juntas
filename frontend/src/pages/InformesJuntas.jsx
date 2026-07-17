@@ -198,6 +198,9 @@ export default function InformesJuntas() {
 
   // Sub-vista dentro del reporte de Cargos: "cargos" (grafica) o "dignatarios" (listado).
   const [cargosView, setCargosView] = useState("cargos");
+  // Paginacion del listado de dignatarios (evita renderizar miles de filas de golpe).
+  const [dignatariosPage, setDignatariosPage] = useState(1);
+  const DIGNATARIOS_PAGE_SIZE = 25;
 
   /**
    * Carga el catalogo de lugares una sola vez y deriva:
@@ -638,7 +641,10 @@ export default function InformesJuntas() {
                       Cargos
                     </button>
                     <button
-                      onClick={() => setCargosView("dignatarios")}
+                      onClick={() => {
+                        setCargosView("dignatarios");
+                        setDignatariosPage(1);
+                      }}
                       className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors ${
                         cargosView === "dignatarios"
                           ? "bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white"
@@ -683,23 +689,62 @@ export default function InformesJuntas() {
                       </p>
 
                       {dignatariosData?.rows?.length ? (
-                        <>
-                          <div className="mb-4 inline-block rounded-lg border-2 border-[#009E76] bg-[#009E76]/10 px-5 py-3">
-                            <span className="text-3xl font-extrabold text-[#009E76]">
-                              {dignatariosData.rows.length}
-                            </span>{" "}
-                            <span className="text-sm font-semibold text-[#009E76]">
-                              dignatarios registrados
-                            </span>
-                          </div>
+                        (() => {
+                          const totalRows = dignatariosData.rows.length;
+                          const totalPages = Math.ceil(totalRows / DIGNATARIOS_PAGE_SIZE);
+                          const currentPage = Math.min(dignatariosPage, totalPages);
+                          const startIdx = (currentPage - 1) * DIGNATARIOS_PAGE_SIZE;
+                          const pageRows = dignatariosData.rows.slice(
+                            startIdx,
+                            startIdx + DIGNATARIOS_PAGE_SIZE
+                          );
 
-                          <DownloadButtons
-                            onDownload={(format) => downloadReport("dignatarios", format)}
-                            compact
-                          />
+                          return (
+                            <>
+                              <div className="mb-4 inline-block rounded-lg border-2 border-[#009E76] bg-[#009E76]/10 px-5 py-3">
+                                <span className="text-3xl font-extrabold text-[#009E76]">
+                                  {totalRows}
+                                </span>{" "}
+                                <span className="text-sm font-semibold text-[#009E76]">
+                                  dignatarios registrados
+                                </span>
+                              </div>
 
-                          <Table headers={dignatariosData.headers} rows={dignatariosData.rows} />
-                        </>
+                              <DownloadButtons
+                                onDownload={(format) => downloadReport("dignatarios", format)}
+                                compact
+                              />
+
+                              <Table headers={dignatariosData.headers} rows={pageRows} />
+
+                              {/* Controles de paginacion */}
+                              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                                <p className="text-sm text-gray-600">
+                                  Mostrando {startIdx + 1}–{startIdx + pageRows.length} de {totalRows}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => setDignatariosPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage <= 1}
+                                    className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-100 disabled:opacity-40"
+                                  >
+                                    Anterior
+                                  </button>
+                                  <span className="text-sm font-semibold text-gray-700">
+                                    Página {currentPage} de {totalPages}
+                                  </span>
+                                  <button
+                                    onClick={() => setDignatariosPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage >= totalPages}
+                                    className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-100 disabled:opacity-40"
+                                  >
+                                    Siguiente
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()
                       ) : (
                         <p className="text-gray-400">Sin dignatarios registrados</p>
                       )}
