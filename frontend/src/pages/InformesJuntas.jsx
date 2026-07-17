@@ -75,8 +75,7 @@ const tabs = [
   { key: "gender", label: "Genero" },
   { key: "province", label: "Provincias" },
   { key: "municipality", label: "Municipio" },
-  { key: "autoresolutorios", label: "Número de Autoresolutorios" },
-  { key: "dignatarios", label: "Dignatarios" }
+  { key: "autoresolutorios", label: "Número de Autoresolutorios" }
 ];
 
 /**
@@ -197,6 +196,9 @@ export default function InformesJuntas() {
   const [selectedPosition, setSelectedPosition] = useState("");
   const [selectedGender, setSelectedGender] = useState("");
 
+  // Sub-vista dentro del reporte de Cargos: "cargos" (grafica) o "dignatarios" (listado).
+  const [cargosView, setCargosView] = useState("cargos");
+
   /**
    * Carga el catalogo de lugares una sola vez y deriva:
    * - Provincias de Boyaca
@@ -285,8 +287,7 @@ export default function InformesJuntas() {
       active: "/juntas/reports/activas",
       positions: "/juntas/reports/cargos",
       gender: "/juntas/reports/genero",
-      autoresolutorios: "/certificados/reports/autoresolutorios",
-      dignatarios: "/juntas/reports/dignatarios"
+      autoresolutorios: "/certificados/reports/autoresolutorios"
     };
     const endpoint = endpointMap[selectedReport];
     if (!endpoint) return;
@@ -304,7 +305,6 @@ export default function InformesJuntas() {
         if (selectedReport === "positions") setPositionsData(data);
         if (selectedReport === "gender") setGenderData(data);
         if (selectedReport === "autoresolutorios") setAutoresolutoriosData(data);
-        if (selectedReport === "dignatarios") setDignatariosData(data);
         if (selectedReport === "active") {
           setActiveData({ activas: data.series?.[0] ?? 0, inactivas: data.series?.[1] ?? 0 });
         }
@@ -318,6 +318,33 @@ export default function InformesJuntas() {
 
     load();
   }, [selectedReport]);
+
+  /**
+   * Carga el listado de dignatarios bajo demanda:
+   * solo cuando el usuario entra al reporte de Cargos y elige la sub-vista
+   * "dignatarios". Se cachea en estado para no recargar en cada cambio.
+   */
+  useEffect(() => {
+    if (selectedReport !== "positions" || cargosView !== "dignatarios") return;
+    if (dignatariosData) return;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiFetch("/juntas/reports/dignatarios");
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        setDignatariosData(await res.json());
+      } catch (e) {
+        console.error(e);
+        setError(e.message || "No se pudo cargar el listado de dignatarios");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [selectedReport, cargosView, dignatariosData]);
 
   /**
    * Punto unico de descarga para Excel/Word/PDF.
@@ -598,27 +625,86 @@ export default function InformesJuntas() {
 
               {selectedReport === "positions" && (
                 <div>
-                  <div className="mb-4 max-w-sm">
-                    <label className="mb-1 block text-sm font-semibold text-gray-700">Cargo</label>
-                    <select
-                      value={selectedPosition}
-                      onChange={(e) => setSelectedPosition(e.target.value)}
-                      className="w-full rounded-lg border px-3 py-2"
+                  {/* Sub-selector: gráfica de cargos vs. listado de dignatarios */}
+                  <div className="mb-5 inline-flex rounded-lg border bg-gray-100 p-1">
+                    <button
+                      onClick={() => setCargosView("cargos")}
+                      className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors ${
+                        cargosView === "cargos"
+                          ? "bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white"
+                          : "text-gray-600 hover:text-gray-800"
+                      }`}
                     >
-                      <option value="">Todos</option>
-                      {(positionsData?.labels || []).map((label) => (
-                        <option key={label} value={label}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
+                      Cargos
+                    </button>
+                    <button
+                      onClick={() => setCargosView("dignatarios")}
+                      className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors ${
+                        cargosView === "dignatarios"
+                          ? "bg-gradient-to-r from-[#009E76] to-[#64AF59] text-white"
+                          : "text-gray-600 hover:text-gray-800"
+                      }`}
+                    >
+                      Dignatarios
+                    </button>
                   </div>
-                  <BarChart labels={filteredPositions?.labels} series={filteredPositions?.series} color="bg-purple-500" />
-                  <DownloadButtons
-                    onDownload={(format) =>
-                      downloadReport("positions", format, selectedPosition ? { filtro: [selectedPosition] } : {})
-                    }
-                  />
+
+                  {cargosView === "cargos" && (
+                    <div>
+                      <div className="mb-4 max-w-sm">
+                        <label className="mb-1 block text-sm font-semibold text-gray-700">Cargo</label>
+                        <select
+                          value={selectedPosition}
+                          onChange={(e) => setSelectedPosition(e.target.value)}
+                          className="w-full rounded-lg border px-3 py-2"
+                        >
+                          <option value="">Todos</option>
+                          {(positionsData?.labels || []).map((label) => (
+                            <option key={label} value={label}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <BarChart labels={filteredPositions?.labels} series={filteredPositions?.series} color="bg-purple-500" />
+                      <DownloadButtons
+                        onDownload={(format) =>
+                          downloadReport("positions", format, selectedPosition ? { filtro: [selectedPosition] } : {})
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {cargosView === "dignatarios" && (
+                    <div>
+                      <p className="mb-4 text-sm text-gray-600">
+                        Información personal de todos los dignatarios y mandatarios, con la junta y
+                        municipio al que pertenecen y el cargo que desempeñan.
+                      </p>
+
+                      {dignatariosData?.rows?.length ? (
+                        <>
+                          <div className="mb-4 inline-block rounded-lg border-2 border-[#009E76] bg-[#009E76]/10 px-5 py-3">
+                            <span className="text-3xl font-extrabold text-[#009E76]">
+                              {dignatariosData.rows.length}
+                            </span>{" "}
+                            <span className="text-sm font-semibold text-[#009E76]">
+                              dignatarios registrados
+                            </span>
+                          </div>
+
+                          <DownloadButtons
+                            onDownload={(format) => downloadReport("dignatarios", format)}
+                            compact
+                          />
+
+                          <Table headers={dignatariosData.headers} rows={dignatariosData.rows} />
+                        </>
+                      ) : (
+                        <p className="text-gray-400">Sin dignatarios registrados</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -877,38 +963,6 @@ export default function InformesJuntas() {
                         }
                       />
                     </>
-                  )}
-                </div>
-              )}
-
-              {selectedReport === "dignatarios" && (
-                <div>
-                  <h2 className="mb-2 text-xl font-bold text-gray-800">Dignatarios</h2>
-                  <p className="mb-4 text-sm text-gray-600">
-                    Información personal de todos los dignatarios y mandatarios, con la junta y
-                    municipio al que pertenecen y el cargo que desempeñan.
-                  </p>
-
-                  {dignatariosData?.rows?.length ? (
-                    <>
-                      <div className="mb-4 inline-block rounded-lg border-2 border-[#009E76] bg-[#009E76]/10 px-5 py-3">
-                        <span className="text-3xl font-extrabold text-[#009E76]">
-                          {dignatariosData.rows.length}
-                        </span>{" "}
-                        <span className="text-sm font-semibold text-[#009E76]">
-                          dignatarios registrados
-                        </span>
-                      </div>
-
-                      <DownloadButtons
-                        onDownload={(format) => downloadReport("dignatarios", format)}
-                        compact
-                      />
-
-                      <Table headers={dignatariosData.headers} rows={dignatariosData.rows} />
-                    </>
-                  ) : (
-                    <p className="text-gray-400">Sin dignatarios registrados</p>
                   )}
                 </div>
               )}
