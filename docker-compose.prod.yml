@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_PATH=${VITE_PATH}
+        - VITE_RECAPTCHA_V3_SITE_KEY=${VITE_RECAPTCHA_V3_SITE_KEY}
+    container_name: notificaciones-app
+    environment:
+      - PORT=3000
+      - RECAPTCHA_SECRET=${RECAPTCHA_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - CLIENT_ORIGIN=${CLIENT_ORIGIN}
+      - DATABASE_URL=${DATABASE_URL}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+    volumes:
+      # Persistent storage for uploads, support documents, signatures, and logs
+      - ./backend/firmas:/app/backend/firmas
+      - ./backend/src/utils/logs:/app/backend/src/utils/logs
+    restart: always
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+backend/node_modules
+backend/src/utils/logs/*
+frontend/node_modules
+frontend/dist
+.git
+.gitignore
+.env
+.agents
+*.md
