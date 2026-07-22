@@ -269,12 +269,14 @@ const PORT = process.env.PORT || 3000;
     console.log(" Conectado correctamente a la base de datos PostgreSQL");
 
     Asociaciones();
-    await verifyMailerConnection();
 
     console.log(" Modelos sincronizados con la base de datos");
 
     server.listen(PORT, () => {
     });
+
+    // No bloquea el arranque del servidor: un problema con el SMTP no debe tumbar el API.
+    verifyMailerConnection();
 
   } catch (error) {
     console.error(" Error al conectar:");
