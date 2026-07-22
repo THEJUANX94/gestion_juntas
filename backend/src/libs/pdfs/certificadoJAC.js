@@ -215,7 +215,7 @@ const generarCertificadoJAC = async (datosCertificado) => {
   doc.text('Elaboró, Generó y Revisó:', margenIzq, yPos);
   yPos += 5;
   doc.setFont('helvetica', 'normal');
-  doc.text(`Elaboró: ${datosCertificado.elaboradoPor || '________________'}`, margenIzq, yPos);
+  doc.text(`Elaboró: ${datosCertificado.generadoPor || '________________'}`, margenIzq, yPos);
   yPos += 5;
   doc.text(`Generó: ${datosCertificado.generadoPor || '________________'}`, margenIzq, yPos);
   yPos += 5;
